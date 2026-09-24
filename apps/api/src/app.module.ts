@@ -8,6 +8,12 @@ import { TenantResolutionMiddleware } from "./tenancy/tenant-resolution.middlewa
 import { AuthModule } from "./auth/auth.module";
 import { StorageModule } from "./storage/storage.module";
 import { CatalogModule } from "./catalog/catalog.module";
+import { StoresModule } from "./stores/stores.module";
+import { StoreProductsModule } from "./store-products/store-products.module";
+import { PricingModule } from "./pricing/pricing.module";
+import { CustomersModule } from "./customers/customers.module";
+import { OrdersModule } from "./orders/orders.module";
+import { StorefrontModule } from "./storefront/storefront.module";
 
 @Module({
   imports: [
@@ -22,6 +28,12 @@ import { CatalogModule } from "./catalog/catalog.module";
     AuthModule,
     StorageModule,
     CatalogModule,
+    StoresModule,
+    StoreProductsModule,
+    PricingModule,
+    CustomersModule,
+    OrdersModule,
+    StorefrontModule,
   ],
 })
 export class AppModule implements NestModule {

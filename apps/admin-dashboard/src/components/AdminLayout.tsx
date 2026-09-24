@@ -1,11 +1,13 @@
 import React from "react";
-import { Package, FolderTree, LogOut, Store, Shield } from "lucide-react";
+import { Package, FolderTree, LogOut, Store, Shield, Truck } from "lucide-react";
 import { Button } from "@repo/ui";
+
+export type AdminDashboardTab = "catalog" | "categories" | "fulfillment";
 
 interface AdminLayoutProps {
   children: React.ReactNode;
-  activeTab: "catalog" | "categories";
-  setActiveTab: (tab: "catalog" | "categories") => void;
+  activeTab: AdminDashboardTab;
+  setActiveTab: (tab: AdminDashboardTab) => void;
   user: any;
   onLogout: () => void;
 }
@@ -32,6 +34,18 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
         </div>
 
         <nav className="flex-1 p-4 space-y-1">
+          <button
+            onClick={() => setActiveTab("fulfillment")}
+            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+              activeTab === "fulfillment"
+                ? "bg-blue-600 text-white"
+                : "text-slate-400 hover:text-white hover:bg-slate-800"
+            }`}
+          >
+            <Truck className="h-4 w-4" />
+            Order Fulfillment
+          </button>
+
           <button
             onClick={() => setActiveTab("catalog")}
             className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${

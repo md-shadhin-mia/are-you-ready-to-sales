@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { LoginPage } from "./pages/auth/LoginPage";
-import { AdminLayout } from "./components/AdminLayout";
+import { AdminLayout, AdminDashboardTab } from "./components/AdminLayout";
 import { MasterCatalogPage } from "./pages/catalog/MasterCatalogPage";
 import { CategoriesPage } from "./pages/categories/CategoriesPage";
+import { FulfillmentPage } from "./pages/fulfillment/FulfillmentPage";
 import { apiClient } from "@repo/api-client";
 
 export function App() {
@@ -10,7 +11,7 @@ export function App() {
     localStorage.getItem("admin_token"),
   );
   const [user, setUser] = useState<any>(null);
-  const [activeTab, setActiveTab] = useState<"catalog" | "categories">("catalog");
+  const [activeTab, setActiveTab] = useState<AdminDashboardTab>("fulfillment");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -34,6 +35,7 @@ export function App() {
     localStorage.setItem("admin_token", accessToken);
     setToken(accessToken);
     setUser(loggedInUser);
+    setActiveTab("fulfillment");
   };
 
   const handleLogout = () => {
@@ -64,6 +66,7 @@ export function App() {
       user={user}
       onLogout={handleLogout}
     >
+      {activeTab === "fulfillment" && <FulfillmentPage token={token} />}
       {activeTab === "catalog" && <MasterCatalogPage token={token} />}
       {activeTab === "categories" && <CategoriesPage token={token} />}
     </AdminLayout>

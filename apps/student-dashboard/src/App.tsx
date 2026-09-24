@@ -1,8 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { StudentAuthPage } from "./pages/auth/StudentAuthPage";
-import { StudentLayout } from "./components/StudentLayout";
+import { StudentLayout, StudentDashboardTab } from "./components/StudentLayout";
 import { MarketplacePage } from "./pages/marketplace/MarketplacePage";
 import { OnboardingWizard } from "./pages/onboarding/OnboardingWizard";
+import { StoreBuilderPage } from "./pages/store-builder/StoreBuilderPage";
+import { MyProductsPage } from "./pages/my-products/MyProductsPage";
+import { StudentOrdersPage } from "./pages/orders/StudentOrdersPage";
+import { StudentCrmPage } from "./pages/crm/StudentCrmPage";
 import { apiClient } from "@repo/api-client";
 
 export function App() {
@@ -10,9 +14,7 @@ export function App() {
     localStorage.getItem("student_token"),
   );
   const [user, setUser] = useState<any>(null);
-  const [activeTab, setActiveTab] = useState<"marketplace" | "onboarding">(
-    "marketplace",
-  );
+  const [activeTab, setActiveTab] = useState<StudentDashboardTab>("store-builder");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -40,7 +42,7 @@ export function App() {
     localStorage.setItem("student_token", accessToken);
     setToken(accessToken);
     setUser(loggedInUser);
-    setActiveTab("onboarding");
+    setActiveTab("store-builder");
   };
 
   const handleLogout = () => {
@@ -71,12 +73,16 @@ export function App() {
       user={user}
       onLogout={handleLogout}
     >
+      {activeTab === "store-builder" && <StoreBuilderPage token={token} />}
+      {activeTab === "my-products" && <MyProductsPage token={token} />}
       {activeTab === "marketplace" && <MarketplacePage token={token} />}
+      {activeTab === "orders" && <StudentOrdersPage token={token} />}
+      {activeTab === "crm" && <StudentCrmPage token={token} />}
       {activeTab === "onboarding" && (
         <OnboardingWizard
           user={user}
           token={token}
-          onComplete={() => setActiveTab("marketplace")}
+          onComplete={() => setActiveTab("store-builder")}
         />
       )}
     </StudentLayout>

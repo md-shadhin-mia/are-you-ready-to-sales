@@ -208,6 +208,65 @@ async function main() {
   }
 
   console.log(`✅ Seeded ${masterProducts.length} master products`);
+
+  // 5. Seed Reseller Store Products for Apex Gadgets
+  const p1 = await prisma.masterProduct.findUnique({
+    where: { sku: "SKU-ELEC-001" },
+  });
+  const p2 = await prisma.masterProduct.findUnique({
+    where: { sku: "SKU-ELEC-002" },
+  });
+
+  if (p1 && p2) {
+    await prisma.storeProduct.upsert({
+      where: {
+        storeId_masterProductId: {
+          storeId: sampleStore.id,
+          masterProductId: p1.id,
+        },
+      },
+      update: {},
+      create: {
+        storeId: sampleStore.id,
+        masterProductId: p1.id,
+        sellingPrice: 4200.0,
+        compareAtPrice: 4500.0,
+        customTitle: "Apex Pro Wireless Noise-Cancelling Headphones",
+        customDescription:
+          "Experience pure studio sound with active noise cancellation. Curated specially by Apex Gadgets.",
+        customImages: p1.masterImages,
+        isFeatured: true,
+        isVisible: true,
+        tags: ["audio", "wireless", "premium"],
+      },
+    });
+
+    await prisma.storeProduct.upsert({
+      where: {
+        storeId_masterProductId: {
+          storeId: sampleStore.id,
+          masterProductId: p2.id,
+        },
+      },
+      update: {},
+      create: {
+        storeId: sampleStore.id,
+        masterProductId: p2.id,
+        sellingPrice: 1650.0,
+        compareAtPrice: 1800.0,
+        customTitle: "Apex Ultra-Slim 20000mAh Fast Power Bank",
+        customDescription:
+          "High capacity 22.5W Power Delivery portable charger for smartphones and laptops.",
+        customImages: p2.masterImages,
+        isFeatured: true,
+        isVisible: true,
+        tags: ["chargers", "travel", "fast-charging"],
+      },
+    });
+
+    console.log("✅ Seeded 2 reseller products for Apex Gadgets store");
+  }
+
   console.log("🎉 Seeding completed successfully!");
 }
 
