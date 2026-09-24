@@ -8,14 +8,20 @@ import {
   Box,
   Truck,
   Users,
+  LayoutDashboard,
+  Star,
+  Award,
 } from "lucide-react";
 import { Button } from "@repo/ui";
 
 export type StudentDashboardTab =
+  | "dashboard"
   | "marketplace"
   | "store-builder"
   | "my-products"
   | "orders"
+  | "reviews"
+  | "reputation"
   | "crm"
   | "onboarding";
 
@@ -39,11 +45,14 @@ export const StudentLayout: React.FC<StudentLayoutProps> = ({
     label: string;
     icon: React.ComponentType<{ className?: string }>;
   }> = [
+    { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
     { id: "store-builder", label: "Store Builder", icon: Store },
     { id: "my-products", label: "My Products", icon: Box },
     { id: "marketplace", label: "Wholesale Catalog", icon: Compass },
     { id: "orders", label: "Orders & Profits", icon: Truck },
-    { id: "crm", label: "Customer CRM", icon: Users },
+    { id: "reviews", label: "Reviews", icon: Star },
+    { id: "reputation", label: "Reputation", icon: Award },
+    { id: "crm", label: "CRM", icon: Users },
   ];
 
   return (

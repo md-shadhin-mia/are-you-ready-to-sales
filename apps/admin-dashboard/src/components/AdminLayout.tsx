@@ -1,8 +1,8 @@
 import React from "react";
-import { Package, FolderTree, LogOut, Store, Shield, Truck } from "lucide-react";
+import { Package, FolderTree, LogOut, Store, Shield, Truck, MessageSquare } from "lucide-react";
 import { Button } from "@repo/ui";
 
-export type AdminDashboardTab = "catalog" | "categories" | "fulfillment";
+export type AdminDashboardTab = "catalog" | "categories" | "fulfillment" | "reviews";
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -68,6 +68,18 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
           >
             <FolderTree className="h-4 w-4" />
             Categories
+          </button>
+
+          <button
+            onClick={() => setActiveTab("reviews")}
+            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+              activeTab === "reviews"
+                ? "bg-blue-600 text-white"
+                : "text-slate-400 hover:text-white hover:bg-slate-800"
+            }`}
+          >
+            <MessageSquare className="h-4 w-4" />
+            Review Moderation
           </button>
         </nav>
 

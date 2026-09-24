@@ -4,6 +4,8 @@ import {
   BadRequestException,
   ConflictException,
 } from "@nestjs/common";
+import { EventEmitter2 } from "@nestjs/event-emitter";
+import { randomBytes } from "crypto";
 import { PrismaService } from "../prisma/prisma.service";
 import { PricingService } from "../pricing/pricing.service";
 import { StoresService } from "../stores/stores.service";
@@ -21,6 +23,7 @@ export class OrdersService {
     private readonly prisma: PrismaService,
     private readonly pricingService: PricingService,
     private readonly storesService: StoresService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   /**
@@ -339,6 +342,11 @@ export class OrdersService {
       shippingFee: Number(order.shippingFee),
       recipientCity: shipping?.city || shipping?.district,
       store: order.store,
+      reviewToken:
+        order.status === OrderStatus.DELIVERED ||
+        order.status === OrderStatus.COMPLETED
+          ? order.reviewToken
+          : null,
       items: order.items.map((item) => ({
         id: item.id,
         title: item.storeProduct?.customTitle || item.masterProduct.title,
@@ -593,13 +601,49 @@ export class OrdersService {
             ? "CANCELLED"
             : undefined;
 
+      // Handle review token generation upon delivery/completion
+      const isDeliveredOrCompleted =
+        toStatus === OrderStatus.DELIVERED || toStatus === OrderStatus.COMPLETED;
+      let reviewToken = order.reviewToken;
+      let reviewRequestSentAt = order.reviewRequestSentAt;
+
+      if (isDeliveredOrCompleted && !reviewToken) {
+        reviewToken = `tok_${randomBytes(16).toString("hex")}`;
+        reviewRequestSentAt = new Date();
+      }
+
+      // If transitioning to DELIVERED/COMPLETED for the first time, increment store completed orders
+      const wasDeliveredOrCompleted =
+        order.status === OrderStatus.DELIVERED ||
+        order.status === OrderStatus.COMPLETED;
+
+      if (isDeliveredOrCompleted && !wasDeliveredOrCompleted) {
+        await tx.store.update({
+          where: { id: order.storeId },
+          data: {
+            completedOrdersCount: { increment: 1 },
+          },
+        });
+      }
+
       const updated = await tx.order.update({
         where: { id: orderId },
         data: {
           status: toStatus,
           ...(paymentStatusUpdate ? { paymentStatus: paymentStatusUpdate } : {}),
+          ...(reviewToken ? { reviewToken, reviewRequestSentAt } : {}),
         },
       });
+
+      if (isDeliveredOrCompleted) {
+        this.eventEmitter.emit("order.delivered", {
+          orderId: updated.id,
+          storeId: updated.storeId,
+          customerId: updated.customerId,
+          orderNumber: updated.orderNumber,
+          reviewToken,
+        });
+      }
 
       return updated;
     });

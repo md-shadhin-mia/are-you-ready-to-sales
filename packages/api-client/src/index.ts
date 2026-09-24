@@ -76,6 +76,9 @@ export interface Store {
   status: "DRAFT" | "ACTIVE" | "SUSPENDED";
   ratingAvg: number | string;
   totalReviewsCount: number;
+  responseRatePercent?: number;
+  repeatCustomerPercent?: number;
+  completedOrdersCount?: number;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -174,6 +177,8 @@ export interface Order {
   };
   courierName?: string | null;
   trackingNumber?: string | null;
+  reviewToken?: string | null;
+  reviewRequestSentAt?: string | null;
   items?: OrderItem[];
   customer?: {
     id: string;
@@ -255,6 +260,155 @@ export class ApiError extends Error {
     super(message);
     this.name = "ApiError";
   }
+}
+
+export interface Review {
+  id: string;
+  orderId: string;
+  masterProductId: string;
+  storeId: string;
+  customerId: string;
+  productRating: number;
+  storeRating: number;
+  deliveryRating: number;
+  productComment?: string | null;
+  storeComment?: string | null;
+  deliveryComment?: string | null;
+  isVerified: boolean;
+  isPublished: boolean;
+  createdAt: string;
+  updatedAt: string;
+  customer?: {
+    id?: string;
+    fullName: string;
+    phone: string;
+  };
+  masterProduct?: {
+    id: string;
+    title: string;
+    sku?: string;
+    masterImages?: string[];
+  };
+  product?: {
+    id: string;
+    title: string;
+    images?: string[];
+  };
+  store?: {
+    id: string;
+    storeName: string;
+    slug: string;
+  };
+  order?: {
+    orderNumber: string;
+    createdAt: string;
+  };
+}
+
+export interface ReviewDimensionBreakdown {
+  totalReviews: number;
+  averageProductRating: number;
+  averageStoreRating: number;
+  averageDeliveryRating: number;
+  starDistribution: {
+    5: number;
+    4: number;
+    3: number;
+    2: number;
+    1: number;
+  };
+}
+
+export interface StoreReputation {
+  storeId: string;
+  storeName: string;
+  slug: string;
+  ratingAvg: number;
+  totalReviewsCount: number;
+  completedOrdersCount: number;
+  responseRatePercent: number;
+  repeatCustomerPercent: number;
+  compositeScore: number;
+  trustBadge: {
+    badgeText: string;
+    ratingText: string;
+    fulfillmentRateText: string;
+  };
+  tips?: string[];
+}
+
+export interface StudentDashboardSummary {
+  grossSales: number;
+  grossSalesGrowthPercent: number;
+  netProfit: number;
+  profitMarginPercent: number;
+  totalOrders: number;
+  completedOrders: number;
+  averageOrderValue: number;
+  activeCustomersCount: number;
+  repeatCustomerPercent: number;
+  storeRating: number;
+  totalReviewsCount: number;
+  recentOrders: Array<{
+    id: string;
+    orderNumber: string;
+    customerName: string;
+    status: string;
+    totalAmount: number;
+    studentNetProfit: number;
+    createdAt: string;
+  }>;
+  recentReviews: Array<{
+    id: string;
+    productTitle: string;
+    customerName: string;
+    productRating: number;
+    storeRating: number;
+    deliveryRating: number;
+    productComment?: string | null;
+    createdAt: string;
+  }>;
+  trainingProgress?: {
+    overallCompletionPercent: number;
+    modules: Array<{
+      id: string;
+      title: string;
+      status: "COMPLETED" | "IN_PROGRESS" | "LOCKED";
+      progressPercent: number;
+    }>;
+  };
+}
+
+export interface StudentDashboardChartPoint {
+  date: string;
+  revenue: number;
+  profit: number;
+  ordersCount: number;
+}
+
+export interface SubmitReviewDto {
+  reviewToken?: string;
+  orderNumber?: string;
+  customerPhone?: string;
+  masterProductId: string;
+  productRating: number;
+  storeRating: number;
+  deliveryRating: number;
+  productComment?: string;
+  storeComment?: string;
+  deliveryComment?: string;
+}
+
+export interface VerifyReviewTokenResult {
+  valid: boolean;
+  orderNumber: string;
+  customerName: string;
+  items: Array<{
+    masterProductId: string;
+    title: string;
+    image?: string;
+    alreadyReviewed: boolean;
+  }>;
 }
 
 export class PlatformApiClient {
@@ -893,6 +1047,150 @@ export class PlatformApiClient {
       }
       return true;
     },
+  };
+
+  // Reviews & Ratings System (Phase 3)
+  reviews = {
+    submit: (storeSlug: string, body: SubmitReviewDto) =>
+      this.request<{ success: boolean; review: Review }>(
+        `/api/v1/stores/${storeSlug}/reviews`,
+        { method: "POST", body: JSON.stringify(body) },
+      ),
+
+    verifyToken: (storeSlug: string, token: string) =>
+      this.request<VerifyReviewTokenResult>(
+        `/api/v1/stores/${storeSlug}/reviews/verify-token?token=${encodeURIComponent(token)}`,
+        { method: "GET" },
+      ),
+
+    verifyOrder: (storeSlug: string, orderNumber: string, phone: string) =>
+      this.request<VerifyReviewTokenResult>(
+        `/api/v1/stores/${storeSlug}/reviews/verify-order?orderNumber=${encodeURIComponent(orderNumber)}&phone=${encodeURIComponent(phone)}`,
+        { method: "GET" },
+      ),
+
+    getByProduct: (
+      storeSlug: string,
+      productId: string,
+      params: { page?: number; limit?: number } = {},
+    ) => {
+      const searchParams = new URLSearchParams();
+      if (params.page) searchParams.set("page", String(params.page));
+      if (params.limit) searchParams.set("limit", String(params.limit));
+      const qs = searchParams.toString();
+      return this.request<{
+        breakdown: ReviewDimensionBreakdown;
+        reviews: Review[];
+        meta: { page: number; limit: number; total: number; totalPages: number };
+      }>(
+        `/api/v1/stores/${storeSlug}/products/${productId}/reviews${qs ? `?${qs}` : ""}`,
+        { method: "GET" },
+      );
+    },
+
+    getByStore: (
+      storeSlug: string,
+      params: { page?: number; limit?: number } = {},
+    ) => {
+      const searchParams = new URLSearchParams();
+      if (params.page) searchParams.set("page", String(params.page));
+      if (params.limit) searchParams.set("limit", String(params.limit));
+      const qs = searchParams.toString();
+      return this.request<{
+        reviews: Review[];
+        meta: { page: number; limit: number; total: number; totalPages: number };
+      }>(
+        `/api/v1/stores/${storeSlug}/reviews${qs ? `?${qs}` : ""}`,
+        { method: "GET" },
+      );
+    },
+
+    listStudentReviews: (
+      params: { page?: number; limit?: number; ratingFilter?: string; search?: string } = {},
+      token: string,
+    ) => {
+      const searchParams = new URLSearchParams();
+      if (params.page) searchParams.set("page", String(params.page));
+      if (params.limit) searchParams.set("limit", String(params.limit));
+      if (params.ratingFilter) searchParams.set("ratingFilter", params.ratingFilter);
+      if (params.search) searchParams.set("search", params.search);
+      const qs = searchParams.toString();
+      return this.request<{
+        items: Review[];
+        breakdown: ReviewDimensionBreakdown;
+        total: number;
+        page: number;
+        limit: number;
+        totalPages: number;
+      }>(
+        `/api/v1/student/reviews${qs ? `?${qs}` : ""}`,
+        { method: "GET" },
+        token,
+      );
+    },
+
+    listAdminReviews: (
+      params: { page?: number; limit?: number; search?: string; status?: string } = {},
+      token: string,
+    ) => {
+      const searchParams = new URLSearchParams();
+      if (params.page) searchParams.set("page", String(params.page));
+      if (params.limit) searchParams.set("limit", String(params.limit));
+      if (params.search) searchParams.set("search", params.search);
+      if (params.status) searchParams.set("status", params.status);
+      const qs = searchParams.toString();
+      return this.request<{
+        items: Review[];
+        total: number;
+        page: number;
+        limit: number;
+        totalPages: number;
+      }>(
+        `/api/v1/admin/reviews${qs ? `?${qs}` : ""}`,
+        { method: "GET" },
+        token,
+      );
+    },
+
+    togglePublish: (id: string, isPublished: boolean, token: string) =>
+      this.request<Review>(
+        `/api/v1/admin/reviews/${id}/publish`,
+        { method: "PATCH", body: JSON.stringify({ isPublished }) },
+        token,
+      ),
+  };
+
+  // Store Reputation & Trust Scoring (Phase 3)
+  reputation = {
+    getStoreReputation: (storeSlug: string) =>
+      this.request<StoreReputation>(
+        `/api/v1/stores/${storeSlug}/reputation`,
+        { method: "GET" },
+      ),
+
+    getStudentScorecard: (token: string) =>
+      this.request<StoreReputation>(
+        `/api/v1/student/reputation`,
+        { method: "GET" },
+        token,
+      ),
+  };
+
+  // Student Executive Dashboard (Phase 3)
+  dashboard = {
+    getSummary: (token: string) =>
+      this.request<StudentDashboardSummary>(
+        `/api/v1/student/dashboard/summary`,
+        { method: "GET" },
+        token,
+      ),
+
+    getChartData: (range: "7d" | "30d" | "1y" = "30d", token: string) =>
+      this.request<StudentDashboardChartPoint[]>(
+        `/api/v1/student/dashboard/chart-data?range=${range}`,
+        { method: "GET" },
+        token,
+      ),
   };
 }
 

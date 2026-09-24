@@ -4,6 +4,7 @@ import { AdminLayout, AdminDashboardTab } from "./components/AdminLayout";
 import { MasterCatalogPage } from "./pages/catalog/MasterCatalogPage";
 import { CategoriesPage } from "./pages/categories/CategoriesPage";
 import { FulfillmentPage } from "./pages/fulfillment/FulfillmentPage";
+import { AdminReviewsPage } from "./pages/reviews/AdminReviewsPage";
 import { apiClient } from "@repo/api-client";
 
 export function App() {
@@ -69,6 +70,7 @@ export function App() {
       {activeTab === "fulfillment" && <FulfillmentPage token={token} />}
       {activeTab === "catalog" && <MasterCatalogPage token={token} />}
       {activeTab === "categories" && <CategoriesPage token={token} />}
+      {activeTab === "reviews" && <AdminReviewsPage token={token} />}
     </AdminLayout>
   );
 }

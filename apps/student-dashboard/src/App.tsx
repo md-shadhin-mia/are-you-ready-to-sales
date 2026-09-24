@@ -7,6 +7,9 @@ import { StoreBuilderPage } from "./pages/store-builder/StoreBuilderPage";
 import { MyProductsPage } from "./pages/my-products/MyProductsPage";
 import { StudentOrdersPage } from "./pages/orders/StudentOrdersPage";
 import { StudentCrmPage } from "./pages/crm/StudentCrmPage";
+import { ExecutiveDashboardPage } from "./pages/dashboard/ExecutiveDashboardPage";
+import { StudentReviewsPage } from "./pages/reviews/StudentReviewsPage";
+import { StudentReputationPage } from "./pages/reputation/StudentReputationPage";
 import { apiClient } from "@repo/api-client";
 
 export function App() {
@@ -14,7 +17,7 @@ export function App() {
     localStorage.getItem("student_token"),
   );
   const [user, setUser] = useState<any>(null);
-  const [activeTab, setActiveTab] = useState<StudentDashboardTab>("store-builder");
+  const [activeTab, setActiveTab] = useState<StudentDashboardTab>("dashboard");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -73,16 +76,21 @@ export function App() {
       user={user}
       onLogout={handleLogout}
     >
+      {activeTab === "dashboard" && (
+        <ExecutiveDashboardPage token={token} setActiveTab={setActiveTab} />
+      )}
       {activeTab === "store-builder" && <StoreBuilderPage token={token} />}
       {activeTab === "my-products" && <MyProductsPage token={token} />}
       {activeTab === "marketplace" && <MarketplacePage token={token} />}
       {activeTab === "orders" && <StudentOrdersPage token={token} />}
+      {activeTab === "reviews" && <StudentReviewsPage token={token} />}
+      {activeTab === "reputation" && <StudentReputationPage token={token} />}
       {activeTab === "crm" && <StudentCrmPage token={token} />}
       {activeTab === "onboarding" && (
         <OnboardingWizard
           user={user}
           token={token}
-          onComplete={() => setActiveTab("store-builder")}
+          onComplete={() => setActiveTab("dashboard")}
         />
       )}
     </StudentLayout>

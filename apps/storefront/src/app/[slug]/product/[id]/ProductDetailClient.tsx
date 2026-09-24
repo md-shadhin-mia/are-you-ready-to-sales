@@ -1,9 +1,24 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { ShoppingBag, Plus, Minus, Zap, CheckCircle2, AlertCircle } from "lucide-react";
+import {
+  ShoppingBag,
+  Plus,
+  Minus,
+  Zap,
+  CheckCircle2,
+  AlertCircle,
+  Star,
+  ShieldCheck,
+  Truck,
+  Store,
+  Package,
+  MessageSquare,
+  ArrowRight,
+} from "lucide-react";
 import { useCart } from "../../../../store/useCart";
+import { apiClient, Review, ReviewDimensionBreakdown } from "@repo/api-client";
 
 interface ProductDetailClientProps {
   storeSlug: string;
@@ -26,6 +41,22 @@ export function ProductDetailClient({ storeSlug, product }: ProductDetailClientP
   const [selectedImage, setSelectedImage] = useState(product.images?.[0] || "");
   const [quantity, setQuantity] = useState(1);
   const [added, setAdded] = useState(false);
+
+  // Reviews state
+  const [reviewsData, setReviewsData] = useState<{
+    breakdown: ReviewDimensionBreakdown;
+    reviews: Review[];
+    meta: any;
+  } | null>(null);
+  const [reviewsLoading, setReviewsLoading] = useState(true);
+
+  useEffect(() => {
+    apiClient.reviews
+      .getByProduct(storeSlug, product.id)
+      .then((data) => setReviewsData(data))
+      .catch((err) => console.error("Failed to load reviews:", err))
+      .finally(() => setReviewsLoading(false));
+  }, [storeSlug, product.id]);
 
   const handleAddToCart = () => {
     if (!product.inStock) return;
@@ -210,6 +241,196 @@ export function ProductDetailClient({ storeSlug, product }: ProductDetailClientP
             {product.description || "High quality guaranteed product ready for instant delivery."}
           </p>
         </div>
+      </div>
+
+      {/* Tri-Dimensional Reviews Section */}
+      <div className="lg:col-span-2 pt-12 border-t border-slate-200/80 space-y-8">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h2 className="text-xl sm:text-2xl font-bold text-slate-900 flex items-center gap-2.5">
+              <MessageSquare className="h-6 w-6 text-store-primary" />
+              Verified Customer Reviews
+            </h2>
+            <p className="text-xs text-slate-500 mt-1">
+              Independent ratings for product quality, student seller service, and delivery speed.
+            </p>
+          </div>
+
+          <button
+            onClick={() => router.push(`/${storeSlug}/review`)}
+            className="inline-flex items-center gap-2 bg-slate-900 hover:bg-slate-800 text-white px-5 py-2.5 rounded-xl font-semibold text-xs transition-colors shadow-xs"
+          >
+            <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
+            Write a Review
+          </button>
+        </div>
+
+        {reviewsLoading ? (
+          <div className="py-12 text-center text-slate-400 text-xs">
+            Loading reviews and rating breakdown...
+          </div>
+        ) : !reviewsData || reviewsData.breakdown.totalReviews === 0 ? (
+          <div className="bg-slate-50 border border-slate-200 rounded-3xl p-8 text-center space-y-3">
+            <div className="h-12 w-12 bg-white rounded-2xl border border-slate-200 shadow-xs flex items-center justify-center mx-auto text-slate-400">
+              <Star className="h-6 w-6" />
+            </div>
+            <h3 className="font-bold text-sm text-slate-900">No Reviews Yet</h3>
+            <p className="text-xs text-slate-500 max-w-sm mx-auto">
+              Be the first to review this product after your order is delivered!
+            </p>
+            <button
+              onClick={() => router.push(`/${storeSlug}/review`)}
+              className="text-xs font-semibold text-store-primary hover:underline inline-flex items-center gap-1 pt-1"
+            >
+              Submit an order review
+              <ArrowRight className="h-3 w-3" />
+            </button>
+          </div>
+        ) : (
+          <div className="space-y-6">
+            {/* 3D Breakdown Overview Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Product Quality Card */}
+              <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-xs flex items-center gap-3">
+                <div className="p-2.5 rounded-xl bg-blue-50 text-blue-600">
+                  <Package className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-[11px] font-semibold text-slate-500 uppercase">Product Quality</p>
+                  <p className="text-lg font-bold text-slate-900 flex items-center gap-1.5">
+                    {reviewsData.breakdown.averageProductRating} ★
+                    <span className="text-xs font-normal text-slate-400">/ 5.0</span>
+                  </p>
+                </div>
+              </div>
+
+              {/* Store Service Card */}
+              <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-xs flex items-center gap-3">
+                <div className="p-2.5 rounded-xl bg-purple-50 text-purple-600">
+                  <Store className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-[11px] font-semibold text-slate-500 uppercase">Seller Service</p>
+                  <p className="text-lg font-bold text-slate-900 flex items-center gap-1.5">
+                    {reviewsData.breakdown.averageStoreRating} ★
+                    <span className="text-xs font-normal text-slate-400">/ 5.0</span>
+                  </p>
+                </div>
+              </div>
+
+              {/* Delivery Speed Card */}
+              <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-xs flex items-center gap-3">
+                <div className="p-2.5 rounded-xl bg-emerald-50 text-emerald-600">
+                  <Truck className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-[11px] font-semibold text-slate-500 uppercase">Delivery & Packing</p>
+                  <p className="text-lg font-bold text-slate-900 flex items-center gap-1.5">
+                    {reviewsData.breakdown.averageDeliveryRating} ★
+                    <span className="text-xs font-normal text-slate-400">/ 5.0</span>
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Star Distribution Meter */}
+            <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-5 max-w-md">
+              <p className="text-xs font-bold text-slate-900 mb-3">Rating Breakdown</p>
+              <div className="space-y-2">
+                {[5, 4, 3, 2, 1].map((stars) => {
+                  const count =
+                    (reviewsData.breakdown.starDistribution as any)?.[stars] || 0;
+                  const pct =
+                    reviewsData.breakdown.totalReviews > 0
+                      ? Math.round((count / reviewsData.breakdown.totalReviews) * 100)
+                      : 0;
+                  return (
+                    <div key={stars} className="flex items-center gap-3 text-xs">
+                      <span className="w-10 font-medium text-slate-600 flex items-center gap-1">
+                        {stars} <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
+                      </span>
+                      <div className="flex-1 h-2 bg-slate-200 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-amber-400 rounded-full transition-all"
+                          style={{ width: `${pct}%` }}
+                        />
+                      </div>
+                      <span className="w-8 text-right text-slate-400 text-[11px]">{count}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Individual Reviews Cards */}
+            <div className="space-y-4 pt-2">
+              {reviewsData.reviews.map((rev) => (
+                <div
+                  key={rev.id}
+                  className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs space-y-3"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2.5">
+                      <div className="h-8 w-8 rounded-full bg-blue-100 text-blue-700 font-bold text-xs flex items-center justify-center">
+                        {rev.customer?.fullName?.[0] || "C"}
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold text-slate-900">
+                          {rev.customer?.fullName}
+                        </p>
+                        <p className="text-[11px] text-slate-400">
+                          {new Date(rev.createdAt).toLocaleDateString()}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                        <ShieldCheck className="h-3.5 w-3.5" />
+                        Verified Purchase
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* 3D Score Pills */}
+                  <div className="flex flex-wrap gap-2 pt-1">
+                    <span className="inline-flex items-center gap-1 bg-slate-100 text-slate-700 text-[11px] font-semibold px-2.5 py-0.5 rounded-md">
+                      Product: {rev.productRating} ★
+                    </span>
+                    <span className="inline-flex items-center gap-1 bg-slate-100 text-slate-700 text-[11px] font-semibold px-2.5 py-0.5 rounded-md">
+                      Service: {rev.storeRating} ★
+                    </span>
+                    <span className="inline-flex items-center gap-1 bg-slate-100 text-slate-700 text-[11px] font-semibold px-2.5 py-0.5 rounded-md">
+                      Delivery: {rev.deliveryRating} ★
+                    </span>
+                  </div>
+
+                  {/* Comments */}
+                  <div className="space-y-1.5 pt-1 text-xs text-slate-700">
+                    {rev.productComment && (
+                      <p>
+                        <span className="font-semibold text-slate-900">Product: </span>
+                        {rev.productComment}
+                      </p>
+                    )}
+                    {rev.storeComment && (
+                      <p>
+                        <span className="font-semibold text-slate-900">Service: </span>
+                        {rev.storeComment}
+                      </p>
+                    )}
+                    {rev.deliveryComment && (
+                      <p>
+                        <span className="font-semibold text-slate-900">Delivery: </span>
+                        {rev.deliveryComment}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

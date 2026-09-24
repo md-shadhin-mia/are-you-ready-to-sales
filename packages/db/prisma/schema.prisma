@@ -44,43 +44,47 @@ enum LedgerEntryType {
 }
 
 model User {
-  id           String    @id @default(uuid())
-  email        String    @unique
-  passwordHash String    @map("password_hash")
-  fullName     String    @map("full_name")
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  fullName     String   @map("full_name")
   phone        String?
-  role         UserRole  @default(STUDENT)
-  isActive     Boolean   @default(true) @map("is_active")
-  isVerified   Boolean   @default(false) @map("is_verified")
-  createdAt    DateTime  @default(now()) @map("created_at")
-  updatedAt    DateTime  @updatedAt @map("updated_at")
+  role         UserRole @default(STUDENT)
+  isActive     Boolean  @default(true) @map("is_active")
+  isVerified   Boolean  @default(false) @map("is_verified")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
 
-  stores       Store[]
+  stores Store[]
 
   @@map("users")
 }
 
 model Store {
-  id                String         @id @default(uuid())
-  studentId         String         @map("student_id")
-  student           User           @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  storeName         String         @map("store_name")
-  slug              String         @unique
-  customDomain      String?        @unique @map("custom_domain")
-  logoUrl           String?        @map("logo_url")
-  faviconUrl        String?        @map("favicon_url")
-  themeConfig       Json           @default("{}") @map("theme_config")
-  brandingInfo      Json           @default("{}") @map("branding_info")
-  status            StoreStatus    @default(DRAFT)
-  ratingAvg         Decimal        @default(0.0) @db.Decimal(3, 2) @map("rating_avg")
-  totalReviewsCount Int            @default(0) @map("total_reviews_count")
-  createdAt         DateTime       @default(now()) @map("created_at")
-  updatedAt         DateTime       @updatedAt @map("updated_at")
+  id                    String      @id @default(uuid())
+  studentId             String      @map("student_id")
+  student               User        @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  storeName             String      @map("store_name")
+  slug                  String      @unique
+  customDomain          String?     @unique @map("custom_domain")
+  logoUrl               String?     @map("logo_url")
+  faviconUrl            String?     @map("favicon_url")
+  themeConfig           Json        @default("{}") @map("theme_config")
+  brandingInfo          Json        @default("{}") @map("branding_info")
+  status                StoreStatus @default(DRAFT)
+  ratingAvg             Decimal     @default(0.0) @map("rating_avg") @db.Decimal(3, 2)
+  totalReviewsCount     Int         @default(0) @map("total_reviews_count")
+  responseRatePercent   Decimal     @default(100.00) @map("response_rate_percent") @db.Decimal(5, 2)
+  repeatCustomerPercent Decimal     @default(0.00) @map("repeat_customer_percent") @db.Decimal(5, 2)
+  completedOrdersCount  Int         @default(0) @map("completed_orders_count")
+  createdAt             DateTime    @default(now()) @map("created_at")
+  updatedAt             DateTime    @updatedAt @map("updated_at")
 
-  storeProducts     StoreProduct[]
-  customers         Customer[]
-  orders            Order[]
-  ledgerEntries     LedgerEntry[]
+  storeProducts StoreProduct[]
+  customers     Customer[]
+  orders        Order[]
+  ledgerEntries LedgerEntry[]
+  reviews       Review[]
 
   @@index([studentId])
   @@index([status])
@@ -103,23 +107,24 @@ model Category {
 }
 
 model MasterProduct {
-  id                String          @id @default(uuid())
-  sku               String          @unique
+  id                String   @id @default(uuid())
+  sku               String   @unique
   title             String
-  categoryId        String          @map("category_id")
-  category          Category        @relation(fields: [categoryId], references: [id], onDelete: Restrict)
-  basePrice         Decimal         @db.Decimal(10, 2) @map("base_price")
-  stockQuantity     Int             @default(0) @map("stock_quantity")
-  masterDescription String          @db.Text @map("master_description")
-  masterImages      String[]        @default([]) @map("master_images")
-  isActive          Boolean         @default(true) @map("is_active")
-  ratingAvg         Decimal         @default(0.0) @db.Decimal(3, 2) @map("rating_avg")
-  totalReviewsCount Int             @default(0) @map("total_reviews_count")
-  createdAt         DateTime        @default(now()) @map("created_at")
-  updatedAt         DateTime        @updatedAt @map("updated_at")
+  categoryId        String   @map("category_id")
+  category          Category @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  basePrice         Decimal  @map("base_price") @db.Decimal(10, 2)
+  stockQuantity     Int      @default(0) @map("stock_quantity")
+  masterDescription String   @map("master_description") @db.Text
+  masterImages      String[] @default([]) @map("master_images")
+  isActive          Boolean  @default(true) @map("is_active")
+  ratingAvg         Decimal  @default(0.0) @map("rating_avg") @db.Decimal(3, 2)
+  totalReviewsCount Int      @default(0) @map("total_reviews_count")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
 
-  storeProducts     StoreProduct[]
-  orderItems        OrderItem[]
+  storeProducts StoreProduct[]
+  orderItems    OrderItem[]
+  reviews       Review[]
 
   @@index([categoryId])
   @@index([isActive])
@@ -132,10 +137,10 @@ model StoreProduct {
   store             Store         @relation(fields: [storeId], references: [id], onDelete: Cascade)
   masterProductId   String        @map("master_product_id")
   masterProduct     MasterProduct @relation(fields: [masterProductId], references: [id], onDelete: Restrict)
-  sellingPrice      Decimal       @db.Decimal(10, 2) @map("selling_price")
-  compareAtPrice    Decimal?      @db.Decimal(10, 2) @map("compare_at_price")
+  sellingPrice      Decimal       @map("selling_price") @db.Decimal(10, 2)
+  compareAtPrice    Decimal?      @map("compare_at_price") @db.Decimal(10, 2)
   customTitle       String?       @map("custom_title")
-  customDescription String?       @db.Text @map("custom_description")
+  customDescription String?       @map("custom_description") @db.Text
   customImages      String[]      @default([]) @map("custom_images")
   tags              String[]      @default([])
   isFeatured        Boolean       @default(false) @map("is_featured")
@@ -143,7 +148,7 @@ model StoreProduct {
   createdAt         DateTime      @default(now()) @map("created_at")
   updatedAt         DateTime      @updatedAt @map("updated_at")
 
-  orderItems        OrderItem[]
+  orderItems OrderItem[]
 
   @@unique([storeId, masterProductId])
   @@index([storeId])
@@ -152,19 +157,20 @@ model StoreProduct {
 }
 
 model Customer {
-  id                String    @id @default(uuid())
-  storeId           String    @map("store_id")
-  store             Store     @relation(fields: [storeId], references: [id], onDelete: Cascade)
-  fullName          String    @map("full_name")
-  phone             String
-  email             String?
-  addresses         Json      @default("[]")
-  totalOrdersCount  Int       @default(0) @map("total_orders_count")
-  totalSpend        Decimal   @default(0.0) @db.Decimal(10, 2) @map("total_spend")
-  createdAt         DateTime  @default(now()) @map("created_at")
-  updatedAt         DateTime  @updatedAt @map("updated_at")
+  id               String   @id @default(uuid())
+  storeId          String   @map("store_id")
+  store            Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  fullName         String   @map("full_name")
+  phone            String
+  email            String?
+  addresses        Json     @default("[]")
+  totalOrdersCount Int      @default(0) @map("total_orders_count")
+  totalSpend       Decimal  @default(0.0) @map("total_spend") @db.Decimal(10, 2)
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
 
-  orders            Order[]
+  orders  Order[]
+  reviews Review[]
 
   @@unique([storeId, phone])
   @@index([storeId])
@@ -172,31 +178,34 @@ model Customer {
 }
 
 model Order {
-  id                 String       @id @default(uuid())
-  storeId            String       @map("store_id")
-  store              Store        @relation(fields: [storeId], references: [id], onDelete: Restrict)
-  customerId         String       @map("customer_id")
-  customer           Customer     @relation(fields: [customerId], references: [id], onDelete: Restrict)
-  orderNumber        String       @unique @map("order_number")
-  subtotal           Decimal      @db.Decimal(10, 2)
-  shippingFee        Decimal      @default(0.0) @db.Decimal(10, 2) @map("shipping_fee")
-  discountAmount     Decimal      @default(0.0) @db.Decimal(10, 2) @map("discount_amount")
-  totalAmount        Decimal      @db.Decimal(10, 2) @map("total_amount")
-  totalBaseCost      Decimal      @default(0.0) @db.Decimal(10, 2) @map("total_base_cost")
-  platformCommission Decimal      @default(0.0) @db.Decimal(10, 2) @map("platform_commission")
-  paymentFee         Decimal      @default(0.0) @db.Decimal(10, 2) @map("payment_fee")
-  studentNetProfit   Decimal      @default(0.0) @db.Decimal(10, 2) @map("student_net_profit")
-  status             OrderStatus  @default(PENDING_PAYMENT)
-  paymentMethod      String       @default("COD") @map("payment_method")
-  paymentStatus      String       @default("UNPAID") @map("payment_status")
-  shippingAddress    Json         @map("shipping_address")
-  trackingNumber     String?      @map("tracking_number")
-  courierName        String?      @map("courier_name")
-  createdAt          DateTime     @default(now()) @map("created_at")
-  updatedAt          DateTime     @updatedAt @map("updated_at")
+  id                  String      @id @default(uuid())
+  storeId             String      @map("store_id")
+  store               Store       @relation(fields: [storeId], references: [id], onDelete: Restrict)
+  customerId          String      @map("customer_id")
+  customer            Customer    @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  orderNumber         String      @unique @map("order_number")
+  subtotal            Decimal     @db.Decimal(10, 2)
+  shippingFee         Decimal     @default(0.0) @map("shipping_fee") @db.Decimal(10, 2)
+  discountAmount      Decimal     @default(0.0) @map("discount_amount") @db.Decimal(10, 2)
+  totalAmount         Decimal     @map("total_amount") @db.Decimal(10, 2)
+  totalBaseCost       Decimal     @default(0.0) @map("total_base_cost") @db.Decimal(10, 2)
+  platformCommission  Decimal     @default(0.0) @map("platform_commission") @db.Decimal(10, 2)
+  paymentFee          Decimal     @default(0.0) @map("payment_fee") @db.Decimal(10, 2)
+  studentNetProfit    Decimal     @default(0.0) @map("student_net_profit") @db.Decimal(10, 2)
+  status              OrderStatus @default(PENDING_PAYMENT)
+  paymentMethod       String      @default("COD") @map("payment_method")
+  paymentStatus       String      @default("UNPAID") @map("payment_status")
+  shippingAddress     Json        @map("shipping_address")
+  trackingNumber      String?     @map("tracking_number")
+  courierName         String?     @map("courier_name")
+  reviewToken         String?     @unique @map("review_token")
+  reviewRequestSentAt DateTime?   @map("review_request_sent_at")
+  createdAt           DateTime    @default(now()) @map("created_at")
+  updatedAt           DateTime    @updatedAt @map("updated_at")
 
-  items              OrderItem[]
-  ledgerEntries      LedgerEntry[]
+  items         OrderItem[]
+  ledgerEntries LedgerEntry[]
+  reviews       Review[]
 
   @@index([storeId])
   @@index([customerId])
@@ -213,9 +222,9 @@ model OrderItem {
   masterProductId  String        @map("master_product_id")
   masterProduct    MasterProduct @relation(fields: [masterProductId], references: [id], onDelete: Restrict)
   quantity         Int
-  unitBasePrice    Decimal       @db.Decimal(10, 2) @map("unit_base_price")
-  unitSellingPrice Decimal       @db.Decimal(10, 2) @map("unit_selling_price")
-  totalPrice       Decimal       @db.Decimal(10, 2) @map("total_price")
+  unitBasePrice    Decimal       @map("unit_base_price") @db.Decimal(10, 2)
+  unitSellingPrice Decimal       @map("unit_selling_price") @db.Decimal(10, 2)
+  totalPrice       Decimal       @map("total_price") @db.Decimal(10, 2)
   createdAt        DateTime      @default(now()) @map("created_at")
 
   @@map("order_items")
@@ -229,10 +238,43 @@ model LedgerEntry {
   order        Order?          @relation(fields: [orderId], references: [id], onDelete: SetNull)
   entryType    LedgerEntryType @map("entry_type")
   amount       Decimal         @db.Decimal(10, 2)
-  balanceAfter Decimal         @db.Decimal(10, 2) @map("balance_after")
+  balanceAfter Decimal         @map("balance_after") @db.Decimal(10, 2)
   notes        String?
   createdAt    DateTime        @default(now()) @map("created_at")
 
   @@index([storeId])
   @@map("ledger_entries")
+}
+
+model Review {
+  id              String        @id @default(uuid())
+  orderId         String        @map("order_id")
+  order           Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  masterProductId String        @map("master_product_id")
+  masterProduct   MasterProduct @relation(fields: [masterProductId], references: [id], onDelete: Restrict)
+  storeId         String        @map("store_id")
+  store           Store         @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  customerId      String        @map("customer_id")
+  customer        Customer      @relation(fields: [customerId], references: [id], onDelete: Restrict)
+
+  productRating  Int @map("product_rating")
+  storeRating    Int @map("store_rating")
+  deliveryRating Int @map("delivery_rating")
+
+  productComment  String? @map("product_comment") @db.Text
+  storeComment    String? @map("store_comment") @db.Text
+  deliveryComment String? @map("delivery_comment") @db.Text
+
+  isVerified  Boolean @default(true) @map("is_verified")
+  isPublished Boolean @default(true) @map("is_published")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@unique([orderId, masterProductId])
+  @@index([masterProductId])
+  @@index([storeId])
+  @@index([customerId])
+  @@index([isPublished])
+  @@map("reviews")
 }

@@ -10,6 +10,7 @@ import {
   AlertCircle,
   Loader2,
   ExternalLink,
+  Star,
 } from "lucide-react";
 
 interface TrackOrderClientProps {
@@ -206,6 +207,37 @@ export function TrackOrderClient({
               ))}
             </div>
           </div>
+
+          {/* Delivered Callout: Leave a Review */}
+          {(order.status === "DELIVERED" || order.status === "COMPLETED") && (
+            <div className="pt-6 border-t border-slate-100">
+              <div className="bg-amber-50/70 border border-amber-200/80 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 bg-amber-100 text-amber-700 rounded-xl">
+                    <Star className="h-5 w-5 fill-amber-400 text-amber-500" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-slate-900">
+                      Your parcel was successfully delivered!
+                    </p>
+                    <p className="text-[11px] text-slate-500">
+                      Leave an independent 3D review for product, service, and courier speed.
+                    </p>
+                  </div>
+                </div>
+
+                <a
+                  href={`/${storeSlug}/review?${
+                    order.reviewToken ? `token=${order.reviewToken}` : `orderNumber=${order.orderNumber}`
+                  }`}
+                  className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-slate-900 text-white font-bold text-xs shadow-xs hover:bg-slate-800 transition-colors shrink-0"
+                >
+                  <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
+                  Write Review
+                </a>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>
