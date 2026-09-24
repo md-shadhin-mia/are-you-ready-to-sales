@@ -71,6 +71,10 @@ model User {
   stores            Store[]
   studentLevel      StudentLevel?
   studentProgresses StudentProgress[]
+  roleAssignments   UserRoleAssignment[]
+  subscription      StudentSubscription?
+  payoutRequests    PayoutRequest[]      @relation("StudentPayouts")
+  reviewedPayouts   PayoutRequest[]      @relation("ReviewedPayouts")
 
   @@map("users")
 }
@@ -106,6 +110,7 @@ model Store {
   reviews       Review[]
   coupons       Coupon[]
   funnelEvents  StoreFunnelEvent[]
+  payoutRequests PayoutRequest[]
 
   @@index([studentId])
   @@index([status])
@@ -260,18 +265,21 @@ model OrderItem {
 }
 
 model LedgerEntry {
-  id           String          @id @default(uuid())
-  storeId      String          @map("store_id")
-  store        Store           @relation(fields: [storeId], references: [id], onDelete: Restrict)
-  orderId      String?         @map("order_id")
-  order        Order?          @relation(fields: [orderId], references: [id], onDelete: SetNull)
-  entryType    LedgerEntryType @map("entry_type")
-  amount       Decimal         @db.Decimal(10, 2)
-  balanceAfter Decimal         @map("balance_after") @db.Decimal(10, 2)
-  notes        String?
-  createdAt    DateTime        @default(now()) @map("created_at")
+  id              String          @id @default(uuid())
+  storeId         String          @map("store_id")
+  store           Store           @relation(fields: [storeId], references: [id], onDelete: Restrict)
+  orderId         String?         @map("order_id")
+  order           Order?          @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  payoutRequestId String?         @map("payout_request_id")
+  payoutRequest   PayoutRequest?  @relation(fields: [payoutRequestId], references: [id], onDelete: SetNull)
+  entryType       LedgerEntryType @map("entry_type")
+  amount          Decimal         @db.Decimal(10, 2)
+  balanceAfter    Decimal         @map("balance_after") @db.Decimal(10, 2)
+  notes           String?
+  createdAt       DateTime        @default(now()) @map("created_at")
 
   @@index([storeId])
+  @@index([payoutRequestId])
   @@map("ledger_entries")
 }
 
@@ -395,4 +403,134 @@ model StoreFunnelEvent {
   @@index([sessionId])
   @@map("store_funnel_events")
 }
+
+enum PayoutMethod {
+  BKASH
+  NAGAD
+  BANK_TRANSFER
+}
+
+enum PayoutStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  PROCESSED
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  PAST_DUE
+  CANCELLED
+}
+
+model Permission {
+  id          String   @id @default(uuid())
+  slug        String   @unique
+  name        String
+  description String?  @db.Text
+  module      String
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  rolePermissions RolePermission[]
+
+  @@map("permissions")
+}
+
+model Role {
+  id           String   @id @default(uuid())
+  name         String   @unique
+  description  String?  @db.Text
+  isSystemRole Boolean  @default(false) @map("is_system_role")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  rolePermissions RolePermission[]
+  userAssignments UserRoleAssignment[]
+
+  @@map("roles")
+}
+
+model RolePermission {
+  roleId       String     @map("role_id")
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permissionId String     @map("permission_id")
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+  createdAt    DateTime   @default(now()) @map("created_at")
+
+  @@id([roleId, permissionId])
+  @@map("role_permissions")
+}
+
+model UserRoleAssignment {
+  userId    String   @map("user_id")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  roleId    String   @map("role_id")
+  role      Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@id([userId, roleId])
+  @@map("user_role_assignments")
+}
+
+model PayoutRequest {
+  id                   String       @id @default(uuid())
+  storeId              String       @map("store_id")
+  store                Store        @relation(fields: [storeId], references: [id], onDelete: Restrict)
+  studentId            String       @map("student_id")
+  student              User         @relation("StudentPayouts", fields: [studentId], references: [id], onDelete: Restrict)
+  amount               Decimal      @db.Decimal(10, 2)
+  paymentMethod        PayoutMethod @map("payment_method")
+  accountDetails       Json         @map("account_details")
+  status               PayoutStatus @default(PENDING)
+  transactionReference String?      @map("transaction_reference")
+  adminNotes           String?      @map("admin_notes") @db.Text
+  reviewedById         String?      @map("reviewed_by_id")
+  reviewedBy           User?        @relation("ReviewedPayouts", fields: [reviewedById], references: [id], onDelete: SetNull)
+  createdAt            DateTime     @default(now()) @map("created_at")
+  updatedAt            DateTime     @updatedAt @map("updated_at")
+
+  ledgerEntries LedgerEntry[]
+
+  @@index([storeId])
+  @@index([studentId])
+  @@index([status])
+  @@map("payout_requests")
+}
+
+model SubscriptionPlan {
+  id                        String   @id @default(uuid())
+  name                      String
+  code                      String   @unique
+  monthlyPrice              Decimal  @map("monthly_price") @db.Decimal(10, 2)
+  yearlyPrice               Decimal  @map("yearly_price") @db.Decimal(10, 2)
+  maxProducts               Int      @map("max_products")
+  allowCustomDomain         Boolean  @default(false) @map("allow_custom_domain")
+  platformCommissionPercent  Decimal  @map("platform_commission_percent") @db.Decimal(5, 2)
+  features                  String[] @default([])
+  isActive                  Boolean  @default(true) @map("is_active")
+  createdAt                 DateTime @default(now()) @map("created_at")
+  updatedAt                 DateTime @updatedAt @map("updated_at")
+
+  subscriptions StudentSubscription[]
+
+  @@map("subscription_plans")
+}
+
+model StudentSubscription {
+  id                 String             @id @default(uuid())
+  studentId          String             @unique @map("student_id")
+  student            User               @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  planId             String             @map("plan_id")
+  plan               SubscriptionPlan   @relation(fields: [planId], references: [id], onDelete: Restrict)
+  status             SubscriptionStatus @default(ACTIVE)
+  currentPeriodStart DateTime           @map("current_period_start")
+  currentPeriodEnd   DateTime           @map("current_period_end")
+  createdAt          DateTime           @default(now()) @map("created_at")
+  updatedAt          DateTime           @updatedAt @map("updated_at")
+
+  @@index([studentId])
+  @@index([planId])
+  @@map("student_subscriptions")
+}
+
 

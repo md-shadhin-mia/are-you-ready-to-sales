@@ -6,6 +6,7 @@ import {
 import { PrismaService } from "../prisma/prisma.service";
 import { StoresService } from "../stores/stores.service";
 import { PricingService } from "../pricing/pricing.service";
+import { SubscriptionsService } from "../subscriptions/subscriptions.service";
 import {
   ImportProductDto,
   UpdateStoreProductDto,
@@ -21,6 +22,7 @@ export class StoreProductsService {
     private readonly prisma: PrismaService,
     private readonly storesService: StoresService,
     private readonly pricingService: PricingService,
+    private readonly subscriptionsService: SubscriptionsService,
     private readonly eventEmitter: EventEmitter2,
   ) {}
 
@@ -37,6 +39,20 @@ export class StoreProductsService {
 
     const basePriceNum = Number(masterProduct.basePrice);
     this.pricingService.validateSellingPrice(basePriceNum, dto.sellingPrice);
+
+    // Check if product already exists in store; if not, enforce subscription quota
+    const existing = await this.prisma.storeProduct.findUnique({
+      where: {
+        storeId_masterProductId: {
+          storeId: store.id,
+          masterProductId: masterProduct.id,
+        },
+      },
+    });
+
+    if (!existing) {
+      await this.subscriptionsService.checkProductQuota(userId, store.id);
+    }
 
     const storeProduct = await this.prisma.storeProduct.upsert({
       where: {

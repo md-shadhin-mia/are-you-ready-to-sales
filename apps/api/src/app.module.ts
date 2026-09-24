@@ -20,6 +20,9 @@ import { DashboardModule } from "./dashboard/dashboard.module";
 import { GamificationModule } from "./gamification/gamification.module";
 import { MarketingModule } from "./marketing/marketing.module";
 import { AnalyticsModule } from "./analytics/analytics.module";
+import { FinanceModule } from "./finance/finance.module";
+import { SubscriptionsModule } from "./subscriptions/subscriptions.module";
+import { AdminModule } from "./admin/admin.module";
 
 @Module({
   imports: [
@@ -46,6 +49,9 @@ import { AnalyticsModule } from "./analytics/analytics.module";
     GamificationModule,
     MarketingModule,
     AnalyticsModule,
+    FinanceModule,
+    SubscriptionsModule,
+    AdminModule,
   ],
 })
 export class AppModule implements NestModule {

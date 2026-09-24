@@ -21,6 +21,7 @@ import {
   UpdateBrandingDto,
   UpdateThemeDto,
   UpdateStoreStatusDto,
+  UpdateCustomDomainDto,
 } from "./dto/store.dto";
 import { JwtAuthGuard } from "../auth/jwt-auth.guard";
 import { RolesGuard } from "../auth/roles.guard";
@@ -102,4 +103,18 @@ export class StoresController {
   ) {
     return this.storesService.updateStatus(req.user.id, dto.status);
   }
+
+  @Patch("me/domain")
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.STUDENT, UserRole.SUPER_ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: "Configure custom domain for student store" })
+  @ApiResponse({ status: 200, description: "Store custom domain updated" })
+  updateCustomDomain(
+    @Req() req: Request & { user: { id: string } },
+    @Body() dto: UpdateCustomDomainDto,
+  ) {
+    return this.storesService.updateCustomDomain(req.user.id, dto.customDomain || null);
+  }
 }
+

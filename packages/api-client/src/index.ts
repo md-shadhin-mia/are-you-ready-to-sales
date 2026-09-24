@@ -522,6 +522,164 @@ export interface VerifyReviewTokenResult {
   }>;
 }
 
+export interface Permission {
+  id: string;
+  slug: string;
+  name: string;
+  description?: string | null;
+  module: string;
+  createdAt: string;
+}
+
+export interface Role {
+  id: string;
+  name: string;
+  description?: string | null;
+  isSystemRole: boolean;
+  assignedUsersCount?: number;
+  permissions?: Permission[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PayoutRequest {
+  id: string;
+  storeId: string;
+  studentId: string;
+  amount: number;
+  paymentMethod: "BKASH" | "NAGAD" | "BANK_TRANSFER";
+  accountDetails: Record<string, any>;
+  status: "PENDING" | "APPROVED" | "REJECTED" | "PROCESSED";
+  transactionReference?: string | null;
+  adminNotes?: string | null;
+  createdAt: string;
+  updatedAt?: string;
+  store?: { id: string; storeName: string; slug: string };
+  student?: { id: string; fullName: string; email: string; phone?: string };
+}
+
+export interface SubscriptionPlan {
+  id: string;
+  name: string;
+  code: string;
+  monthlyPrice: number;
+  yearlyPrice: number;
+  maxProducts: number;
+  allowCustomDomain: boolean;
+  platformCommissionPercent: number;
+  features: string[];
+  isActive: boolean;
+}
+
+export interface StudentSubscription {
+  subscription: {
+    id: string;
+    status: string;
+    currentPeriodStart: string;
+    currentPeriodEnd: string;
+  };
+  plan: SubscriptionPlan;
+  usage: {
+    currentProductCount: number;
+    maxProducts: number;
+    allowCustomDomain: boolean;
+    platformCommissionPercent: number;
+  };
+}
+
+export interface WalletSummary {
+  currentBalance: number;
+  availableBalance: number;
+  pendingHold: number;
+  totalWithdrawn: number;
+  totalEarned: number;
+  minWithdrawalAmount: number;
+}
+
+export interface LedgerStatementEntry {
+  id: string;
+  entryType: "ORDER_PROFIT" | "PLATFORM_FEE" | "PAYOUT_WITHDRAWAL";
+  amount: number;
+  balanceAfter: number;
+  notes?: string | null;
+  orderNumber?: string | null;
+  transactionReference?: string | null;
+  createdAt: string;
+}
+
+export interface LedgerStatementResponse {
+  entries: LedgerStatementEntry[];
+  currentBalance: number;
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
+export interface ExecutiveKpis {
+  platformGMV: number;
+  instituteNetRevenue: number;
+  platformCommissions: number;
+  wholesaleMargins: number;
+  totalOrdersCount: number;
+  warehouseBacklogCount: number;
+  outstandingStudentLiabilities: number;
+  totalSettledPayouts: number;
+  students: {
+    total: number;
+    verified: number;
+  };
+  stores: {
+    total: number;
+    active: number;
+    suspended: number;
+    draft: number;
+  };
+  dailyTrends: Array<{
+    date: string;
+    gmv: number;
+    orders: number;
+  }>;
+}
+
+export interface SellerScorecardItem {
+  storeId: string;
+  storeName: string;
+  slug: string;
+  studentName: string;
+  studentEmail: string;
+  status: string;
+  ratingAvg: number;
+  totalReviewsCount: number;
+  completedOrdersCount: number;
+  grossSales: number;
+  responseRatePercent: number;
+}
+
+export interface AdminStudentItem {
+  id: string;
+  fullName: string;
+  email: string;
+  phone?: string | null;
+  isVerified: boolean;
+  createdAt: string;
+  level: { level: number; title: string; xp: number };
+  subscription: { planName: string; planCode: string; status: string };
+  store?: {
+    id: string;
+    name: string;
+    slug: string;
+    customDomain?: string | null;
+    status: string;
+    ratingAvg: number;
+    totalReviews: number;
+    completedOrders: number;
+    productsCount: number;
+  } | null;
+}
+
 export class PlatformApiClient {
   private baseUrl: string;
 
@@ -802,6 +960,13 @@ export class PlatformApiClient {
       this.request<Store>(
         "/api/v1/stores/me/status",
         { method: "PATCH", body: JSON.stringify({ status }) },
+        token,
+      ),
+
+    updateCustomDomain: (customDomain: string | null, token: string) =>
+      this.request<Store>(
+        "/api/v1/stores/me/domain",
+        { method: "PATCH", body: JSON.stringify({ customDomain }) },
         token,
       ),
   };
@@ -1442,6 +1607,244 @@ export class PlatformApiClient {
     getCoachingAdvice: (token: string) =>
       this.request<CoachingAdvice>(
         `/api/v1/student/analytics/coach`,
+        { method: "GET" },
+        token,
+      ),
+  };
+
+  // Finance & Wallet Ledger (Phase 5)
+  finance = {
+    getWalletSummary: (token: string) =>
+      this.request<WalletSummary>(
+        "/api/v1/student/wallet/summary",
+        { method: "GET" },
+        token,
+      ),
+
+    getStatement: (page = 1, limit = 20, token: string) =>
+      this.request<LedgerStatementResponse>(
+        `/api/v1/student/wallet/statement?page=${page}&limit=${limit}`,
+        { method: "GET" },
+        token,
+      ),
+
+    requestPayout: (
+      dto: {
+        amount: number;
+        paymentMethod: "BKASH" | "NAGAD" | "BANK_TRANSFER";
+        accountDetails: Record<string, any>;
+      },
+      token: string,
+    ) =>
+      this.request<PayoutRequest>(
+        "/api/v1/student/wallet/withdraw",
+        {
+          method: "POST",
+          body: JSON.stringify(dto),
+        },
+        token,
+      ),
+
+    getPayoutHistory: (token: string) =>
+      this.request<PayoutRequest[]>(
+        "/api/v1/student/wallet/payouts",
+        { method: "GET" },
+        token,
+      ),
+
+    getAdminPayouts: (
+      params: { status?: string; page?: number; limit?: number } = {},
+      token: string,
+    ) => {
+      const q = new URLSearchParams();
+      if (params.status) q.append("status", params.status);
+      if (params.page) q.append("page", String(params.page));
+      if (params.limit) q.append("limit", String(params.limit));
+      const queryStr = q.toString() ? `?${q.toString()}` : "";
+      return this.request<{ requests: PayoutRequest[]; pagination: any }>(
+        `/api/v1/admin/finance/payouts${queryStr}`,
+        { method: "GET" },
+        token,
+      );
+    },
+
+    approvePayout: (
+      id: string,
+      dto: { transactionReference: string; adminNotes?: string },
+      token: string,
+    ) =>
+      this.request<{ payout: PayoutRequest; ledgerEntry: LedgerStatementEntry }>(
+        `/api/v1/admin/finance/payouts/${id}/approve`,
+        {
+          method: "POST",
+          body: JSON.stringify(dto),
+        },
+        token,
+      ),
+
+    rejectPayout: (id: string, reason: string | undefined, token: string) =>
+      this.request<PayoutRequest>(
+        `/api/v1/admin/finance/payouts/${id}/reject`,
+        {
+          method: "POST",
+          body: JSON.stringify({ reason }),
+        },
+        token,
+      ),
+
+    getFinanceSummary: (token: string) =>
+      this.request<{
+        platformGMV: number;
+        instituteNetRevenue: number;
+        totalPlatformCommissions: number;
+        totalSettledPayouts: number;
+        outstandingStudentLiabilities: number;
+        totalOrdersProcessed: number;
+      }>(
+        "/api/v1/admin/finance/summary",
+        { method: "GET" },
+        token,
+      ),
+  };
+
+  // Subscriptions & Gating (Phase 5)
+  subscriptions = {
+    getPlans: () =>
+      this.request<SubscriptionPlan[]>(
+        "/api/v1/subscriptions/plans",
+        { method: "GET" },
+      ),
+
+    getMySubscription: (token: string) =>
+      this.request<StudentSubscription>(
+        "/api/v1/student/subscription",
+        { method: "GET" },
+        token,
+      ),
+
+    upgradeSubscription: (planCode: string, token: string) =>
+      this.request<{ success: boolean; message: string; subscription: any }>(
+        "/api/v1/student/subscription/upgrade",
+        {
+          method: "POST",
+          body: JSON.stringify({ planCode }),
+        },
+        token,
+      ),
+  };
+
+  // Dynamic RBAC Roles (Phase 5)
+  roles = {
+    getRoles: (token: string) =>
+      this.request<Role[]>("/api/v1/admin/roles", { method: "GET" }, token),
+
+    createRole: (
+      dto: { name: string; description?: string; permissionIds?: string[] },
+      token: string,
+    ) =>
+      this.request<Role>(
+        "/api/v1/admin/roles",
+        {
+          method: "POST",
+          body: JSON.stringify(dto),
+        },
+        token,
+      ),
+
+    updateRolePermissions: (
+      id: string,
+      permissionIds: string[],
+      token: string,
+    ) =>
+      this.request<Role>(
+        `/api/v1/admin/roles/${id}/permissions`,
+        {
+          method: "PUT",
+          body: JSON.stringify({ permissionIds }),
+        },
+        token,
+      ),
+
+    getPermissions: (token: string) =>
+      this.request<{ all: Permission[]; grouped: Record<string, Permission[]> }>(
+        "/api/v1/admin/roles/permissions",
+        { method: "GET" },
+        token,
+      ),
+
+    assignUserRole: (userId: string, roleId: string, token: string) =>
+      this.request<any>(
+        `/api/v1/admin/roles/users/${userId}/assign`,
+        {
+          method: "POST",
+          body: JSON.stringify({ roleId }),
+        },
+        token,
+      ),
+
+    removeUserRole: (userId: string, roleId: string, token: string) =>
+      this.request<{ success: boolean; message: string }>(
+        `/api/v1/admin/roles/users/${userId}/remove/${roleId}`,
+        { method: "DELETE" },
+        token,
+      ),
+
+    getUserRoles: (userId: string, token: string) =>
+      this.request<{ userId: string; roles: Role[]; effectivePermissions: string[] }>(
+        `/api/v1/admin/roles/users/${userId}`,
+        { method: "GET" },
+        token,
+      ),
+  };
+
+  // Institute Executive Overview & Student Governance (Phase 5)
+  adminDashboard = {
+    getExecutiveKpis: (token: string) =>
+      this.request<ExecutiveKpis>(
+        "/api/v1/admin/dashboard/kpis",
+        { method: "GET" },
+        token,
+      ),
+
+    getStudents: (
+      params: {
+        search?: string;
+        status?: string;
+        page?: number;
+        limit?: number;
+      } = {},
+      token: string,
+    ) => {
+      const q = new URLSearchParams();
+      if (params.search) q.append("search", params.search);
+      if (params.status) q.append("status", params.status);
+      if (params.page) q.append("page", String(params.page));
+      if (params.limit) q.append("limit", String(params.limit));
+      const queryStr = q.toString() ? `?${q.toString()}` : "";
+      return this.request<{ students: AdminStudentItem[]; pagination: any }>(
+        `/api/v1/admin/students${queryStr}`,
+        { method: "GET" },
+        token,
+      );
+    },
+
+    updateStoreStatus: (
+      storeId: string,
+      dto: { status: string; reason?: string },
+      token: string,
+    ) =>
+      this.request<{ store: any; reason: string; updatedBy?: string }>(
+        `/api/v1/admin/students/${storeId}/status`,
+        {
+          method: "PATCH",
+          body: JSON.stringify(dto),
+        },
+        token,
+      ),
+
+    getSellerScorecard: (token: string) =>
+      this.request<SellerScorecardItem[]>(
+        "/api/v1/admin/sellers/scorecard",
         { method: "GET" },
         token,
       ),

@@ -6,6 +6,10 @@ import { CategoriesPage } from "./pages/categories/CategoriesPage";
 import { FulfillmentPage } from "./pages/fulfillment/FulfillmentPage";
 import { AdminReviewsPage } from "./pages/reviews/AdminReviewsPage";
 import { AdminChallengesPage } from "./pages/challenges/AdminChallengesPage";
+import { ExecutiveOverviewPage } from "./pages/overview/ExecutiveOverviewPage";
+import { StudentGovernancePage } from "./pages/students/StudentGovernancePage";
+import { PayoutApprovalPage } from "./pages/payouts/PayoutApprovalPage";
+import { RolesManagerPage } from "./pages/roles/RolesManagerPage";
 import { apiClient } from "@repo/api-client";
 
 export function App() {
@@ -13,7 +17,7 @@ export function App() {
     localStorage.getItem("admin_token"),
   );
   const [user, setUser] = useState<any>(null);
-  const [activeTab, setActiveTab] = useState<AdminDashboardTab>("fulfillment");
+  const [activeTab, setActiveTab] = useState<AdminDashboardTab>("overview");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -68,9 +72,15 @@ export function App() {
       user={user}
       onLogout={handleLogout}
     >
+      {activeTab === "overview" && (
+        <ExecutiveOverviewPage token={token} setActiveTab={setActiveTab} />
+      )}
       {activeTab === "fulfillment" && <FulfillmentPage token={token} />}
       {activeTab === "catalog" && <MasterCatalogPage token={token} />}
       {activeTab === "categories" && <CategoriesPage token={token} />}
+      {activeTab === "students" && <StudentGovernancePage token={token} />}
+      {activeTab === "payouts" && <PayoutApprovalPage token={token} />}
+      {activeTab === "roles" && <RolesManagerPage token={token} />}
       {activeTab === "reviews" && <AdminReviewsPage token={token} />}
       {activeTab === "challenges" && <AdminChallengesPage token={token} />}
     </AdminLayout>

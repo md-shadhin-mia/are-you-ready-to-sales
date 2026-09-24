@@ -466,6 +466,261 @@ async function main() {
   });
   console.log("✅ Seeded sample coupon (WELCOME10) and announcement banner for Apex Gadgets");
 
+  // 8. Phase 5: Seed Permissions & Dynamic RBAC
+  const permissionsData = [
+    { slug: "*", name: "Super Admin All Access", module: "system", description: "Universal root access" },
+    { slug: "catalog:view", name: "View Catalog", module: "catalog", description: "View master catalog items" },
+    { slug: "catalog:create", name: "Create Products", module: "catalog", description: "Create products in master catalog" },
+    { slug: "catalog:update", name: "Update Products", module: "catalog", description: "Modify master catalog products" },
+    { slug: "catalog:stock", name: "Manage Inventory", module: "catalog", description: "Update product warehouse stock" },
+    { slug: "orders:read", name: "Read Orders", module: "orders", description: "View platform-wide orders" },
+    { slug: "orders:dispatch", name: "Dispatch Orders", module: "orders", description: "Ship and fulfill customer orders" },
+    { slug: "orders:returns", name: "Manage Returns", module: "orders", description: "Handle order returns and refunds" },
+    { slug: "finance:view_ledger", name: "View Financial Ledger", module: "finance", description: "Inspect platform and student financial ledgers" },
+    { slug: "finance:payout", name: "Approve Payouts", module: "finance", description: "Review and approve student withdrawal payouts" },
+    { slug: "students:view", name: "View Students", module: "students", description: "Inspect student records and performance" },
+    { slug: "students:suspend", name: "Suspend Stores", module: "students", description: "Suspend fraudulent or violating stores" },
+    { slug: "students:verify", name: "Verify Students", module: "students", description: "Verify student identity and documentation" },
+    { slug: "roles:manage", name: "Manage Roles & RBAC", module: "roles", description: "Create custom roles and configure permissions" },
+    { slug: "subscriptions:manage", name: "Manage Subscriptions", module: "subscriptions", description: "Configure subscription plans and pricing" },
+  ];
+
+  const permissionsMap = new Map<string, string>();
+  for (const perm of permissionsData) {
+    const p = await prisma.permission.upsert({
+      where: { slug: perm.slug },
+      update: { name: perm.name, description: perm.description, module: perm.module },
+      create: perm,
+    });
+    permissionsMap.set(perm.slug, p.id);
+  }
+
+  // System Roles Definition
+  const rolesData = [
+    {
+      name: "SUPER_ADMIN",
+      description: "Full system administrative control with wildcard access",
+      isSystemRole: true,
+      permissionSlugs: ["*"],
+    },
+    {
+      name: "INSTITUTE_ADMIN",
+      description: "Institute manager with catalog, order, student, and finance permissions",
+      isSystemRole: true,
+      permissionSlugs: [
+        "catalog:view",
+        "catalog:create",
+        "catalog:update",
+        "catalog:stock",
+        "orders:read",
+        "orders:dispatch",
+        "orders:returns",
+        "finance:view_ledger",
+        "finance:payout",
+        "students:view",
+        "students:suspend",
+        "students:verify",
+        "roles:manage",
+        "subscriptions:manage",
+      ],
+    },
+    {
+      name: "PRODUCT_MANAGER",
+      description: "Catalog product and inventory manager",
+      isSystemRole: true,
+      permissionSlugs: ["catalog:view", "catalog:create", "catalog:update", "catalog:stock"],
+    },
+    {
+      name: "ORDER_MANAGER",
+      description: "Order fulfillment and shipping manager",
+      isSystemRole: true,
+      permissionSlugs: ["orders:read", "orders:dispatch", "orders:returns"],
+    },
+    {
+      name: "SUPPORT_AGENT",
+      description: "Customer service and order tracking agent",
+      isSystemRole: true,
+      permissionSlugs: ["orders:read", "students:view", "catalog:view"],
+    },
+    {
+      name: "STUDENT",
+      description: "Student reseller role",
+      isSystemRole: true,
+      permissionSlugs: [],
+    },
+  ];
+
+  const rolesMap = new Map<string, string>();
+  for (const roleDef of rolesData) {
+    const role = await prisma.role.upsert({
+      where: { name: roleDef.name },
+      update: { description: roleDef.description, isSystemRole: roleDef.isSystemRole },
+      create: {
+        name: roleDef.name,
+        description: roleDef.description,
+        isSystemRole: roleDef.isSystemRole,
+      },
+    });
+    rolesMap.set(roleDef.name, role.id);
+
+    // Link permissions
+    for (const slug of roleDef.permissionSlugs) {
+      const permId = permissionsMap.get(slug);
+      if (permId) {
+        await prisma.rolePermission.upsert({
+          where: {
+            roleId_permissionId: {
+              roleId: role.id,
+              permissionId: permId,
+            },
+          },
+          update: {},
+          create: {
+            roleId: role.id,
+            permissionId: permId,
+          },
+        });
+      }
+    }
+  }
+
+  // Assign roles to seeded users
+  const userAssignments = [
+    { userId: superAdmin.id, roleName: "SUPER_ADMIN" },
+    { userId: instituteAdmin.id, roleName: "INSTITUTE_ADMIN" },
+    { userId: productManager.id, roleName: "PRODUCT_MANAGER" },
+    { userId: studentUser.id, roleName: "STUDENT" },
+  ];
+
+  for (const assign of userAssignments) {
+    const roleId = rolesMap.get(assign.roleName);
+    if (roleId) {
+      await prisma.userRoleAssignment.upsert({
+        where: {
+          userId_roleId: {
+            userId: assign.userId,
+            roleId,
+          },
+        },
+        update: {},
+        create: {
+          userId: assign.userId,
+          roleId,
+        },
+      });
+    }
+  }
+  console.log("✅ Seeded dynamic RBAC permissions, system roles, and user assignments");
+
+  // 9. Phase 5: Seed Subscription Plans & Student Subscription
+  const subscriptionPlans = [
+    {
+      name: "Free Plan",
+      code: "FREE",
+      monthlyPrice: 0.0,
+      yearlyPrice: 0.0,
+      maxProducts: 10,
+      allowCustomDomain: false,
+      platformCommissionPercent: 5.0,
+      features: [
+        "Up to 10 products",
+        "Subdomain hosting (store.platform.local)",
+        "Standard 5.0% commission",
+        "Basic store analytics",
+      ],
+      isActive: true,
+    },
+    {
+      name: "Starter Plan",
+      code: "STARTER",
+      monthlyPrice: 499.0,
+      yearlyPrice: 4990.0,
+      maxProducts: 30,
+      allowCustomDomain: false,
+      platformCommissionPercent: 3.5,
+      features: [
+        "Up to 30 products",
+        "Promotional coupon campaigns",
+        "Reduced 3.5% commission",
+        "Priority warehouse fulfillment",
+      ],
+      isActive: true,
+    },
+    {
+      name: "Professional Plan",
+      code: "PROFESSIONAL",
+      monthlyPrice: 1499.0,
+      yearlyPrice: 14990.0,
+      maxProducts: 100,
+      allowCustomDomain: true,
+      platformCommissionPercent: 2.0,
+      features: [
+        "Up to 100 products",
+        "Custom domain mapping (yourstore.com)",
+        "Low 2.0% platform commission",
+        "Full conversion funnel analytics",
+        "VIP mentorship priority",
+      ],
+      isActive: true,
+    },
+    {
+      name: "Business Plan",
+      code: "BUSINESS",
+      monthlyPrice: 2999.0,
+      yearlyPrice: 29990.0,
+      maxProducts: 10000,
+      allowCustomDomain: true,
+      platformCommissionPercent: 1.0,
+      features: [
+        "Unlimited master catalog imports",
+        "Custom domain & white-label store",
+        "Lowest 1.0% platform commission",
+        "Automated AI business coach",
+        "Dedicated account manager",
+      ],
+      isActive: true,
+    },
+  ];
+
+  let freePlanId: string | null = null;
+  for (const plan of subscriptionPlans) {
+    const p = await prisma.subscriptionPlan.upsert({
+      where: { code: plan.code },
+      update: {
+        name: plan.name,
+        monthlyPrice: plan.monthlyPrice,
+        yearlyPrice: plan.yearlyPrice,
+        maxProducts: plan.maxProducts,
+        allowCustomDomain: plan.allowCustomDomain,
+        platformCommissionPercent: plan.platformCommissionPercent,
+        features: plan.features,
+        isActive: plan.isActive,
+      },
+      create: plan,
+    });
+    if (plan.code === "FREE") {
+      freePlanId = p.id;
+    }
+  }
+
+  if (freePlanId) {
+    const oneYearFromNow = new Date();
+    oneYearFromNow.setFullYear(oneYearFromNow.getFullYear() + 1);
+
+    await prisma.studentSubscription.upsert({
+      where: { studentId: studentUser.id },
+      update: {},
+      create: {
+        studentId: studentUser.id,
+        planId: freePlanId,
+        status: "ACTIVE",
+        currentPeriodStart: new Date(),
+        currentPeriodEnd: oneYearFromNow,
+      },
+    });
+  }
+  console.log("✅ Seeded subscription plans (Free, Starter, Professional, Business) & student subscription");
+
   console.log("🎉 Seeding completed successfully!");
 }
 

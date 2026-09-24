@@ -1,7 +1,29 @@
-import { Package, FolderTree, LogOut, Store, Shield, Truck, MessageSquare, Trophy } from "lucide-react";
+import {
+  Package,
+  FolderTree,
+  LogOut,
+  Store,
+  Shield,
+  Truck,
+  MessageSquare,
+  Trophy,
+  LayoutDashboard,
+  Users,
+  Banknote,
+  ShieldCheck,
+} from "lucide-react";
 import { Button } from "@repo/ui";
 
-export type AdminDashboardTab = "catalog" | "categories" | "fulfillment" | "reviews" | "challenges";
+export type AdminDashboardTab =
+  | "overview"
+  | "fulfillment"
+  | "catalog"
+  | "categories"
+  | "students"
+  | "payouts"
+  | "roles"
+  | "reviews"
+  | "challenges";
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -33,6 +55,18 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
         </div>
 
         <nav className="flex-1 p-4 space-y-1">
+          <button
+            onClick={() => setActiveTab("overview")}
+            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+              activeTab === "overview"
+                ? "bg-blue-600 text-white"
+                : "text-slate-400 hover:text-white hover:bg-slate-800"
+            }`}
+          >
+            <LayoutDashboard className="h-4 w-4" />
+            Executive Overview
+          </button>
+
           <button
             onClick={() => setActiveTab("fulfillment")}
             className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
@@ -67,6 +101,42 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
           >
             <FolderTree className="h-4 w-4" />
             Categories
+          </button>
+
+          <button
+            onClick={() => setActiveTab("students")}
+            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+              activeTab === "students"
+                ? "bg-blue-600 text-white"
+                : "text-slate-400 hover:text-white hover:bg-slate-800"
+            }`}
+          >
+            <Users className="h-4 w-4" />
+            Students & Sellers
+          </button>
+
+          <button
+            onClick={() => setActiveTab("payouts")}
+            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+              activeTab === "payouts"
+                ? "bg-blue-600 text-white"
+                : "text-slate-400 hover:text-white hover:bg-slate-800"
+            }`}
+          >
+            <Banknote className="h-4 w-4" />
+            Payouts & Settlement
+          </button>
+
+          <button
+            onClick={() => setActiveTab("roles")}
+            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+              activeTab === "roles"
+                ? "bg-blue-600 text-white"
+                : "text-slate-400 hover:text-white hover:bg-slate-800"
+            }`}
+          >
+            <ShieldCheck className="h-4 w-4" />
+            Roles & RBAC
           </button>
 
           <button

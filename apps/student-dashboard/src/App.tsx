@@ -13,6 +13,8 @@ import { StudentReputationPage } from "./pages/reputation/StudentReputationPage"
 import { GamificationPage } from "./pages/gamification/GamificationPage";
 import { MarketingPage } from "./pages/marketing/MarketingPage";
 import { AnalyticsPage } from "./pages/analytics/AnalyticsPage";
+import { StudentWalletPage } from "./pages/wallet/StudentWalletPage";
+import { StudentBillingPage } from "./pages/billing/StudentBillingPage";
 import { apiClient } from "@repo/api-client";
 
 export function App() {
@@ -82,6 +84,8 @@ export function App() {
       {activeTab === "dashboard" && (
         <ExecutiveDashboardPage token={token} setActiveTab={setActiveTab} />
       )}
+      {activeTab === "wallet" && <StudentWalletPage token={token} />}
+      {activeTab === "billing" && <StudentBillingPage token={token} />}
       {activeTab === "gamification" && <GamificationPage token={token} />}
       {activeTab === "marketing" && <MarketingPage token={token} />}
       {activeTab === "analytics" && (

@@ -3,9 +3,12 @@ import {
   ConflictException,
   NotFoundException,
   BadRequestException,
+  Inject,
+  forwardRef,
 } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
 import { RedisService } from "../redis/redis.service";
+import { SubscriptionsService } from "../subscriptions/subscriptions.service";
 import {
   CreateStoreDto,
   UpdateBrandingDto,
@@ -34,6 +37,8 @@ export class StoresService {
     private readonly prisma: PrismaService,
     private readonly redis: RedisService,
     private readonly eventEmitter: EventEmitter2,
+    @Inject(forwardRef(() => SubscriptionsService))
+    private readonly subscriptionsService: SubscriptionsService,
   ) {}
 
   async getMyStore(userId: string) {
@@ -196,4 +201,49 @@ export class StoresService {
     await this.redis.del(`tenant:slug:${store.slug}`);
     return updated;
   }
+
+  async updateCustomDomain(userId: string, customDomain: string | null) {
+    const store = await this.getMyStore(userId);
+
+    if (customDomain) {
+      const normalizedDomain = customDomain.trim().toLowerCase();
+      // Check subscription quota
+      await this.subscriptionsService.checkCustomDomainAllowed(userId);
+
+      // Verify domain uniqueness
+      const existing = await this.prisma.store.findFirst({
+        where: {
+          customDomain: normalizedDomain,
+          id: { not: store.id },
+        },
+      });
+
+      if (existing) {
+        throw new ConflictException("This custom domain is already registered to another store");
+      }
+
+      const updated = await this.prisma.store.update({
+        where: { id: store.id },
+        data: { customDomain: normalizedDomain },
+      });
+
+      // Cache domain mapping in Redis
+      await this.redis.set(`domain_map:${normalizedDomain}`, store.id);
+      await this.redis.del(`tenant:slug:${store.slug}`);
+      return updated;
+    } else {
+      if (store.customDomain) {
+        await this.redis.del(`domain_map:${store.customDomain}`);
+      }
+
+      const updated = await this.prisma.store.update({
+        where: { id: store.id },
+        data: { customDomain: null },
+      });
+
+      await this.redis.del(`tenant:slug:${store.slug}`);
+      return updated;
+    }
+  }
 }
+

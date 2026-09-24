@@ -4,9 +4,10 @@ import { StoreProductsController } from "./store-products.controller";
 import { StoresModule } from "../stores/stores.module";
 import { PricingModule } from "../pricing/pricing.module";
 import { AuthModule } from "../auth/auth.module";
+import { SubscriptionsModule } from "../subscriptions/subscriptions.module";
 
 @Module({
-  imports: [StoresModule, PricingModule, AuthModule],
+  imports: [StoresModule, PricingModule, AuthModule, SubscriptionsModule],
   controllers: [StoreProductsController],
   providers: [StoreProductsService],
   exports: [StoreProductsService],
