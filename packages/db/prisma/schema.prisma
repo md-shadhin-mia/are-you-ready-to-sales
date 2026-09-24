@@ -1,0 +1,101 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum UserRole {
+  SUPER_ADMIN
+  INSTITUTE_ADMIN
+  PRODUCT_MANAGER
+  ORDER_MANAGER
+  TRAINING_MANAGER
+  SUPPORT_AGENT
+  STUDENT
+  CUSTOMER
+}
+
+enum StoreStatus {
+  DRAFT
+  ACTIVE
+  SUSPENDED
+  MAINTENANCE
+}
+
+model User {
+  id           String    @id @default(uuid())
+  email        String    @unique
+  passwordHash String    @map("password_hash")
+  fullName     String    @map("full_name")
+  phone        String?
+  role         UserRole  @default(STUDENT)
+  isActive     Boolean   @default(true) @map("is_active")
+  isVerified   Boolean   @default(false) @map("is_verified")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  stores       Store[]
+
+  @@map("users")
+}
+
+model Store {
+  id                String      @id @default(uuid())
+  studentId         String      @map("student_id")
+  student           User        @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  storeName         String      @map("store_name")
+  slug              String      @unique
+  customDomain      String?     @unique @map("custom_domain")
+  logoUrl           String?     @map("logo_url")
+  faviconUrl        String?     @map("favicon_url")
+  themeConfig       Json        @default("{}") @map("theme_config")
+  brandingInfo      Json        @default("{}") @map("branding_info")
+  status            StoreStatus @default(DRAFT)
+  ratingAvg         Decimal     @default(0.0) @db.Decimal(3, 2) @map("rating_avg")
+  totalReviewsCount Int         @default(0) @map("total_reviews_count")
+  createdAt         DateTime    @default(now()) @map("created_at")
+  updatedAt         DateTime    @updatedAt @map("updated_at")
+
+  @@index([studentId])
+  @@index([status])
+  @@map("stores")
+}
+
+model Category {
+  id             String          @id @default(uuid())
+  name           String
+  slug           String          @unique
+  parentId       String?         @map("parent_id")
+  parent         Category?       @relation("CategoryHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
+  children       Category[]      @relation("CategoryHierarchy")
+  masterProducts MasterProduct[]
+  createdAt      DateTime        @default(now()) @map("created_at")
+  updatedAt      DateTime        @updatedAt @map("updated_at")
+
+  @@index([parentId])
+  @@map("categories")
+}
+
+model MasterProduct {
+  id                String    @id @default(uuid())
+  sku               String    @unique
+  title             String
+  categoryId        String    @map("category_id")
+  category          Category  @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  basePrice         Decimal   @db.Decimal(10, 2) @map("base_price")
+  stockQuantity     Int       @default(0) @map("stock_quantity")
+  masterDescription String    @db.Text @map("master_description")
+  masterImages      String[]  @default([]) @map("master_images")
+  isActive          Boolean   @default(true) @map("is_active")
+  ratingAvg         Decimal   @default(0.0) @db.Decimal(3, 2) @map("rating_avg")
+  totalReviewsCount Int       @default(0) @map("total_reviews_count")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  @@index([categoryId])
+  @@index([isActive])
+  @@map("master_products")
+}

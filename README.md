@@ -47,12 +47,17 @@ flowchart TD
 
 ## 🛠 Tech Stack
 
-- **Backend:** Node.js (NestJS / Express) / Go / Python (FastAPI)
-- **Frontend:** Next.js 14+ (App Router, TailwindCSS, TypeScript)
-- **Database:** PostgreSQL 16 with Multi-Tenant Row-Level Security
-- **Caching & Sessions:** Redis 7
-- **Event Broker:** RabbitMQ / Redis Streams / Apache Kafka
-- **Storage:** S3-compatible Object Storage (MinIO / Cloudflare R2)
+A modern, lightweight monorepo — modular monolith, no microservices/broker overhead. Full rationale in [`docs/tech_stack.md`](docs/tech_stack.md).
+
+- **Monorepo:** pnpm workspaces + Turborepo
+- **Backend:** NestJS (TypeScript) modular monolith, Prisma ORM
+- **Storefront:** Next.js 14+ (App Router, TailwindCSS)
+- **Dashboards:** Vite + React SPA (Student & Institute Admin portals)
+- **Database:** PostgreSQL 16, multi-tenant via `store_id` scoping
+- **Caching, Sessions & Jobs:** Redis 7 + BullMQ
+- **Events:** In-process domain events (`@nestjs/event-emitter`)
+- **Storage:** MinIO (S3-compatible object storage)
+- **Deployment:** Docker Compose on a self-hosted VPS, behind Caddy
 
 ---
 
