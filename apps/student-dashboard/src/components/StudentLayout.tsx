@@ -11,6 +11,9 @@ import {
   LayoutDashboard,
   Star,
   Award,
+  Trophy,
+  Megaphone,
+  BarChart3,
 } from "lucide-react";
 import { Button } from "@repo/ui";
 
@@ -20,6 +23,9 @@ export type StudentDashboardTab =
   | "store-builder"
   | "my-products"
   | "orders"
+  | "gamification"
+  | "marketing"
+  | "analytics"
   | "reviews"
   | "reputation"
   | "crm"
@@ -46,6 +52,9 @@ export const StudentLayout: React.FC<StudentLayoutProps> = ({
     icon: React.ComponentType<{ className?: string }>;
   }> = [
     { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+    { id: "gamification", label: "Level & Perks", icon: Trophy },
+    { id: "marketing", label: "Marketing", icon: Megaphone },
+    { id: "analytics", label: "Funnel & Coach", icon: BarChart3 },
     { id: "store-builder", label: "Store Builder", icon: Store },
     { id: "my-products", label: "My Products", icon: Box },
     { id: "marketplace", label: "Wholesale Catalog", icon: Compass },

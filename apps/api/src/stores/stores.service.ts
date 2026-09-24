@@ -13,6 +13,8 @@ import {
 } from "./dto/store.dto";
 import { StoreStatus } from "@repo/db";
 
+import { EventEmitter2 } from "@nestjs/event-emitter";
+
 const RESERVED_SLUGS = [
   "admin",
   "api",
@@ -31,6 +33,7 @@ export class StoresService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly redis: RedisService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   async getMyStore(userId: string) {
@@ -121,6 +124,11 @@ export class StoresService {
       },
     });
 
+    this.eventEmitter.emit("store.created", {
+      storeId: store.id,
+      studentId: userId,
+    });
+
     return store;
   }
 
@@ -177,6 +185,13 @@ export class StoresService {
       where: { id: store.id },
       data: { status },
     });
+
+    if (status === StoreStatus.ACTIVE) {
+      this.eventEmitter.emit("store.published", {
+        storeId: store.id,
+        studentId: userId,
+      });
+    }
 
     await this.redis.del(`tenant:slug:${store.slug}`);
     return updated;

@@ -12,7 +12,11 @@ import {
   CheckCircle,
   AlertCircle,
   Loader2,
+  Tag,
+  Check,
+  X,
 } from "lucide-react";
+import { useFunnelTracker } from "../../../hooks/useFunnelTracker";
 
 interface CheckoutFormClientProps {
   storeSlug: string;
@@ -41,6 +45,7 @@ const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 export function CheckoutFormClient({ storeSlug }: CheckoutFormClientProps) {
   const router = useRouter();
   const { items, getSubtotal, clearCart } = useCart();
+  const { sessionId, attribution, trackCheckoutInitiated } = useFunnelTracker(storeSlug);
   const [mounted, setMounted] = useState(false);
 
   // Form State
@@ -53,12 +58,25 @@ export function CheckoutFormClient({ storeSlug }: CheckoutFormClientProps) {
   const [isInsideDhaka, setIsInsideDhaka] = useState(true);
   const [paymentMethod, setPaymentMethod] = useState<"COD" | "BKASH" | "NAGAD">("COD");
 
+  // Coupon State
+  const [couponCodeInput, setCouponCodeInput] = useState("");
+  const [appliedCoupon, setAppliedCoupon] = useState<{
+    id: string;
+    code: string;
+    discountType: string;
+    discountValue: number;
+  } | null>(null);
+  const [discountAmount, setDiscountAmount] = useState(0);
+  const [couponLoading, setCouponLoading] = useState(false);
+  const [couponMessage, setCouponMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     setMounted(true);
-  }, []);
+    trackCheckoutInitiated();
+  }, [trackCheckoutInitiated]);
 
   const handleDistrictChange = (dist: string) => {
     setDistrict(dist);
@@ -66,11 +84,55 @@ export function CheckoutFormClient({ storeSlug }: CheckoutFormClientProps) {
     setIsInsideDhaka(inside);
   };
 
+  const handleApplyCoupon = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    setCouponMessage(null);
+    const code = couponCodeInput.trim();
+    if (!code) {
+      setCouponMessage({ type: "error", text: "Please enter a coupon code." });
+      return;
+    }
+
+    setCouponLoading(true);
+    try {
+      const res = await fetch(`${API_BASE}/api/v1/stores/${storeSlug}/coupons/validate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code, subtotal: getSubtotal() }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.message || "Failed to validate coupon");
+      }
+
+      setAppliedCoupon(data.coupon);
+      setDiscountAmount(data.discountAmount);
+      setCouponMessage({
+        type: "success",
+        text: `Coupon "${data.coupon.code}" applied! -৳${data.discountAmount.toLocaleString()}`,
+      });
+    } catch (err: any) {
+      setAppliedCoupon(null);
+      setDiscountAmount(0);
+      setCouponMessage({ type: "error", text: err.message || "Invalid coupon code." });
+    } finally {
+      setCouponLoading(false);
+    }
+  };
+
+  const handleRemoveCoupon = () => {
+    setAppliedCoupon(null);
+    setDiscountAmount(0);
+    setCouponCodeInput("");
+    setCouponMessage(null);
+  };
+
   if (!mounted) return null;
 
   const subtotal = getSubtotal();
   const shippingFee = isInsideDhaka ? 80 : 150;
-  const totalAmount = subtotal + shippingFee;
+  const payableSubtotal = Math.max(0, subtotal - discountAmount);
+  const totalAmount = payableSubtotal + shippingFee;
 
   if (items.length === 0) {
     return (
@@ -123,6 +185,12 @@ export function CheckoutFormClient({ storeSlug }: CheckoutFormClientProps) {
           quantity: i.quantity,
         })),
         paymentMethod: paymentMethod,
+        couponCode: appliedCoupon ? appliedCoupon.code : undefined,
+        sessionId: sessionId || undefined,
+        referralCode: attribution.ref || undefined,
+        utmSource: attribution.utmSource || undefined,
+        utmMedium: attribution.utmMedium || undefined,
+        utmCampaign: attribution.utmCampaign || undefined,
       };
 
       const res = await fetch(`${API_BASE}/api/v1/stores/${storeSlug}/checkout`, {
@@ -415,6 +483,78 @@ export function CheckoutFormClient({ storeSlug }: CheckoutFormClientProps) {
             ))}
           </div>
 
+          {/* Coupon Code Section */}
+          <div className="pt-4 border-t border-slate-100">
+            {appliedCoupon ? (
+              <div className="flex items-center justify-between p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-xs">
+                <div className="flex items-center gap-2">
+                  <Tag className="h-4 w-4 text-emerald-600" />
+                  <div>
+                    <span className="font-extrabold text-emerald-800">
+                      {appliedCoupon.code}
+                    </span>
+                    <span className="text-emerald-700 ml-1.5 text-[11px]">
+                      ({appliedCoupon.discountType === "PERCENTAGE" ? `${appliedCoupon.discountValue}% off` : `৳${appliedCoupon.discountValue} off`})
+                    </span>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleRemoveCoupon}
+                  className="text-emerald-700 hover:text-red-600 transition-colors p-1"
+                  title="Remove coupon"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <label className="block text-xs font-bold text-slate-700">
+                  Promo / Discount Code
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={couponCodeInput}
+                    onChange={(e) => setCouponCodeInput(e.target.value.toUpperCase())}
+                    placeholder="Enter coupon code (e.g. WELCOME10)"
+                    className="flex-1 text-xs px-3 py-2 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono uppercase"
+                  />
+                  <button
+                    type="button"
+                    disabled={couponLoading || !couponCodeInput.trim()}
+                    onClick={() => handleApplyCoupon()}
+                    className="px-4 py-2 rounded-xl text-xs font-bold bg-slate-900 text-white hover:bg-slate-800 disabled:opacity-50 transition-opacity flex items-center gap-1.5"
+                  >
+                    {couponLoading ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      "Apply"
+                    )}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Coupon feedback message */}
+            {couponMessage && (
+              <div
+                className={`mt-2 text-xs p-2.5 rounded-lg flex items-center gap-1.5 ${
+                  couponMessage.type === "success"
+                    ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                    : "bg-red-50 text-red-700 border border-red-200"
+                }`}
+              >
+                {couponMessage.type === "success" ? (
+                  <Check className="h-3.5 w-3.5 flex-shrink-0 text-emerald-600" />
+                ) : (
+                  <AlertCircle className="h-3.5 w-3.5 flex-shrink-0 text-red-500" />
+                )}
+                <span>{couponMessage.text}</span>
+              </div>
+            )}
+          </div>
+
           {/* Calculation */}
           <div className="pt-4 border-t border-slate-100 space-y-2 text-xs">
             <div className="flex justify-between text-slate-600">
@@ -423,6 +563,16 @@ export function CheckoutFormClient({ storeSlug }: CheckoutFormClientProps) {
                 ৳{subtotal.toLocaleString()}
               </span>
             </div>
+
+            {discountAmount > 0 && (
+              <div className="flex justify-between text-emerald-600 font-semibold">
+                <span className="flex items-center gap-1">
+                  <Tag className="h-3 w-3" />
+                  Coupon Discount
+                </span>
+                <span>-৳{discountAmount.toLocaleString()}</span>
+              </div>
+            )}
 
             <div className="flex justify-between text-slate-600">
               <span>Shipping ({isInsideDhaka ? "Inside Dhaka" : "Outside Dhaka"})</span>

@@ -33,11 +33,17 @@ describe("Concurrent Checkout & Inventory Locking (E2E)", () => {
     await app.init();
     prisma = app.get(PrismaService);
 
-    // Fetch existing student user
-    const student = await prisma.user.findFirst({
-      where: { email: "student1@platform.local" },
+    // Create dedicated isolated student user
+    const student = await prisma.user.create({
+      data: {
+        email: `concur-student-${Date.now()}@platform.local`,
+        fullName: "Concurrent Student",
+        phone: `+88019${Math.floor(10000000 + Math.random() * 90000000)}`,
+        passwordHash: "dummyhash",
+        role: "STUDENT",
+      },
     });
-    studentUserId = student!.id;
+    studentUserId = student.id;
 
     // Create a test active store
     const store = await prisma.store.create({
@@ -154,5 +160,24 @@ describe("Concurrent Checkout & Inventory Locking (E2E)", () => {
 
     expect(finalMasterProduct).toBeDefined();
     expect(finalMasterProduct!.stockQuantity).toBe(0);
+  });
+
+  afterAll(async () => {
+    if (storeId) {
+      await prisma.orderItem.deleteMany({ where: { order: { storeId } } });
+      await prisma.order.deleteMany({ where: { storeId } });
+      await prisma.storeProduct.deleteMany({ where: { storeId } });
+      await prisma.store.delete({ where: { id: storeId } }).catch(() => {});
+    }
+    if (masterProductId) {
+      await prisma.masterProduct.delete({ where: { id: masterProductId } }).catch(() => {});
+    }
+    if (categoryId) {
+      await prisma.category.delete({ where: { id: categoryId } }).catch(() => {});
+    }
+    if (studentUserId) {
+      await prisma.user.delete({ where: { id: studentUserId } }).catch(() => {});
+    }
+    await app.close();
   });
 });

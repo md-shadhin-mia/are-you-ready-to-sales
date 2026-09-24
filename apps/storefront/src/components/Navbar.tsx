@@ -5,6 +5,8 @@ import Link from "next/link";
 import { Store, ShoppingBag, ShieldCheck, Search, Truck } from "lucide-react";
 import { useCart } from "../store/useCart";
 
+import { AnnouncementBar } from "./marketing/AnnouncementBar";
+
 interface NavbarProps {
   storeSlug: string;
   storeName: string;
@@ -24,6 +26,7 @@ export function Navbar({ storeSlug, storeName, logoUrl, tagline }: NavbarProps) 
 
   return (
     <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-slate-200">
+      <AnnouncementBar storeSlug={storeSlug} />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
         {/* Brand / Logo */}
         <Link href={`/${storeSlug}`} className="flex items-center gap-3 min-w-0">

@@ -17,6 +17,9 @@ import { StorefrontModule } from "./storefront/storefront.module";
 import { ReviewsModule } from "./reviews/reviews.module";
 import { ReputationModule } from "./reputation/reputation.module";
 import { DashboardModule } from "./dashboard/dashboard.module";
+import { GamificationModule } from "./gamification/gamification.module";
+import { MarketingModule } from "./marketing/marketing.module";
+import { AnalyticsModule } from "./analytics/analytics.module";
 
 @Module({
   imports: [
@@ -40,6 +43,9 @@ import { DashboardModule } from "./dashboard/dashboard.module";
     ReviewsModule,
     ReputationModule,
     DashboardModule,
+    GamificationModule,
+    MarketingModule,
+    AnalyticsModule,
   ],
 })
 export class AppModule implements NestModule {

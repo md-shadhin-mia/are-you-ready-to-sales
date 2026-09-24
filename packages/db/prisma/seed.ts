@@ -267,6 +267,205 @@ async function main() {
     console.log("✅ Seeded 2 reseller products for Apex Gadgets store");
   }
 
+  // 5. Seed Phase 4 Challenges
+  const baselineChallenges = [
+    {
+      code: "CH_STORE_SETUP",
+      title: "Store Setup",
+      description: "Complete your store name, branding, and theme configuration",
+      requiredEvent: "store.created",
+      threshold: 1,
+      tierLevel: 1,
+      xpReward: 100,
+      badgeIcon: "store",
+    },
+    {
+      code: "CH_FIRST_PRODUCT",
+      title: "First Listing",
+      description: "Add your first wholesale master product to your catalog",
+      requiredEvent: "store.product.added",
+      threshold: 1,
+      tierLevel: 1,
+      xpReward: 150,
+      badgeIcon: "package",
+    },
+    {
+      code: "CH_STORE_PUBLISH",
+      title: "Store Launch",
+      description: "Publish your storefront and make it publicly accessible",
+      requiredEvent: "store.published",
+      threshold: 1,
+      tierLevel: 1,
+      xpReward: 250,
+      badgeIcon: "rocket",
+    },
+    {
+      code: "CH_FIVE_PRODUCTS",
+      title: "Catalog Builder",
+      description: "Curate and list at least 5 products in your store",
+      requiredEvent: "store.product.added",
+      threshold: 5,
+      tierLevel: 2,
+      xpReward: 300,
+      badgeIcon: "layers",
+    },
+    {
+      code: "CH_FIRST_SALE",
+      title: "First Commercial Sale",
+      description: "Receive and fulfill your first customer order",
+      requiredEvent: "order.delivered",
+      threshold: 1,
+      tierLevel: 2,
+      xpReward: 500,
+      badgeIcon: "shopping-bag",
+    },
+    {
+      code: "CH_PROMO_CAMPAIGN",
+      title: "First Promo Sale",
+      description: "Complete an order that used a discount coupon",
+      requiredEvent: "promo.redeemed",
+      threshold: 1,
+      tierLevel: 2,
+      xpReward: 350,
+      badgeIcon: "tag",
+    },
+    {
+      code: "CH_REVENUE_1K",
+      title: "Four-Figure Milestone",
+      description: "Generate your first ৳1,000 in gross store sales",
+      requiredEvent: "revenue.threshold",
+      threshold: 1000,
+      tierLevel: 2,
+      xpReward: 500,
+      badgeIcon: "trending-up",
+    },
+    {
+      code: "CH_TEN_ORDERS",
+      title: "Order Momentum",
+      description: "Fulfill and deliver 10 customer orders",
+      requiredEvent: "order.delivered",
+      threshold: 10,
+      tierLevel: 3,
+      xpReward: 1000,
+      badgeIcon: "truck",
+    },
+    {
+      code: "CH_REVENUE_10K",
+      title: "Five-Figure Sales",
+      description: "Achieve ৳10,000 in cumulative store sales revenue",
+      requiredEvent: "revenue.threshold",
+      threshold: 10000,
+      tierLevel: 3,
+      xpReward: 1500,
+      badgeIcon: "dollar-sign",
+    },
+    {
+      code: "CH_FIRST_REVIEW",
+      title: "Customer Voice",
+      description: "Receive your first verified customer review and rating",
+      requiredEvent: "review.received",
+      threshold: 1,
+      tierLevel: 3,
+      xpReward: 500,
+      badgeIcon: "star",
+    },
+    {
+      code: "CH_RATING_45",
+      title: "Excellence in Service",
+      description: "Maintain a store rating average of 4.5★ or higher",
+      requiredEvent: "rating.milestone",
+      threshold: 1,
+      tierLevel: 4,
+      xpReward: 2000,
+      badgeIcon: "award",
+    },
+    {
+      code: "CH_FIFTY_ORDERS",
+      title: "Growth Engine",
+      description: "Scale store operations and deliver 50 customer orders",
+      requiredEvent: "order.delivered",
+      threshold: 50,
+      tierLevel: 4,
+      xpReward: 3000,
+      badgeIcon: "zap",
+    },
+  ];
+
+  for (const chal of baselineChallenges) {
+    await prisma.challenge.upsert({
+      where: { code: chal.code },
+      update: chal,
+      create: chal,
+    });
+  }
+  console.log(`✅ Seeded ${baselineChallenges.length} gamification challenges`);
+
+  // 6. Seed Student Level & Starter Progress
+  await prisma.studentLevel.upsert({
+    where: { studentId: studentUser.id },
+    update: {},
+    create: {
+      studentId: studentUser.id,
+      currentLevel: 1,
+      totalXp: 100,
+      levelTitle: "Store Starter",
+      unlockedPerks: ["Basic Storefront", "Standard Commission (5%)", "Master Catalog Access"],
+    },
+  });
+
+  // Mark CH_STORE_SETUP completed for student1
+  const setupChal = await prisma.challenge.findUnique({ where: { code: "CH_STORE_SETUP" } });
+  if (setupChal) {
+    await prisma.studentProgress.upsert({
+      where: {
+        studentId_challengeId: {
+          studentId: studentUser.id,
+          challengeId: setupChal.id,
+        },
+      },
+      update: {},
+      create: {
+        studentId: studentUser.id,
+        challengeId: setupChal.id,
+        currentCount: 1,
+        isCompleted: true,
+        completedAt: new Date(),
+        isClaimed: true,
+        claimedAt: new Date(),
+      },
+    });
+  }
+
+  // 7. Seed Sample Store Banner & Coupon
+  await prisma.store.update({
+    where: { id: sampleStore.id },
+    data: {
+      bannerText: "Grand Opening Offer: Use code WELCOME10 for 10% off your entire cart!",
+      bannerBgColor: "#2563eb",
+      bannerActive: true,
+    },
+  });
+
+  await prisma.coupon.upsert({
+    where: {
+      storeId_code: {
+        storeId: sampleStore.id,
+        code: "WELCOME10",
+      },
+    },
+    update: {},
+    create: {
+      storeId: sampleStore.id,
+      code: "WELCOME10",
+      discountType: "PERCENTAGE",
+      discountValue: 10.0,
+      minSpend: 500.0,
+      maxUses: 100,
+      isActive: true,
+    },
+  });
+  console.log("✅ Seeded sample coupon (WELCOME10) and announcement banner for Apex Gadgets");
+
   console.log("🎉 Seeding completed successfully!");
 }
 

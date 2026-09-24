@@ -43,6 +43,19 @@ enum LedgerEntryType {
   PAYOUT_WITHDRAWAL
 }
 
+enum CouponDiscountType {
+  PERCENTAGE
+  FIXED_AMOUNT
+}
+
+enum FunnelEventType {
+  PAGE_VIEW
+  PRODUCT_VIEW
+  ADD_TO_CART
+  CHECKOUT_INITIATED
+  ORDER_COMPLETED
+}
+
 model User {
   id           String   @id @default(uuid())
   email        String   @unique
@@ -55,7 +68,9 @@ model User {
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 
-  stores Store[]
+  stores            Store[]
+  studentLevel      StudentLevel?
+  studentProgresses StudentProgress[]
 
   @@map("users")
 }
@@ -77,6 +92,10 @@ model Store {
   responseRatePercent   Decimal     @default(100.00) @map("response_rate_percent") @db.Decimal(5, 2)
   repeatCustomerPercent Decimal     @default(0.00) @map("repeat_customer_percent") @db.Decimal(5, 2)
   completedOrdersCount  Int         @default(0) @map("completed_orders_count")
+  bannerText            String?     @map("banner_text")
+  bannerLink            String?     @map("banner_link")
+  bannerBgColor         String?     @map("banner_bg_color")
+  bannerActive          Boolean     @default(false) @map("banner_active")
   createdAt             DateTime    @default(now()) @map("created_at")
   updatedAt             DateTime    @updatedAt @map("updated_at")
 
@@ -85,6 +104,8 @@ model Store {
   orders        Order[]
   ledgerEntries LedgerEntry[]
   reviews       Review[]
+  coupons       Coupon[]
+  funnelEvents  StoreFunnelEvent[]
 
   @@index([studentId])
   @@index([status])
@@ -200,6 +221,13 @@ model Order {
   courierName         String?     @map("courier_name")
   reviewToken         String?     @unique @map("review_token")
   reviewRequestSentAt DateTime?   @map("review_request_sent_at")
+  couponId            String?     @map("coupon_id")
+  coupon              Coupon?     @relation(fields: [couponId], references: [id], onDelete: SetNull)
+  couponCode          String?     @map("coupon_code")
+  utmSource           String?     @map("utm_source")
+  utmMedium           String?     @map("utm_medium")
+  utmCampaign         String?     @map("utm_campaign")
+  referralCode        String?     @map("referral_code")
   createdAt           DateTime    @default(now()) @map("created_at")
   updatedAt           DateTime    @updatedAt @map("updated_at")
 
@@ -209,6 +237,7 @@ model Order {
 
   @@index([storeId])
   @@index([customerId])
+  @@index([couponId])
   @@index([status])
   @@map("orders")
 }
@@ -278,3 +307,92 @@ model Review {
   @@index([isPublished])
   @@map("reviews")
 }
+
+model Challenge {
+  id            String   @id @default(uuid())
+  code          String   @unique
+  title         String
+  description   String   @db.Text
+  requiredEvent String   @map("required_event")
+  threshold     Int      @default(1)
+  tierLevel     Int      @default(1) @map("tier_level")
+  xpReward      Int      @default(100) @map("xp_reward")
+  badgeIcon     String?  @map("badge_icon")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  studentProgresses StudentProgress[]
+
+  @@map("challenges")
+}
+
+model StudentProgress {
+  id           String    @id @default(uuid())
+  studentId    String    @map("student_id")
+  student      User      @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  challengeId  String    @map("challenge_id")
+  challenge    Challenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  currentCount Int       @default(0) @map("current_count")
+  isCompleted  Boolean   @default(false) @map("is_completed")
+  completedAt  DateTime? @map("completed_at")
+  isClaimed    Boolean   @default(false) @map("is_claimed")
+  claimedAt    DateTime? @map("claimed_at")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  @@unique([studentId, challengeId])
+  @@index([studentId])
+  @@index([challengeId])
+  @@map("student_progresses")
+}
+
+model StudentLevel {
+  studentId     String   @id @map("student_id")
+  student       User     @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  currentLevel  Int      @default(1) @map("current_level")
+  totalXp       Int      @default(0) @map("total_xp")
+  levelTitle    String   @default("Store Starter") @map("level_title")
+  unlockedPerks String[] @default([]) @map("unlocked_perks")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@map("student_levels")
+}
+
+model Coupon {
+  id            String             @id @default(uuid())
+  storeId       String             @map("store_id")
+  store         Store              @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  code          String
+  discountType  CouponDiscountType @default(PERCENTAGE) @map("discount_type")
+  discountValue Decimal            @map("discount_value") @db.Decimal(10, 2)
+  minSpend      Decimal            @default(0.0) @map("min_spend") @db.Decimal(10, 2)
+  maxUses       Int?               @map("max_uses")
+  usedCount     Int                @default(0) @map("used_count")
+  startDate     DateTime           @default(now()) @map("start_date")
+  endDate       DateTime?          @map("end_date")
+  isActive      Boolean            @default(true) @map("is_active")
+  createdAt     DateTime           @default(now()) @map("created_at")
+  updatedAt     DateTime           @updatedAt @map("updated_at")
+
+  orders Order[]
+
+  @@unique([storeId, code])
+  @@index([storeId])
+  @@index([code])
+  @@map("coupons")
+}
+
+model StoreFunnelEvent {
+  id        String          @id @default(uuid())
+  storeId   String          @map("store_id")
+  store     Store           @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  sessionId String          @map("session_id")
+  eventType FunnelEventType @map("event_type")
+  entityId  String?         @map("entity_id")
+  metadata  Json            @default("{}")
+  createdAt DateTime        @default(now()) @map("created_at")
+
+  @@index([storeId, eventType, createdAt])
+  @@index([sessionId])
+  @@map("store_funnel_events")
+}
+

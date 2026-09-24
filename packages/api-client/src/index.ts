@@ -212,6 +212,12 @@ export interface CheckoutPayload {
     quantity: number;
   }>;
   paymentMethod: "COD" | "BKASH" | "NAGAD" | "CARD";
+  couponCode?: string;
+  sessionId?: string;
+  utmSource?: string;
+  utmMedium?: string;
+  utmCampaign?: string;
+  referralCode?: string;
 }
 
 export interface CheckoutResult {
@@ -384,6 +390,111 @@ export interface StudentDashboardChartPoint {
   revenue: number;
   profit: number;
   ordersCount: number;
+}
+
+// ----------------------------------------------------
+// Phase 4: Gamification, Marketing & Analytics Types
+// ----------------------------------------------------
+
+export interface Coupon {
+  id: string;
+  storeId: string;
+  code: string;
+  discountType: "PERCENTAGE" | "FIXED_AMOUNT";
+  discountValue: number;
+  minSpend: number;
+  maxUses?: number | null;
+  usedCount: number;
+  startDate: string;
+  endDate?: string | null;
+  isActive: boolean;
+  createdAt: string;
+}
+
+export interface StoreBanner {
+  bannerText?: string | null;
+  bannerLink?: string | null;
+  bannerBgColor?: string | null;
+  bannerActive?: boolean;
+}
+
+export interface ValidateCouponResult {
+  valid: boolean;
+  coupon: {
+    id: string;
+    code: string;
+    discountType: "PERCENTAGE" | "FIXED_AMOUNT";
+    discountValue: number;
+    minSpend: number;
+  };
+  discountAmount: number;
+  finalSubtotal: number;
+}
+
+export interface GamificationChallenge {
+  id: string;
+  code: string;
+  title: string;
+  description: string;
+  requiredEvent?: string;
+  tierLevel: number;
+  xpReward: number;
+  badgeIcon: string | null;
+  threshold: number;
+  currentCount: number;
+  isCompleted: boolean;
+  isClaimed: boolean;
+  completedAt: string | null;
+}
+
+export interface StudentGamificationStatus {
+  currentLevel: number;
+  levelTitle: string;
+  totalXp: number;
+  commissionRate: number;
+  unlockedPerks: string[];
+  nextLevel: {
+    level: number;
+    title: string;
+    xpNeeded: number;
+    ordersNeeded: number;
+    revenueNeeded: number;
+    ratingNeeded: number;
+    isMaxLevel: boolean;
+  } | null;
+  metrics: {
+    completedOrders: number;
+    grossRevenue: number;
+    ratingAvg: number;
+  };
+  challenges: GamificationChallenge[];
+}
+
+export interface CoachingAdvice {
+  diagnosis: string;
+  message: string;
+  actionType: string;
+  actionLabel: string;
+  priority: "HIGH" | "MEDIUM" | "LOW";
+}
+
+export interface FunnelMetrics {
+  visitors: number;
+  productViews: number;
+  addToCarts: number;
+  checkoutsInitiated: number;
+  completedOrders: number;
+  conversionRatePercent: number;
+  averageOrderValue: number;
+  cartAbandonmentPercent: number;
+  stageDropOffs: {
+    visitorToViewDropOff: number;
+    viewToCartDropOff: number;
+    cartToCheckoutDropOff: number;
+    checkoutToOrderDropOff: number;
+  };
+  range: string;
+  coachingAdvice: CoachingAdvice;
 }
 
 export interface SubmitReviewDto {
@@ -1188,6 +1299,149 @@ export class PlatformApiClient {
     getChartData: (range: "7d" | "30d" | "1y" = "30d", token: string) =>
       this.request<StudentDashboardChartPoint[]>(
         `/api/v1/student/dashboard/chart-data?range=${range}`,
+        { method: "GET" },
+        token,
+      ),
+  };
+
+  // Gamification & Training Progression (Phase 4)
+  gamification = {
+    getStatus: (token: string) =>
+      this.request<StudentGamificationStatus>(
+        `/api/v1/student/gamification/status`,
+        { method: "GET" },
+        token,
+      ),
+
+    claimReward: (challengeId: string, token: string) =>
+      this.request<{
+        success: boolean;
+        claimedXp: number;
+        newTotalXp: number;
+        currentLevel: number;
+        levelTitle: string;
+      }>(
+        `/api/v1/student/gamification/claim/${challengeId}`,
+        { method: "POST" },
+        token,
+      ),
+
+    listAdminChallenges: (token: string) =>
+      this.request<GamificationChallenge[]>(
+        `/api/v1/admin/gamification/challenges`,
+        { method: "GET" },
+        token,
+      ),
+
+    getAdminOverview: (token: string) =>
+      this.request<{
+        totalStudents: number;
+        totalXpAwarded: number;
+        totalChallenges: number;
+        totalCompletions: number;
+        levelDistribution: Record<number, number>;
+        tiers: any[];
+      }>(
+        `/api/v1/admin/gamification/overview`,
+        { method: "GET" },
+        token,
+      ),
+  };
+
+  // Marketing Tools & Coupons (Phase 4)
+  marketing = {
+    listCoupons: (token: string) =>
+      this.request<Coupon[]>(
+        `/api/v1/student/coupons`,
+        { method: "GET" },
+        token,
+      ),
+
+    createCoupon: (
+      dto: {
+        code: string;
+        discountType: "PERCENTAGE" | "FIXED_AMOUNT";
+        discountValue: number;
+        minSpend?: number;
+        maxUses?: number;
+        startDate?: string;
+        endDate?: string;
+      },
+      token: string,
+    ) =>
+      this.request<Coupon>(
+        `/api/v1/student/coupons`,
+        { method: "POST", body: JSON.stringify(dto) },
+        token,
+      ),
+
+    updateCoupon: (
+      id: string,
+      dto: {
+        isActive?: boolean;
+        maxUses?: number;
+        endDate?: string;
+      },
+      token: string,
+    ) =>
+      this.request<Coupon>(
+        `/api/v1/student/coupons/${id}`,
+        { method: "PATCH", body: JSON.stringify(dto) },
+        token,
+      ),
+
+    updateBanner: (dto: StoreBanner, token: string) =>
+      this.request<StoreBanner>(
+        `/api/v1/student/marketing/banner`,
+        { method: "PATCH", body: JSON.stringify(dto) },
+        token,
+      ),
+
+    getBanner: (storeSlug: string) =>
+      this.request<StoreBanner>(
+        `/api/v1/stores/${storeSlug}/banner`,
+        { method: "GET" },
+      ),
+
+    validateCoupon: (storeSlug: string, code: string, subtotal: number) =>
+      this.request<ValidateCouponResult>(
+        `/api/v1/stores/${storeSlug}/coupons/validate`,
+        {
+          method: "POST",
+          body: JSON.stringify({ code, subtotal }),
+        },
+      ),
+  };
+
+  // Store Analytics & Coaching Engine (Phase 4)
+  analytics = {
+    sendBeaconEvent: (
+      storeSlug: string,
+      dto: {
+        sessionId: string;
+        eventType: "PAGE_VIEW" | "PRODUCT_VIEW" | "ADD_TO_CART" | "CHECKOUT_INITIATED" | "ORDER_COMPLETED";
+        entityId?: string;
+        metadata?: Record<string, any>;
+      },
+    ) =>
+      this.request<{ success: boolean; eventId: string }>(
+        `/api/v1/stores/${storeSlug}/events`,
+        {
+          method: "POST",
+          body: JSON.stringify(dto),
+        },
+      ),
+
+    getFunnel: (range: "7d" | "30d" | "90d" = "30d", token: string) =>
+      this.request<FunnelMetrics>(
+        `/api/v1/student/analytics/funnel?range=${range}`,
+        { method: "GET" },
+        token,
+      ),
+
+    getCoachingAdvice: (token: string) =>
+      this.request<CoachingAdvice>(
+        `/api/v1/student/analytics/coach`,
         { method: "GET" },
         token,
       ),

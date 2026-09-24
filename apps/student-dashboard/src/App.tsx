@@ -10,6 +10,9 @@ import { StudentCrmPage } from "./pages/crm/StudentCrmPage";
 import { ExecutiveDashboardPage } from "./pages/dashboard/ExecutiveDashboardPage";
 import { StudentReviewsPage } from "./pages/reviews/StudentReviewsPage";
 import { StudentReputationPage } from "./pages/reputation/StudentReputationPage";
+import { GamificationPage } from "./pages/gamification/GamificationPage";
+import { MarketingPage } from "./pages/marketing/MarketingPage";
+import { AnalyticsPage } from "./pages/analytics/AnalyticsPage";
 import { apiClient } from "@repo/api-client";
 
 export function App() {
@@ -78,6 +81,11 @@ export function App() {
     >
       {activeTab === "dashboard" && (
         <ExecutiveDashboardPage token={token} setActiveTab={setActiveTab} />
+      )}
+      {activeTab === "gamification" && <GamificationPage token={token} />}
+      {activeTab === "marketing" && <MarketingPage token={token} />}
+      {activeTab === "analytics" && (
+        <AnalyticsPage token={token} setActiveTab={setActiveTab} />
       )}
       {activeTab === "store-builder" && <StoreBuilderPage token={token} />}
       {activeTab === "my-products" && <MyProductsPage token={token} />}

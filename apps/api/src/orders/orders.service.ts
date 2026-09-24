@@ -154,15 +154,68 @@ export class OrdersService {
         subtotal = Math.round(subtotal * 100) / 100;
         totalBaseCost = Math.round(totalBaseCost * 100) / 100;
 
+        // Process Coupon Discount if provided
+        let couponRecord: any = null;
+        let discountAmount = 0;
+        if (dto.couponCode) {
+          const normalizedCode = dto.couponCode.trim().toUpperCase();
+          couponRecord = await tx.coupon.findUnique({
+            where: {
+              storeId_code: {
+                storeId: store.id,
+                code: normalizedCode,
+              },
+            },
+          });
+
+          if (couponRecord && couponRecord.isActive) {
+            const now = new Date();
+            const isNotExpired = !couponRecord.endDate || now <= couponRecord.endDate;
+            const meetsMinSpend = subtotal >= Number(couponRecord.minSpend);
+            const hasUsesLeft =
+              couponRecord.maxUses === null || couponRecord.usedCount < couponRecord.maxUses;
+
+            if (isNotExpired && meetsMinSpend && hasUsesLeft) {
+              if (couponRecord.discountType === "PERCENTAGE") {
+                discountAmount =
+                  Math.round(((subtotal * Number(couponRecord.discountValue)) / 100) * 100) / 100;
+              } else {
+                discountAmount = Math.min(subtotal, Number(couponRecord.discountValue));
+              }
+
+              // Increment coupon usage
+              await tx.coupon.update({
+                where: { id: couponRecord.id },
+                data: { usedCount: { increment: 1 } },
+              });
+            }
+          }
+        }
+
+        const discountedSubtotal = Math.max(0, subtotal - discountAmount);
+
+        // Check student level for Level 5+ reduced platform commission (1.5% vs 5.0%)
+        const studentLevel = await tx.studentLevel.findUnique({
+          where: { studentId: store.studentId },
+        });
+        const commissionRate =
+          studentLevel && studentLevel.currentLevel >= 5
+            ? 0.015 // Level 5+ Pro Seller reduced commission
+            : PricingService.PLATFORM_COMMISSION_RATE; // 5.0%
+
         const platformCommission =
-          Math.round(subtotal * PricingService.PLATFORM_COMMISSION_RATE * 100) / 100;
+          Math.round(discountedSubtotal * commissionRate * 100) / 100;
         const paymentFee = isOnlinePayment
-          ? Math.round((subtotal + shippingFee) * PricingService.ONLINE_PAYMENT_FEE_RATE * 100) / 100
+          ? Math.round(
+              (discountedSubtotal + shippingFee) *
+                PricingService.ONLINE_PAYMENT_FEE_RATE *
+                100,
+            ) / 100
           : 0;
-        const grossMargin = Math.round((subtotal - totalBaseCost) * 100) / 100;
+        const grossMargin = Math.round((discountedSubtotal - totalBaseCost) * 100) / 100;
         const studentNetProfit =
           Math.round((grossMargin - platformCommission - paymentFee) * 100) / 100;
-        const totalAmount = Math.round((subtotal + shippingFee) * 100) / 100;
+        const totalAmount = Math.round((discountedSubtotal + shippingFee) * 100) / 100;
 
         // Upsert customer scoped to [storeId, phone]
         const customerPhone = dto.shippingAddress.phone || dto.customerPhone;
@@ -211,7 +264,13 @@ export class OrdersService {
             orderNumber,
             subtotal,
             shippingFee,
-            discountAmount: 0,
+            discountAmount,
+            couponId: couponRecord?.id || null,
+            couponCode: couponRecord?.code || dto.couponCode || null,
+            utmSource: dto.utmSource || null,
+            utmMedium: dto.utmMedium || null,
+            utmCampaign: dto.utmCampaign || null,
+            referralCode: dto.referralCode || null,
             totalAmount,
             totalBaseCost,
             platformCommission,
@@ -235,6 +294,25 @@ export class OrdersService {
             customer: true,
           },
         });
+
+        // Record Funnel Event for ORDER_COMPLETED if sessionId exists
+        if (dto.sessionId) {
+          await tx.storeFunnelEvent.create({
+            data: {
+              storeId: store.id,
+              sessionId: dto.sessionId,
+              eventType: "ORDER_COMPLETED",
+              entityId: order.id,
+              metadata: {
+                orderNumber,
+                totalAmount,
+                discountAmount,
+                couponCode: dto.couponCode || null,
+                utmSource: dto.utmSource || null,
+              },
+            },
+          });
+        }
 
         // Record LedgerEntry for student net profit
         const lastLedger = await tx.ledgerEntry.findFirst({
@@ -274,6 +352,8 @@ export class OrdersService {
           totalAmount: Number(order.totalAmount),
           subtotal: Number(order.subtotal),
           shippingFee: Number(order.shippingFee),
+          discountAmount: Number(order.discountAmount),
+          couponCode: order.couponCode,
           studentNetProfit: Number(order.studentNetProfit),
           platformCommission: Number(order.platformCommission),
           paymentFee: Number(order.paymentFee),
@@ -642,6 +722,8 @@ export class OrdersService {
           customerId: updated.customerId,
           orderNumber: updated.orderNumber,
           reviewToken,
+          discountAmount: Number(updated.discountAmount),
+          totalAmount: Number(updated.totalAmount),
         });
       }
 

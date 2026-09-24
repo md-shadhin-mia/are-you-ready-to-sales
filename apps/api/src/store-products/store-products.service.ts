@@ -13,12 +13,15 @@ import {
 } from "./dto/store-product.dto";
 import { Prisma } from "@repo/db";
 
+import { EventEmitter2 } from "@nestjs/event-emitter";
+
 @Injectable()
 export class StoreProductsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly storesService: StoresService,
     private readonly pricingService: PricingService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   async importProduct(userId: string, dto: ImportProductDto) {
@@ -78,6 +81,12 @@ export class StoreProductsService {
     const breakdown = this.pricingService.calculateBreakdown({
       basePrice: basePriceNum,
       sellingPrice: dto.sellingPrice,
+    });
+
+    this.eventEmitter.emit("store.product.added", {
+      storeId: store.id,
+      studentId: userId,
+      productId: storeProduct.id,
     });
 
     return {

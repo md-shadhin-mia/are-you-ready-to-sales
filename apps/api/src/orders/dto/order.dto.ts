@@ -90,6 +90,36 @@ export class CheckoutDto {
   @IsString()
   @IsIn(["COD", "BKASH", "NAGAD", "CARD"])
   paymentMethod!: string;
+
+  @ApiPropertyOptional({ example: "WELCOME10" })
+  @IsOptional()
+  @IsString()
+  couponCode?: string;
+
+  @ApiPropertyOptional({ example: "550e8400-e29b-41d4-a716-446655440000" })
+  @IsOptional()
+  @IsString()
+  sessionId?: string;
+
+  @ApiPropertyOptional({ example: "facebook" })
+  @IsOptional()
+  @IsString()
+  utmSource?: string;
+
+  @ApiPropertyOptional({ example: "cpc" })
+  @IsOptional()
+  @IsString()
+  utmMedium?: string;
+
+  @ApiPropertyOptional({ example: "summer_sale" })
+  @IsOptional()
+  @IsString()
+  utmCampaign?: string;
+
+  @ApiPropertyOptional({ example: "karim" })
+  @IsOptional()
+  @IsString()
+  referralCode?: string;
 }
 
 export class DispatchOrderDto {
