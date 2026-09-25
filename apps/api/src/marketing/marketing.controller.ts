@@ -67,7 +67,7 @@ export class MarketingController {
 
   @Post("student/coupons")
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.STUDENT, UserRole.SUPER_ADMIN)
+  @Roles(UserRole.STUDENT)
   @ApiBearerAuth()
   @ApiOperation({ summary: "Create a new discount coupon for the student's store" })
   @ApiResponse({ status: 201, description: "Coupon created" })
@@ -80,7 +80,7 @@ export class MarketingController {
 
   @Get("student/coupons")
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.STUDENT, UserRole.SUPER_ADMIN)
+  @Roles(UserRole.STUDENT)
   @ApiBearerAuth()
   @ApiOperation({ summary: "List all coupons for student's store" })
   @ApiResponse({ status: 200, description: "List of coupons" })
@@ -90,7 +90,7 @@ export class MarketingController {
 
   @Patch("student/coupons/:id")
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.STUDENT, UserRole.SUPER_ADMIN)
+  @Roles(UserRole.STUDENT)
   @ApiBearerAuth()
   @ApiOperation({ summary: "Update coupon active status, limit, or expiry" })
   @ApiResponse({ status: 200, description: "Coupon updated" })
@@ -104,7 +104,7 @@ export class MarketingController {
 
   @Patch("student/marketing/banner")
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.STUDENT, UserRole.SUPER_ADMIN)
+  @Roles(UserRole.STUDENT)
   @ApiBearerAuth()
   @ApiOperation({ summary: "Configure promotional announcement bar" })
   @ApiResponse({ status: 200, description: "Store banner updated" })

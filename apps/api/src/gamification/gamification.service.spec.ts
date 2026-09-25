@@ -29,6 +29,7 @@ describe("GamificationService Unit Tests", () => {
         findUnique: vi.fn(),
         upsert: vi.fn(),
         update: vi.fn(),
+        updateMany: vi.fn(),
         count: vi.fn(),
       },
     };
@@ -149,10 +150,7 @@ describe("GamificationService Unit Tests", () => {
       },
     });
 
-    mockPrisma.studentProgress.update.mockResolvedValue({
-      id: "prog-1",
-      isClaimed: true,
-    });
+    mockPrisma.studentProgress.updateMany.mockResolvedValue({ count: 1 });
 
     mockPrisma.studentLevel.findUnique.mockResolvedValue({
       studentId: "student-1",

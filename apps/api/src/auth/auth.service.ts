@@ -27,12 +27,15 @@ export class AuthService {
     private readonly configService: ConfigService,
     private readonly passwordService: PasswordService,
   ) {
-    this.accessSecret =
-      this.configService.get<string>("JWT_ACCESS_SECRET") ||
-      "dev-access-super-secret-key-at-least-32-chars-long";
-    this.refreshSecret =
-      this.configService.get<string>("JWT_REFRESH_SECRET") ||
-      "dev-refresh-super-secret-key-at-least-32-chars-long";
+    const accessSecret = this.configService.get<string>("JWT_ACCESS_SECRET");
+    const refreshSecret = this.configService.get<string>("JWT_REFRESH_SECRET");
+    if (!accessSecret || !refreshSecret) {
+      throw new Error(
+        "JWT_ACCESS_SECRET and JWT_REFRESH_SECRET must be set (see .env.example)",
+      );
+    }
+    this.accessSecret = accessSecret;
+    this.refreshSecret = refreshSecret;
     this.accessExpiresIn =
       this.configService.get<string>("JWT_ACCESS_EXPIRES_IN") || "15m";
     this.refreshExpiresIn =
@@ -101,35 +104,50 @@ export class AuthService {
   }
 
   async refresh(refreshToken: string) {
+    let payload: { sub: string; tokenId: string };
     try {
-      const payload = await this.jwtService.verifyAsync(refreshToken, {
+      payload = await this.jwtService.verifyAsync(refreshToken, {
         secret: this.refreshSecret,
       });
-
-      const storedTokenId = await this.redis.get(
-        `auth:refresh:${payload.sub}`,
-      );
-
-      if (!storedTokenId || storedTokenId !== payload.tokenId) {
-        throw new UnauthorizedException("Invalid or revoked refresh token");
-      }
-
-      const user = await this.prisma.user.findUnique({
-        where: { id: payload.sub },
-      });
-
-      if (!user || !user.isActive) {
-        throw new UnauthorizedException("User not found or inactive");
-      }
-
-      return this.generateTokens(user.id, user.email, user.role);
     } catch {
       throw new UnauthorizedException("Invalid or expired refresh token");
     }
+
+    const tokenKey = `auth:refresh:${payload.sub}:${payload.tokenId}`;
+    const stored = await this.redis.get(tokenKey);
+
+    if (!stored) {
+      throw new UnauthorizedException("Invalid or revoked refresh token");
+    }
+
+    const user = await this.prisma.user.findUnique({
+      where: { id: payload.sub },
+    });
+
+    if (!user || !user.isActive) {
+      throw new UnauthorizedException("User not found or inactive");
+    }
+
+    // Rotate: invalidate the used refresh token before issuing new ones.
+    await this.redis.del(tokenKey);
+    return this.generateTokens(user.id, user.email, user.role);
   }
 
-  async logout(userId: string) {
-    await this.redis.del(`auth:refresh:${userId}`);
+  async logout(userId: string, refreshToken?: string) {
+    if (refreshToken) {
+      try {
+        const payload = await this.jwtService.verifyAsync(refreshToken, {
+          secret: this.refreshSecret,
+        });
+        await this.redis.del(`auth:refresh:${userId}:${payload.tokenId}`);
+        return { success: true };
+      } catch {
+        // Fall through to revoking all sessions if the token can't be parsed.
+      }
+    }
+
+    // No usable refresh token supplied: revoke every device's session.
+    await this.redis.delByPrefix(`auth:refresh:${userId}:`);
     return { success: true };
   }
 
@@ -183,8 +201,13 @@ export class AuthService {
       },
     );
 
-    // Save refresh tokenId in Redis for 7 days (604800s)
-    await this.redis.set(`auth:refresh:${userId}`, tokenId, 7 * 24 * 3600);
+    // Save refresh tokenId in Redis for 7 days (604800s), keyed per-device
+    // so logging in on a new device doesn't invalidate other sessions.
+    await this.redis.set(
+      `auth:refresh:${userId}:${tokenId}`,
+      "1",
+      7 * 24 * 3600,
+    );
 
     return {
       accessToken,

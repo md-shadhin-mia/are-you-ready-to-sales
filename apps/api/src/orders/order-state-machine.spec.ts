@@ -50,4 +50,22 @@ describe("OrderStateMachine", () => {
     );
     expect(restitute).toBe(true);
   });
+
+  it("should flag stock restitution for a direct PAID -> REFUNDED transition", () => {
+    expect(
+      OrderStateMachine.shouldRestituteStock(
+        OrderStatus.PAID,
+        OrderStatus.REFUNDED,
+      ),
+    ).toBe(true);
+  });
+
+  it("should not double-restitute when refunding an already-returned order", () => {
+    expect(
+      OrderStateMachine.shouldRestituteStock(
+        OrderStatus.RETURNED,
+        OrderStatus.REFUNDED,
+      ),
+    ).toBe(false);
+  });
 });

@@ -78,10 +78,11 @@ export class RatingAggregatorService {
   /**
    * Get tri-dimensional breakdown (Product, Store, Delivery) and star meter for a given product or store.
    */
-  async getProductBreakdown(masterProductId: string) {
+  async getProductBreakdown(masterProductId: string, storeId: string) {
     const reviews = await this.prisma.review.findMany({
       where: {
         masterProductId,
+        storeId,
         isPublished: true,
       },
       select: {

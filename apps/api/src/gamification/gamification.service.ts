@@ -258,14 +258,20 @@ export class GamificationService {
       throw new BadRequestException("Reward for this challenge has already been claimed.");
     }
 
-    // Mark as claimed
-    await this.prisma.studentProgress.update({
-      where: { id: progress.id },
+    // Atomically claim: the `isClaimed: false` guard in the where clause
+    // makes this a compare-and-swap, so two concurrent claim requests can't
+    // both pass the check above and both award XP for the same challenge.
+    const claim = await this.prisma.studentProgress.updateMany({
+      where: { id: progress.id, isClaimed: false },
       data: {
         isClaimed: true,
         claimedAt: new Date(),
       },
     });
+
+    if (claim.count === 0) {
+      throw new BadRequestException("Reward for this challenge has already been claimed.");
+    }
 
     // Award XP
     await this.prisma.studentLevel.update({

@@ -16,12 +16,14 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     private readonly configService: ConfigService,
     private readonly prisma: PrismaService,
   ) {
+    const secretOrKey = configService.get<string>("JWT_ACCESS_SECRET");
+    if (!secretOrKey) {
+      throw new Error("JWT_ACCESS_SECRET must be set (see .env.example)");
+    }
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
-      secretOrKey:
-        configService.get<string>("JWT_ACCESS_SECRET") ||
-        "dev-access-super-secret-key-at-least-32-chars-long",
+      secretOrKey,
     });
   }
 

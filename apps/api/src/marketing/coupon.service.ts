@@ -86,22 +86,23 @@ export class CouponService {
   async updateCoupon(studentId: string, couponId: string, dto: UpdateCouponDto) {
     const store = await this.getStudentStore(studentId);
 
-    const coupon = await this.prisma.coupon.findFirst({
+    // updateMany scopes the write itself by storeId (not just an earlier
+    // read), so ownership can't be bypassed even if this logic is ever
+    // reused without re-checking storeId first.
+    const result = await this.prisma.coupon.updateMany({
       where: { id: couponId, storeId: store.id },
-    });
-
-    if (!coupon) {
-      throw new NotFoundException("Coupon not found.");
-    }
-
-    return this.prisma.coupon.update({
-      where: { id: couponId },
       data: {
         ...(dto.isActive !== undefined ? { isActive: dto.isActive } : {}),
         ...(dto.maxUses !== undefined ? { maxUses: dto.maxUses } : {}),
         ...(dto.endDate !== undefined ? { endDate: new Date(dto.endDate) } : {}),
       },
     });
+
+    if (result.count === 0) {
+      throw new NotFoundException("Coupon not found.");
+    }
+
+    return this.prisma.coupon.findUnique({ where: { id: couponId } });
   }
 
   /**

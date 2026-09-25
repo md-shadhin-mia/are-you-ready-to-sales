@@ -16,6 +16,7 @@ import {
 } from "./dto/order.dto";
 import { OrderStateMachine } from "./order-state-machine";
 import { OrderStatus, StoreStatus, Prisma } from "@repo/db";
+import { getCommissionRateForLevel } from "../gamification/gamification.types";
 
 @Injectable()
 export class OrdersService {
@@ -50,24 +51,68 @@ export class OrdersService {
 
     // 2. Fetch and validate store products
     const itemProductIds = dto.items.map((i) => i.storeProductId);
+    const uniqueProductIds = Array.from(new Set(itemProductIds));
     const storeProducts = await this.prisma.storeProduct.findMany({
       where: {
-        id: { in: itemProductIds },
+        id: { in: uniqueProductIds },
         storeId: store.id,
         isVisible: true,
       },
       include: { masterProduct: true },
     });
 
-    if (storeProducts.length !== itemProductIds.length) {
+    // `id: { in: [...] }` de-duplicates matches, so compare against the
+    // unique id set rather than the raw (possibly repeated) cart line count.
+    if (storeProducts.length !== uniqueProductIds.length) {
       throw new BadRequestException(
         "One or more products in your cart are invalid, unavailable, or belong to another store",
       );
     }
 
-    // 3. Execute transaction with pessimistic row-locking on master products
+    // 3. Execute transaction with pessimistic row-locking on master products.
+    // Retried on an order-number collision (see step below) since the random
+    // suffix isn't guaranteed unique across stores.
+    const maxOrderNumberAttempts = 5;
+    for (let attempt = 1; attempt <= maxOrderNumberAttempts; attempt++) {
+      try {
+        return await this.runCheckoutTransaction(store, storeProducts, dto);
+      } catch (err) {
+        const isOrderNumberCollision =
+          err instanceof Prisma.PrismaClientKnownRequestError &&
+          err.code === "P2002" &&
+          (err.meta?.target as string[] | undefined)?.some((t) =>
+            t.includes("order_number"),
+          );
+        if (isOrderNumberCollision && attempt < maxOrderNumberAttempts) {
+          continue;
+        }
+        throw err;
+      }
+    }
+    throw new ConflictException(
+      "Could not generate a unique order number, please retry checkout",
+    );
+  }
+
+  private async runCheckoutTransaction(
+    store: { id: string; studentId: string },
+    storeProducts: Array<{
+      id: string;
+      masterProductId: string;
+      sellingPrice: any;
+      masterProduct: any;
+    }>,
+    dto: CheckoutDto,
+  ) {
     return await this.prisma.$transaction(
       async (tx) => {
+        // Lock the store row for the duration of this checkout. This
+        // serializes all concurrent checkouts against the same store, which
+        // closes two lost-update races that would otherwise exist: the
+        // coupon usedCount check-then-increment below, and the running
+        // ledger balance computed later from the last LedgerEntry.
+        await tx.$queryRaw`SELECT id FROM stores WHERE id = ${store.id} FOR UPDATE`;
+
         // Collect master product IDs and order them to avoid deadlocks
         const masterProductIds = Array.from(
           new Set(storeProducts.map((sp) => sp.masterProductId)),
@@ -194,14 +239,15 @@ export class OrdersService {
 
         const discountedSubtotal = Math.max(0, subtotal - discountAmount);
 
-        // Check student level for Level 5+ reduced platform commission (1.5% vs 5.0%)
+        // Commission rate is driven by the student's career tier (see
+        // CAREER_LEVELS) — must go through the shared helper so Level 6's 0%
+        // rate (and any future tier) is never missed by an inline threshold.
         const studentLevel = await tx.studentLevel.findUnique({
           where: { studentId: store.studentId },
         });
-        const commissionRate =
-          studentLevel && studentLevel.currentLevel >= 5
-            ? 0.015 // Level 5+ Pro Seller reduced commission
-            : PricingService.PLATFORM_COMMISSION_RATE; // 5.0%
+        const commissionRate = studentLevel
+          ? getCommissionRateForLevel(studentLevel.currentLevel)
+          : PricingService.PLATFORM_COMMISSION_RATE;
 
         const platformCommission =
           Math.round(discountedSubtotal * commissionRate * 100) / 100;
@@ -615,14 +661,18 @@ export class OrdersService {
 
     OrderStateMachine.validateTransition(order.status, OrderStatus.SHIPPED);
 
-    return await this.prisma.order.update({
+    await this.prisma.order.update({
       where: { id: orderId },
       data: {
         courierName: dto.courierName,
         trackingNumber: dto.trackingNumber,
-        status: OrderStatus.SHIPPED,
       },
     });
+
+    // Route the actual status write through updateOrderStatus so dispatch
+    // stays on the same single code path that owns every other status
+    // transition's side effects (stock/ledger reversal, review tokens, etc).
+    return this.updateOrderStatus(orderId, OrderStatus.SHIPPED);
   }
 
   /**
@@ -641,6 +691,10 @@ export class OrdersService {
     OrderStateMachine.validateTransition(order.status, toStatus);
 
     return await this.prisma.$transaction(async (tx) => {
+      // Lock the store row so a concurrent checkout/status-update on the same
+      // store can't read a stale last-LedgerEntry balance (see checkout()).
+      await tx.$queryRaw`SELECT id FROM stores WHERE id = ${order.storeId} FOR UPDATE`;
+
       // If order is cancelled or returned, restitute stock quantity to master product
       if (OrderStateMachine.shouldRestituteStock(order.status, toStatus)) {
         for (const item of order.items) {

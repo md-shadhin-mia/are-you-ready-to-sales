@@ -37,9 +37,9 @@ describe("PricingService", () => {
 
     expect(result.grossMargin).toBe(600);
     expect(result.platformCommission).toBe(120); // 5% of 2400
-    expect(result.paymentFee).toBe(48); // 2% of 2400
+    expect(result.paymentFee).toBe(51); // 2% of (2400 + 150 shipping), matching checkout
     expect(result.shippingFee).toBe(150); // 150 BDT outside Dhaka
-    expect(result.studentNetProfit).toBe(432); // 600 - 120 - 48 = 432
+    expect(result.studentNetProfit).toBe(429); // 600 - 120 - 51 = 429
     expect(result.totalCustomerAmount).toBe(2550); // 2400 + 150
   });
 

@@ -96,6 +96,20 @@ export const CAREER_LEVELS: LevelTierConfig[] = [
   },
 ];
 
+/**
+ * Single source of truth for a level's platform commission rate — must be
+ * used anywhere commission is computed instead of re-deriving level
+ * thresholds inline, so new tiers (e.g. Level 6's 0%) are never missed.
+ */
+export function getCommissionRateForLevel(currentLevel: number): number {
+  const applicableTier = [...CAREER_LEVELS]
+    .filter((tier) => tier.level <= currentLevel)
+    .pop();
+  return applicableTier
+    ? applicableTier.commissionRate
+    : CAREER_LEVELS[0].commissionRate;
+}
+
 export interface StudentGamificationStatus {
   currentLevel: number;
   levelTitle: string;

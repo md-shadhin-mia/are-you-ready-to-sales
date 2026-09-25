@@ -38,23 +38,33 @@ export class PricingService {
     sellingPrice: number;
     isOnlinePayment?: boolean;
     isInsideDhaka?: boolean;
+    /** Student's tier commission rate (see getCommissionRateForLevel); defaults to the base 5% rate. */
+    commissionRate?: number;
   }): FeeBreakdown {
-    const { basePrice, sellingPrice, isOnlinePayment = false, isInsideDhaka = true } = params;
+    const {
+      basePrice,
+      sellingPrice,
+      isOnlinePayment = false,
+      isInsideDhaka = true,
+      commissionRate = PricingService.PLATFORM_COMMISSION_RATE,
+    } = params;
 
     this.validateSellingPrice(basePrice, sellingPrice);
 
-    // 5% Platform commission on selling price
-    const platformCommission = Math.round(sellingPrice * PricingService.PLATFORM_COMMISSION_RATE * 100) / 100;
-
-    // 2% Payment gateway processing fee for online MFS/Cards, 0 for COD
-    const paymentFee = isOnlinePayment
-      ? Math.round(sellingPrice * PricingService.ONLINE_PAYMENT_FEE_RATE * 100) / 100
-      : 0;
+    // Platform commission on selling price, at the student's tier rate
+    const platformCommission = Math.round(sellingPrice * commissionRate * 100) / 100;
 
     // Shipping fee
     const shippingFee = isInsideDhaka
       ? PricingService.SHIPPING_FEE_INSIDE_DHAKA
       : PricingService.SHIPPING_FEE_OUTSIDE_DHAKA;
+
+    // 2% Payment gateway processing fee for online MFS/Cards, 0 for COD.
+    // Charged on the full amount the gateway actually processes (price + shipping),
+    // matching what checkout charges.
+    const paymentFee = isOnlinePayment
+      ? Math.round((sellingPrice + shippingFee) * PricingService.ONLINE_PAYMENT_FEE_RATE * 100) / 100
+      : 0;
 
     const grossMargin = Math.round((sellingPrice - basePrice) * 100) / 100;
     const studentNetProfit = Math.round((grossMargin - platformCommission - paymentFee) * 100) / 100;

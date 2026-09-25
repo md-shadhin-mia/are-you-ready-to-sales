@@ -293,11 +293,15 @@ export class ReviewsService {
     const limit = query?.limit ? Math.max(1, Number(query.limit)) : 10;
     const skip = (page - 1) * limit;
 
+    // Scoped by storeId as well as masterProductId — two stores can import
+    // the same MasterProduct, and without this a customer's review submitted
+    // through one store would leak onto every other store selling it.
     const [breakdown, reviews, total] = await Promise.all([
-      this.ratingAggregator.getProductBreakdown(masterProductId),
+      this.ratingAggregator.getProductBreakdown(masterProductId, store.id),
       this.prisma.review.findMany({
         where: {
           masterProductId,
+          storeId: store.id,
           isPublished: true,
         },
         include: {
@@ -309,7 +313,7 @@ export class ReviewsService {
         take: limit,
       }),
       this.prisma.review.count({
-        where: { masterProductId, isPublished: true },
+        where: { masterProductId, storeId: store.id, isPublished: true },
       }),
     ]);
 

@@ -9,7 +9,7 @@ import {
   IsString,
   Min,
 } from "class-validator";
-import { Type } from "class-transformer";
+import { Transform, Type } from "class-transformer";
 
 export class CreateMasterProductDto {
   @ApiProperty({ example: "SKU-ELEC-009" })
@@ -136,7 +136,12 @@ export class QueryMasterProductsDto {
 
   @ApiPropertyOptional()
   @IsOptional()
+  @Transform(({ value }) => {
+    if (typeof value === "boolean") return value;
+    if (value === "true") return true;
+    if (value === "false") return false;
+    return value;
+  })
   @IsBoolean()
-  @Type(() => Boolean)
   isActive?: boolean;
 }

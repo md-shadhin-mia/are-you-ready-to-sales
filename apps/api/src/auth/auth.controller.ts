@@ -15,7 +15,7 @@ import {
   ApiBearerAuth,
 } from "@nestjs/swagger";
 import { AuthService } from "./auth.service";
-import { RegisterDto, LoginDto, RefreshTokenDto } from "./dto/auth.dto";
+import { RegisterDto, LoginDto, RefreshTokenDto, LogoutDto } from "./dto/auth.dto";
 import { JwtAuthGuard } from "./jwt-auth.guard";
 import { Request } from "express";
 
@@ -56,8 +56,11 @@ export class AuthController {
   @ApiBearerAuth()
   @ApiOperation({ summary: "Logout and revoke refresh token" })
   @ApiResponse({ status: 200, description: "Logged out successfully" })
-  async logout(@Req() req: Request & { user: { id: string } }) {
-    return this.authService.logout(req.user.id);
+  async logout(
+    @Req() req: Request & { user: { id: string } },
+    @Body() dto: LogoutDto,
+  ) {
+    return this.authService.logout(req.user.id, dto.refreshToken);
   }
 
   @Get("me")

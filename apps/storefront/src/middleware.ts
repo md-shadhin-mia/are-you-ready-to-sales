@@ -9,10 +9,15 @@ export function middleware(request: NextRequest) {
 
   let slug: string | undefined;
 
-  // 1. Direct header override for testing
-  const explicitSlug = request.headers.get("x-tenant-slug");
-  if (explicitSlug) {
-    slug = explicitSlug.trim().toLowerCase();
+  // 1. Direct header override — local/testing only. In production this must
+  //    never be honored from an incoming client request: it would let any
+  //    caller spoof an arbitrary store by setting a header, since this value
+  //    is forwarded to the API as the trusted tenant-resolution header below.
+  if (process.env.NODE_ENV !== "production") {
+    const explicitSlug = request.headers.get("x-tenant-slug");
+    if (explicitSlug) {
+      slug = explicitSlug.trim().toLowerCase();
+    }
   }
 
   // 2. Extract subdomain from host: {slug}.platform.local
@@ -29,10 +34,14 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Inject tenant header into request
+  // Inject tenant header into request. Always overwrite/clear whatever the
+  // client sent so an unresolved slug can't fall through to the API as a
+  // stale/attacker-controlled x-tenant-slug header.
   const requestHeaders = new Headers(request.headers);
   if (slug) {
     requestHeaders.set("x-tenant-slug", slug);
+  } else {
+    requestHeaders.delete("x-tenant-slug");
   }
 
   return NextResponse.next({

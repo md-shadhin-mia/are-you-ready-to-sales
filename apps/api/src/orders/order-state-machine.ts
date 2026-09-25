@@ -32,10 +32,16 @@ export class OrderStateMachine {
 
   static shouldRestituteStock(from: OrderStatus, to: OrderStatus): boolean {
     // If order was cancelled or returned after inventory was deducted, restock it
-    return (
-      (to === OrderStatus.CANCELLED || to === OrderStatus.RETURNED) &&
-      from !== OrderStatus.CANCELLED &&
-      from !== OrderStatus.RETURNED
-    );
+    if (to === OrderStatus.CANCELLED || to === OrderStatus.RETURNED) {
+      return from !== OrderStatus.CANCELLED && from !== OrderStatus.RETURNED;
+    }
+    // A direct PAID -> REFUNDED transition skips RETURNED entirely, so stock
+    // and the profit ledger entry were never reversed for it. Refunding after
+    // RETURNED must NOT restitute again — that already happened at the
+    // RETURNED step.
+    if (to === OrderStatus.REFUNDED) {
+      return from !== OrderStatus.RETURNED && from !== OrderStatus.CANCELLED;
+    }
+    return false;
   }
 }

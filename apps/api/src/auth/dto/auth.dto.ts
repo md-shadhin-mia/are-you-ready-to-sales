@@ -41,3 +41,10 @@ export class RefreshTokenDto {
   @IsNotEmpty()
   refreshToken!: string;
 }
+
+export class LogoutDto {
+  @ApiPropertyOptional({ example: "eyJhbGciOiJIUzI1NiIsInR5cCI6..." })
+  @IsOptional()
+  @IsString()
+  refreshToken?: string;
+}

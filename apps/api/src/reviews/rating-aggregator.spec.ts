@@ -65,7 +65,7 @@ describe("RatingAggregatorService", () => {
       { productRating: 4, storeRating: 4, deliveryRating: 3 },
     ]);
 
-    const breakdown = await service.getProductBreakdown("prod-1");
+    const breakdown = await service.getProductBreakdown("prod-1", "store-1");
 
     expect(breakdown.totalReviews).toBe(3);
     expect(breakdown.averageProductRating).toBe(4.7);
@@ -79,7 +79,7 @@ describe("RatingAggregatorService", () => {
   it("should return zeroed breakdown when no reviews exist", async () => {
     mockPrisma.review.findMany.mockResolvedValue([]);
 
-    const breakdown = await service.getProductBreakdown("prod-none");
+    const breakdown = await service.getProductBreakdown("prod-none", "store-1");
 
     expect(breakdown.totalReviews).toBe(0);
     expect(breakdown.averageProductRating).toBe(0);

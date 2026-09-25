@@ -25,11 +25,17 @@ export class TenantResolutionMiddleware implements NestMiddleware {
 
   async use(req: RequestWithTenant, res: Response, next: NextFunction) {
     let slug: string | undefined;
+    const isProduction =
+      this.configService.get<string>("NODE_ENV") === "production";
 
-    // 1. Check direct header (for API / mobile / testing)
-    const headerSlug = req.headers["x-tenant-slug"];
-    if (typeof headerSlug === "string" && headerSlug.trim().length > 0) {
-      slug = headerSlug.trim().toLowerCase();
+    // 1. Check direct header (for local/testing use only — trusting a
+    //    client-controlled header for tenant resolution in production would
+    //    let any caller spoof an arbitrary store).
+    if (!isProduction) {
+      const headerSlug = req.headers["x-tenant-slug"];
+      if (typeof headerSlug === "string" && headerSlug.trim().length > 0) {
+        slug = headerSlug.trim().toLowerCase();
+      }
     }
 
     // 2. Parse Host header if no explicit header

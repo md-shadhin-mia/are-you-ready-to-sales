@@ -22,9 +22,17 @@ async function bootstrap() {
     }),
   );
 
-  // Enable CORS
+  // Enable CORS — restrict credentialed cross-origin requests to an explicit
+  // allow-list; never reflect an arbitrary Origin back when credentials are on.
+  const allowedOrigins = configService
+    .get<string>("CORS_ALLOWED_ORIGINS", "")
+    .split(",")
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+  const isProduction = configService.get<string>("NODE_ENV") === "production";
+
   app.enableCors({
-    origin: true,
+    origin: allowedOrigins.length > 0 ? allowedOrigins : !isProduction,
     credentials: true,
   });
 
