@@ -1,3 +1,17 @@
+@import url("https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200");
+@import "@repo/ui/tokens.css";
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+:root {
+  --color-brand: #005fd5;
+  --color-brand-hover: #004fb5;
+  --color-brand-dark: #003f91;
+  --color-brand-light: #e8f1ff;
+  --color-brand-soft: #f4f8ff;
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-heading: var(--font-jakarta), var(--font-sans);
+}
+

@@ -13,12 +13,12 @@ import {
   Star,
 } from "lucide-react";
 
+import { Input } from "@repo/ui";
+import { API_BASE } from "../../../lib/api-base";
 interface TrackOrderClientProps {
   storeSlug: string;
   initialOrderNumber?: string;
 }
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
 export function TrackOrderClient({
   storeSlug,
@@ -82,29 +82,29 @@ export function TrackOrderClient({
     <div className="space-y-6">
       {/* Search Input Bar */}
       <form onSubmit={handleSearch} className="flex gap-2">
-        <div className="relative flex-1">
+        <div className="relative flex-1 min-w-0">
           <Search className="h-4 w-4 text-slate-400 absolute left-3.5 top-3.5" />
-          <input
+          <Input
             type="text"
             required
             value={orderNumber}
             onChange={(e) => setOrderNumber(e.target.value)}
-            placeholder="Enter Order ID (e.g. ORD-20260924-1234)"
-            className="w-full text-xs font-mono pl-10 pr-4 py-3 rounded-2xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white shadow-sm uppercase"
+            placeholder="Order ID (e.g. ORD-...)"
+            className="w-full text-xs font-mono pl-10 pr-3 sm:pr-4 uppercase min-w-0"
           />
         </div>
         <button
           type="submit"
           disabled={loading}
-          className="px-6 py-3 rounded-2xl font-bold text-xs btn-store-primary flex items-center gap-2 shadow-sm disabled:opacity-50"
+          className="px-4 sm:px-6 py-3 rounded-2xl font-bold text-xs bg-primary text-primary-foreground hover:bg-primary/90 flex items-center gap-2 shadow-sm disabled:opacity-50 shrink-0"
         >
-          {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Track"}
+          {loading ? <Loader2 className="h-4 w-4 animate-spin shrink-0" /> : "Track"}
         </button>
       </form>
 
       {/* Error Message */}
       {error && (
-        <div className="p-4 bg-red-50 border border-red-200 rounded-2xl flex items-center gap-3 text-xs text-red-700">
+        <div className="p-4 bg-destructive/5 border border-destructive/20 rounded-2xl flex items-center gap-3 text-xs text-destructive">
           <AlertCircle className="h-5 w-5 text-red-500 flex-shrink-0" />
           <span>{error}</span>
         </div>
@@ -112,37 +112,37 @@ export function TrackOrderClient({
 
       {/* Tracking Result View */}
       {order && (
-        <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 sm:p-8 space-y-8">
+        <div className="bg-card rounded-2xl sm:rounded-3xl border border-border shadow-sm p-4 sm:p-6 md:p-8 space-y-6 sm:space-y-8">
           {/* Header Info */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-6">
-            <div>
-              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 border-b border-slate-100 pb-4 sm:pb-6">
+            <div className="min-w-0">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
                 Order Tracking
               </span>
-              <h2 className="text-xl font-extrabold text-slate-900 font-mono">
+              <h2 className="text-lg sm:text-xl font-extrabold text-foreground font-mono break-all">
                 {order.orderNumber}
               </h2>
-              <p className="text-xs text-slate-500 mt-0.5">
+              <p className="text-xs text-muted-foreground mt-0.5">
                 Placed on {new Date(order.createdAt).toLocaleDateString()} • Destination: {order.recipientCity || "Bangladesh"}
               </p>
             </div>
 
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200 self-start sm:self-auto">
-              <Clock className="h-3.5 w-3.5" />
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-primary/5 text-primary border border-primary/20 self-start sm:self-auto shrink-0">
+              <Clock className="h-3.5 w-3.5 shrink-0" />
               Status: {order.status}
             </div>
           </div>
 
           {/* Courier Banner if Shipped */}
           {order.courierName && (
-            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div className="flex items-center gap-3">
-                <Truck className="h-6 w-6 text-store-primary flex-shrink-0" />
-                <div>
-                  <h4 className="text-xs font-bold text-slate-900">
+            <div className="p-3.5 sm:p-4 rounded-2xl bg-muted/50 border border-border flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-3 min-w-0">
+                <Truck className="h-5 w-5 sm:h-6 sm:w-6 text-primary flex-shrink-0" />
+                <div className="min-w-0">
+                  <h4 className="text-xs font-bold text-foreground truncate">
                     Dispatched via {order.courierName}
                   </h4>
-                  <p className="text-xs font-mono text-slate-500">
+                  <p className="text-xs font-mono text-muted-foreground break-all">
                     Tracking Number: <strong>{order.trackingNumber || "Assigned"}</strong>
                   </p>
                 </div>
@@ -151,8 +151,8 @@ export function TrackOrderClient({
           )}
 
           {/* Timeline */}
-          <div className="py-4">
-            <div className="grid grid-cols-4 gap-2 text-center">
+          <div className="py-2 sm:py-4">
+            <div className="grid grid-cols-4 gap-1 sm:gap-2 text-center">
               {[
                 { title: "Placed", icon: CheckCircle2, step: 0 },
                 { title: "Processing", icon: Package, step: 1 },
@@ -164,22 +164,22 @@ export function TrackOrderClient({
                 const isCurrent = status === "current";
 
                 return (
-                  <div key={idx} className="space-y-2 flex flex-col items-center">
+                  <div key={idx} className="space-y-1.5 sm:space-y-2 flex flex-col items-center min-w-0">
                     <div
-                      className={`h-10 w-10 rounded-full flex items-center justify-center transition-all ${
+                      className={`h-8 w-8 sm:h-10 sm:w-10 rounded-full flex items-center justify-center transition-all shrink-0 ${
                         isCompleted
-                          ? "bg-emerald-600 text-white shadow-sm"
+                          ? "bg-emerald-600 text-primary-foreground shadow-sm"
                           : isCurrent
-                            ? "btn-store-primary text-white ring-4 ring-blue-100"
-                            : "bg-slate-100 text-slate-400"
+                            ? "bg-primary text-primary-foreground hover:bg-primary/90 text-primary-foreground ring-4 ring-ring"
+                            : "bg-muted text-slate-400"
                       }`}
                     >
-                      <item.icon className="h-5 w-5" />
+                      <item.icon className="h-4 w-4 sm:h-5 sm:w-5" />
                     </div>
                     <span
-                      className={`text-xs font-semibold ${
+                      className={`text-[10px] sm:text-xs font-semibold block truncate max-w-full px-0.5 ${
                         isCompleted || isCurrent
-                          ? "text-slate-900 font-bold"
+                          ? "text-foreground font-bold"
                           : "text-slate-400"
                       }`}
                     >
@@ -194,13 +194,13 @@ export function TrackOrderClient({
           {/* Items Summary */}
           <div className="pt-6 border-t border-slate-100 space-y-3">
             <h4 className="text-xs font-bold text-slate-700">Purchased Items</h4>
-            <div className="divide-y divide-slate-100 text-xs">
+            <div className="divide-y divide-border/60 text-xs">
               {order.items?.map((item: any) => (
                 <div key={item.id} className="py-2.5 flex justify-between items-center">
                   <span className="font-medium text-slate-800">
                     {item.title} × {item.quantity}
                   </span>
-                  <span className="font-bold text-slate-900">
+                  <span className="font-bold text-foreground">
                     ৳{item.totalPrice?.toLocaleString()}
                   </span>
                 </div>
@@ -217,10 +217,10 @@ export function TrackOrderClient({
                     <Star className="h-5 w-5 fill-amber-400 text-amber-500" />
                   </div>
                   <div>
-                    <p className="text-xs font-bold text-slate-900">
+                    <p className="text-xs font-bold text-foreground">
                       Your parcel was successfully delivered!
                     </p>
-                    <p className="text-[11px] text-slate-500">
+                    <p className="text-[11px] text-muted-foreground">
                       Leave an independent 3D review for product, service, and courier speed.
                     </p>
                   </div>

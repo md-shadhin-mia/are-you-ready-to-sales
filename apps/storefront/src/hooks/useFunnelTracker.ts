@@ -2,8 +2,7 @@
 
 import { useEffect, useCallback, useState } from "react";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
-
+import { API_BASE } from "../lib/api-base";
 export interface AttributionData {
   ref?: string;
   utmSource?: string;

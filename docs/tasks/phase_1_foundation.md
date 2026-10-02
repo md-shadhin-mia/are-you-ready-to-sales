@@ -16,11 +16,12 @@ Phase 1 establishes the bedrock architecture of the platform. Although public cu
 
 ### Target Outcomes
 1. **Monorepo Foundation:** Working pnpm + Turborepo workspace setup with `apps/api`, `apps/storefront`, `apps/student-dashboard`, `apps/admin-dashboard`, `packages/db`, `packages/ui`, `packages/config`, and `packages/api-client`.
-2. **PostgreSQL & Prisma:** Core tables (`users`, `stores`, `categories`, `master_products`) migrated with UUIDs and indices.
+2. **PostgreSQL & Prisma:** Core tables (`users`, `stores`, `categories`, `master_products`, `branches`, `student_batches`) migrated with UUIDs and indices, plus complete `OrderStatus` enum.
 3. **Multi-Tenancy Engine:** Host header and subdomain resolution middleware (`{slug}.platform.com`), Redis domain caching, and Prisma tenant auto-scoping.
-4. **Auth & RBAC:** JWT access & refresh tokens, Argon2 password hashing, and NestJS role guards with hardcoded roles (`SUPER_ADMIN`, `INSTITUTE_ADMIN`, `PRODUCT_MANAGER`, `ORDER_MANAGER`, `TRAINING_MANAGER`, `SUPPORT_AGENT`, `STUDENT`, `CUSTOMER`).
+4. **Auth & RBAC:** JWT access & refresh tokens, Argon2 password hashing, and NestJS role guards with core roles (`SUPER_ADMIN`, `INSTITUTE_ADMIN`, `BRANCH_MANAGER`, `PRODUCT_MANAGER`, `ORDER_MANAGER`, `TRAINING_MANAGER`, `SUPPORT_AGENT`, `SELLER`, `STUDENT`, `CUSTOMER`).
 5. **Master Catalog & Media:** Central product CRUD for institute product managers with MinIO S3-compatible image uploads via presigned URLs.
 6. **Marketplace Discovery API:** Read-only endpoint allowing authenticated students to explore the institute's product catalog.
+7. **Admin Portal Shell & Navigation IA:** Deploy the foundational `AdminLayout` supporting all 7 primary operational menus: Dashboards (with urgent alert badge `01`), Students (expandable menu), Branches, Student Batches, Orders (11-status fulfillment navigation & volume counters), Seller Panel, Payment Requests (with pending badge `3`), alongside Master Catalog and Categories.
 
 ---
 
@@ -38,7 +39,15 @@ Phase 1 establishes the bedrock architecture of the platform. Although public cu
 │   │       └── users/                # User management & onboarding state
 │   ├── admin-dashboard/              # Vite + React SPA (Institute portal)
 │   │   └── src/
+│   │       ├── components/AdminLayout.tsx # Multi-group navigation shell with live badge & counter support
 │   │       ├── pages/auth/           # Admin login
+│   │       ├── pages/dashboards/     # Overview & alert notification bubble [01]
+│   │       ├── pages/students/       # Expandable student management placeholder
+│   │       ├── pages/branches/       # Campus & branch locations placeholder
+│   │       ├── pages/batches/        # Student batches & cohort schedules placeholder
+│   │       ├── pages/orders/         # Orders multi-status queues placeholder
+│   │       ├── pages/sellers/        # Seller Panel (Merchants & Instructors) placeholder
+│   │       ├── pages/payouts/        # Financial payment requests [3] placeholder
 │   │       ├── pages/catalog/        # Master product management & uploader
 │   │       └── pages/categories/     # Category hierarchy manager
 │   ├── student-dashboard/            # Vite + React SPA (Student portal)
@@ -72,14 +81,17 @@ Phase 1 establishes the bedrock architecture of the platform. Although public cu
 - [ ] **Task 1.2: Database Package (`packages/db`)**
   - Initialize Prisma with PostgreSQL provider.
   - Implement initial schema in `packages/db/prisma/schema.prisma`:
-    - Enum `UserRole`: `SUPER_ADMIN`, `INSTITUTE_ADMIN`, `PRODUCT_MANAGER`, `ORDER_MANAGER`, `TRAINING_MANAGER`, `SUPPORT_AGENT`, `STUDENT`, `CUSTOMER`.
+    - Enum `UserRole`: `SUPER_ADMIN`, `INSTITUTE_ADMIN`, `BRANCH_MANAGER`, `PRODUCT_MANAGER`, `ORDER_MANAGER`, `TRAINING_MANAGER`, `SUPPORT_AGENT`, `SELLER`, `STUDENT`, `CUSTOMER`.
     - Enum `StoreStatus`: `DRAFT`, `ACTIVE`, `SUSPENDED`, `MAINTENANCE`.
+    - Enum `OrderStatus`: `NEW`, `INVOICED`, `IN_COURIER`, `PARTIAL_DELIVERED`, `DELIVERED`, `COMPLETE`, `HOLD`, `CANCELLED`, `UNMATCH`, `EXCHANGE`, `RETURNED`, `REFUNDED`.
     - Model `User`: `id` (UUID), `email`, `passwordHash`, `fullName`, `phone`, `role`, `isActive`, `isVerified`, `createdAt`, `updatedAt`.
+    - Model `Branch`: `id` (UUID), `name`, `code` (unique — e.g. `DHK-MAIN`), `branchType` (`PHYSICAL`/`DIGITAL`), `address`, `city`, `contactPhone`, `contactEmail`, `managerId` (FK User nullable), `isActive` (Boolean default true), timestamps.
+    - Model `StudentBatch`: `id` (UUID), `branchId` (FK Branch nullable), `name`, `batchCode` (unique — e.g. `BATCH-2026-A`), `instructorId` (FK User nullable), `startDate`, `endDate`, `maxCapacity`, `status`, timestamps.
     - Model `Store`: `id` (UUID), `studentId` (FK User), `storeName`, `slug` (unique), `customDomain` (unique nullable), `logoUrl`, `faviconUrl`, `themeConfig` (Json), `brandingInfo` (Json), `status` (StoreStatus), `ratingAvg`, `totalReviewsCount`, timestamps.
     - Model `Category`: `id` (UUID), `name`, `slug` (unique), `parentId` (self-referencing FK nullable), `createdAt`.
     - Model `MasterProduct`: `id` (UUID), `sku` (unique), `title`, `categoryId` (FK Category), `basePrice` (Decimal), `stockQuantity` (Int), `masterDescription` (Text), `masterImages` (Text[]), `isActive` (Boolean), `ratingAvg`, `totalReviewsCount`, timestamps.
   - Generate initial Prisma migration `0001_foundation`.
-  - Create seed script (`packages/db/prisma/seed.ts`) creating default Super Admin, Institute Admin, sample categories, and 5 initial master products.
+  - Create seed script (`packages/db/prisma/seed.ts`) creating default Super Admin, Institute Admin, Branch Manager (`Dhaka Main Campus`), sample batch (`BATCH-2026-A`), sample categories, and 5 initial master products.
 
 ---
 
@@ -143,9 +155,28 @@ Phase 1 establishes the bedrock architecture of the platform. Although public cu
 
 - [ ] **Task 1.8: Shared UI Package (`packages/ui`)**
   - Setup Tailwind CSS preset and shadcn/ui components: Button, Input, Form, Dialog, DropdownMenu, Table, Badge, Card, Toast.
-- [ ] **Task 1.9: Admin Dashboard (`apps/admin-dashboard`)**
+- [ ] **Task 1.9: Admin Dashboard Shell & Catalog (`apps/admin-dashboard`)**
   - Implement Authentication Flow (Login page, JWT session storage in memory/cookies, TanStack Query auth provider).
-  - Implement Protected Layout with Sidebar (Dashboard, Master Catalog, Categories, Staff Users, Settings).
+  - Implement Protected `AdminLayout` Navigation Shell with Primary Operational Menus & Badges:
+    - **1. Dashboards:** Overview panel with notification bubble displaying `01` urgent alert count.
+    - **2. Students:** Expandable accordion menu section (*Directory & Profiles*, *Verification & KYC*, *Student Records*, *Restrictions*).
+    - **3. Branches:** Campus location management placeholder route (`/branches`).
+    - **4. Student Batches:** Cohorts & class schedules placeholder route (`/batches`).
+    - **5. Orders (Expanded Section):** Multi-status tracking navigation with live volume count indicators:
+      - *Order Overview*
+      - *All Orders (9410)*
+      - *New Orders (8)*
+      - *Complete Orders (0)*
+      - *Partial Delivered (233)*
+      - *Unmatch Orders (4035)*
+      - *Invoiced Orders (8778)*
+      - *Hold Orders (29)*
+      - *Cancelled Orders (131)*
+      - *In Courier (9243)*
+      - *Exchange Orders*
+    - **6. Seller Panel:** External merchant & instructor management placeholder route (`/sellers`).
+    - **7. Payment Requests:** Financial payout requests navigation with pending badge counter `3` (`/payouts`).
+    - **Catalog Management:** Navigation items for *Master Catalog* and *Categories*.
   - Implement Category Management Screen:
     - Category tree view, Add Category modal, Edit/Delete actions.
   - Implement Master Product Management Screen:
@@ -177,9 +208,10 @@ Phase 1 establishes the bedrock architecture of the platform. Although public cu
 - [ ] **Task 1.12: Unit Tests (Vitest)**
   - `apps/api/src/auth/password.service.spec.ts`: Test Argon2 hashing, verification, timing attack resilience.
   - `apps/api/src/auth/jwt.strategy.spec.ts`: Test valid token extraction, expired token rejection.
-  - `apps/api/src/auth/roles.guard.spec.ts`: Test role matching and forbidden access scenarios.
+  - `apps/api/src/auth/roles.guard.spec.ts`: Test role matching for `BRANCH_MANAGER`, `SELLER`, `PRODUCT_MANAGER`, `STUDENT`, and forbidden access scenarios.
   - `apps/api/src/tenancy/tenant-resolution.service.spec.ts`: Test parsing host headers (`store1.platform.com`, `customdomain.com`, `localhost:3000`).
   - `apps/api/src/catalog/dto-validation.spec.ts`: Test `CreateMasterProductDto` validation rules (negative price rejection, SKU format).
+  - `apps/admin-dashboard/src/components/AdminLayout.spec.tsx`: Test rendering of all 7 operational navigation sections, expandable student menu items, and notification/volume badge values (`01` on Dashboards, `3` on Payment Requests, order volume badges).
 - [ ] **Task 1.13: Integration Tests (Vitest + Testcontainers/Postgres)**
   - `apps/api/test/auth.e2e-spec.ts`:
     - Test student registration -> login -> token refresh -> logout cycle.
@@ -200,10 +232,11 @@ Phase 1 establishes the bedrock architecture of the platform. Although public cu
   - File: `tests/e2e/admin-catalog-flow.spec.ts`
   - Flow:
     1. Institute Admin logs into `admin.platform.local`.
-    2. Navigates to Master Catalog -> clicks "Add Product".
-    3. Fills in SKU `SKU-TEST-001`, Title `Ergonomic Office Chair`, Base Price `৳4,500`, Stock `50`.
-    4. Uploads test image via MinIO presigned URL mock.
-    5. Saves product; asserts product appears in data table with active status.
+    2. Verifies `AdminLayout` renders sidebar with Dashboards (`01` badge), expandable Students, Branches, Batches, Orders (multi-status tabs), Seller Panel, and Payment Requests (`3` badge).
+    3. Navigates to Master Catalog -> clicks "Add Product".
+    4. Fills in SKU `SKU-TEST-001`, Title `Ergonomic Office Chair`, Base Price `৳4,500`, Stock `50`.
+    5. Uploads test image via MinIO presigned URL mock.
+    6. Saves product; asserts product appears in data table with active status.
 - [ ] **Task 1.15: E2E Test Suite (`apps/student-dashboard`)**
   - File: `tests/e2e/student-onboarding-catalog.spec.ts`
   - Flow:

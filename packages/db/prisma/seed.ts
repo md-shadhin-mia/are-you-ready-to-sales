@@ -65,7 +65,24 @@ async function main() {
     },
   });
 
-  console.log("✅ Seeded users (Super Admin, Institute Admin, Product Manager, Student)");
+  // Operational staff & external personas used by admin portal RBAC
+  const staffPersonas = [
+    { email: "ordermanager@platform.local", fullName: "Fulfillment Order Manager", phone: "+8801700000010", role: UserRole.ORDER_MANAGER },
+    { email: "branchmanager@platform.local", fullName: "Dhaka Campus Branch Manager", phone: "+8801700000011", role: UserRole.BRANCH_MANAGER },
+    { email: "support@platform.local", fullName: "Customer Support Agent", phone: "+8801700000012", role: UserRole.SUPPORT_AGENT },
+    { email: "seller@platform.local", fullName: "Vendor Partner Seller", phone: "+8801700000013", role: UserRole.SELLER },
+  ];
+  const staffUsers = new Map<string, { id: string }>();
+  for (const persona of staffPersonas) {
+    const u = await prisma.user.upsert({
+      where: { email: persona.email },
+      update: {},
+      create: { ...persona, passwordHash, isActive: true, isVerified: true },
+    });
+    staffUsers.set(persona.role, u);
+  }
+
+  console.log("✅ Seeded users (Super Admin, Institute Admin, Product/Order/Branch Managers, Support, Seller, Student)");
 
   // 2. Seed Student Store
   const sampleStore = await prisma.store.upsert({
@@ -465,6 +482,357 @@ async function main() {
     },
   });
   console.log("✅ Seeded sample coupon (WELCOME10) and announcement banner for Apex Gadgets");
+
+  // 8. Phase 5: Seed Permissions & Dynamic RBAC
+  const permissionsData = [
+    { slug: "*", name: "Super Admin All Access", module: "system", description: "Universal root access" },
+    { slug: "catalog:view", name: "View Catalog", module: "catalog", description: "View master catalog items" },
+    { slug: "catalog:create", name: "Create Products", module: "catalog", description: "Create products in master catalog" },
+    { slug: "catalog:update", name: "Update Products", module: "catalog", description: "Modify master catalog products" },
+    { slug: "catalog:stock", name: "Manage Inventory", module: "catalog", description: "Update product warehouse stock" },
+    { slug: "orders:read", name: "Read Orders", module: "orders", description: "View platform-wide orders" },
+    { slug: "orders:dispatch", name: "Dispatch Orders", module: "orders", description: "Ship and fulfill customer orders" },
+    { slug: "orders:returns", name: "Manage Returns", module: "orders", description: "Handle order returns and refunds" },
+    { slug: "finance:view_ledger", name: "View Financial Ledger", module: "finance", description: "Inspect platform and student financial ledgers" },
+    { slug: "finance:payout", name: "Approve Payouts", module: "finance", description: "Review and approve student withdrawal payouts" },
+    { slug: "students:view", name: "View Students", module: "students", description: "Inspect student records and performance" },
+    { slug: "students:suspend", name: "Suspend Stores", module: "students", description: "Suspend fraudulent or violating stores" },
+    { slug: "students:verify", name: "Verify Students", module: "students", description: "Verify student identity and documentation" },
+    { slug: "roles:manage", name: "Manage Roles & RBAC", module: "roles", description: "Create custom roles and configure permissions" },
+    { slug: "subscriptions:manage", name: "Manage Subscriptions", module: "subscriptions", description: "Configure subscription plans and pricing" },
+    { slug: "students:kyc_audit", name: "Audit KYC Documents", module: "students", description: "View unredacted national ID numbers" },
+    { slug: "branches:manage", name: "Manage Branches & Batches", module: "branches", description: "Create campuses, batches, and enroll students" },
+    { slug: "exchanges:manage", name: "Manage Exchanges", module: "exchanges", description: "Review, approve, and inspect exchange orders" },
+    { slug: "sellers:manage", name: "Manage Sellers", module: "sellers", description: "Onboard, adjust, and deactivate external sellers" },
+    { slug: "sellers:approve_adjustment", name: "Approve Seller Adjustments", module: "sellers", description: "Second-approver sign-off for large balance adjustments" },
+    { slug: "finance:gateways", name: "Manage Payment Methods", module: "finance", description: "Configure encrypted payment gateway credentials" },
+    { slug: "inventory:view", name: "View Inventory", module: "inventory", description: "Inspect stock levels and the stock ledger" },
+    { slug: "inventory:manage", name: "Manage Inventory", module: "inventory", description: "Reserve stock and post audit adjustments" },
+    { slug: "purchases:manage", name: "Manage Purchases", module: "purchases", description: "Raise purchase orders, receive goods, and process returns" },
+    { slug: "suppliers:manage", name: "Manage Suppliers", module: "suppliers", description: "Maintain the supplier directory" },
+    { slug: "reports:view", name: "View Operational Reports", module: "reports", description: "Courier, supplier, and profit lifecycle reports" },
+    { slug: "wholesale:manage", name: "Manage Wholesale", module: "wholesale", description: "Create and manage B2B wholesale orders and credit" },
+    { slug: "cms:manage", name: "Manage Site & CMS", module: "cms", description: "Site settings, pages, banners, FAQ, and About Us" },
+    { slug: "employees:manage", name: "Manage Employees", module: "employees", description: "Employee records, commissions, and penalties" },
+    { slug: "payroll:finalize", name: "Finalize Payroll", module: "employees", description: "Seal monthly salary sheets" },
+  ];
+
+  const permissionsMap = new Map<string, string>();
+  for (const perm of permissionsData) {
+    const p = await prisma.permission.upsert({
+      where: { slug: perm.slug },
+      update: { name: perm.name, description: perm.description, module: perm.module },
+      create: perm,
+    });
+    permissionsMap.set(perm.slug, p.id);
+  }
+
+  // System Roles Definition
+  const rolesData = [
+    {
+      name: "SUPER_ADMIN",
+      description: "Full system administrative control with wildcard access",
+      isSystemRole: true,
+      permissionSlugs: ["*"],
+    },
+    {
+      name: "INSTITUTE_ADMIN",
+      description: "Institute manager with catalog, order, student, and finance permissions",
+      isSystemRole: true,
+      permissionSlugs: [
+        "catalog:view",
+        "catalog:create",
+        "catalog:update",
+        "catalog:stock",
+        "orders:read",
+        "orders:dispatch",
+        "orders:returns",
+        "finance:view_ledger",
+        "finance:payout",
+        "students:view",
+        "students:suspend",
+        "students:verify",
+        "roles:manage",
+        "subscriptions:manage",
+        "branches:manage",
+        "exchanges:manage",
+        "sellers:manage",
+        "sellers:approve_adjustment",
+        "finance:gateways",
+        "inventory:view",
+        "inventory:manage",
+        "purchases:manage",
+        "suppliers:manage",
+        "reports:view",
+        "wholesale:manage",
+        "employees:manage",
+      ],
+    },
+    {
+      name: "BRANCH_MANAGER",
+      description: "Campus manager scoped to their assigned branch",
+      isSystemRole: true,
+      permissionSlugs: ["students:view", "employees:manage"],
+    },
+    {
+      name: "PRODUCT_MANAGER",
+      description: "Catalog product and inventory manager",
+      isSystemRole: true,
+      permissionSlugs: [
+        "catalog:view",
+        "catalog:create",
+        "catalog:update",
+        "catalog:stock",
+        "inventory:view",
+        "inventory:manage",
+        "purchases:manage",
+        "suppliers:manage",
+      ],
+    },
+    {
+      name: "ORDER_MANAGER",
+      description: "Order fulfillment and shipping manager",
+      isSystemRole: true,
+      permissionSlugs: ["orders:read", "orders:dispatch", "orders:returns", "exchanges:manage", "inventory:view"],
+    },
+    {
+      name: "SUPPORT_AGENT",
+      description: "Customer service and order tracking agent",
+      isSystemRole: true,
+      permissionSlugs: ["orders:read", "students:view", "catalog:view", "exchanges:manage"],
+    },
+    {
+      name: "STUDENT",
+      description: "Student reseller role",
+      isSystemRole: true,
+      permissionSlugs: [],
+    },
+  ];
+
+  const rolesMap = new Map<string, string>();
+  for (const roleDef of rolesData) {
+    const role = await prisma.role.upsert({
+      where: { name: roleDef.name },
+      update: { description: roleDef.description, isSystemRole: roleDef.isSystemRole },
+      create: {
+        name: roleDef.name,
+        description: roleDef.description,
+        isSystemRole: roleDef.isSystemRole,
+      },
+    });
+    rolesMap.set(roleDef.name, role.id);
+
+    // Link permissions
+    for (const slug of roleDef.permissionSlugs) {
+      const permId = permissionsMap.get(slug);
+      if (permId) {
+        await prisma.rolePermission.upsert({
+          where: {
+            roleId_permissionId: {
+              roleId: role.id,
+              permissionId: permId,
+            },
+          },
+          update: {},
+          create: {
+            roleId: role.id,
+            permissionId: permId,
+          },
+        });
+      }
+    }
+  }
+
+  // Assign roles to seeded users
+  const userAssignments = [
+    { userId: superAdmin.id, roleName: "SUPER_ADMIN" },
+    { userId: instituteAdmin.id, roleName: "INSTITUTE_ADMIN" },
+    { userId: productManager.id, roleName: "PRODUCT_MANAGER" },
+    { userId: studentUser.id, roleName: "STUDENT" },
+    { userId: staffUsers.get(UserRole.ORDER_MANAGER)!.id, roleName: "ORDER_MANAGER" },
+    { userId: staffUsers.get(UserRole.BRANCH_MANAGER)!.id, roleName: "BRANCH_MANAGER" },
+    { userId: staffUsers.get(UserRole.SUPPORT_AGENT)!.id, roleName: "SUPPORT_AGENT" },
+  ];
+
+  for (const assign of userAssignments) {
+    const roleId = rolesMap.get(assign.roleName);
+    if (roleId) {
+      await prisma.userRoleAssignment.upsert({
+        where: {
+          userId_roleId: {
+            userId: assign.userId,
+            roleId,
+          },
+        },
+        update: {},
+        create: {
+          userId: assign.userId,
+          roleId,
+        },
+      });
+    }
+  }
+  console.log("✅ Seeded dynamic RBAC permissions, system roles, and user assignments");
+
+  // 9. Phase 5: Seed Subscription Plans & Student Subscription
+  const subscriptionPlans = [
+    {
+      name: "Free Plan",
+      code: "FREE",
+      monthlyPrice: 0.0,
+      yearlyPrice: 0.0,
+      maxProducts: 10,
+      allowCustomDomain: false,
+      platformCommissionPercent: 5.0,
+      features: [
+        "Up to 10 products",
+        "Subdomain hosting (store.platform.local)",
+        "Standard 5.0% commission",
+        "Basic store analytics",
+      ],
+      isActive: true,
+    },
+    {
+      name: "Starter Plan",
+      code: "STARTER",
+      monthlyPrice: 499.0,
+      yearlyPrice: 4990.0,
+      maxProducts: 30,
+      allowCustomDomain: false,
+      platformCommissionPercent: 3.5,
+      features: [
+        "Up to 30 products",
+        "Promotional coupon campaigns",
+        "Reduced 3.5% commission",
+        "Priority warehouse fulfillment",
+      ],
+      isActive: true,
+    },
+    {
+      name: "Professional Plan",
+      code: "PROFESSIONAL",
+      monthlyPrice: 1499.0,
+      yearlyPrice: 14990.0,
+      maxProducts: 100,
+      allowCustomDomain: true,
+      platformCommissionPercent: 2.0,
+      features: [
+        "Up to 100 products",
+        "Custom domain mapping (yourstore.com)",
+        "Low 2.0% platform commission",
+        "Full conversion funnel analytics",
+        "VIP mentorship priority",
+      ],
+      isActive: true,
+    },
+    {
+      name: "Business Plan",
+      code: "BUSINESS",
+      monthlyPrice: 2999.0,
+      yearlyPrice: 29990.0,
+      maxProducts: 10000,
+      allowCustomDomain: true,
+      platformCommissionPercent: 1.0,
+      features: [
+        "Unlimited master catalog imports",
+        "Custom domain & white-label store",
+        "Lowest 1.0% platform commission",
+        "Automated AI business coach",
+        "Dedicated account manager",
+      ],
+      isActive: true,
+    },
+  ];
+
+  let freePlanId: string | null = null;
+  for (const plan of subscriptionPlans) {
+    const p = await prisma.subscriptionPlan.upsert({
+      where: { code: plan.code },
+      update: {
+        name: plan.name,
+        monthlyPrice: plan.monthlyPrice,
+        yearlyPrice: plan.yearlyPrice,
+        maxProducts: plan.maxProducts,
+        allowCustomDomain: plan.allowCustomDomain,
+        platformCommissionPercent: plan.platformCommissionPercent,
+        features: plan.features,
+        isActive: plan.isActive,
+      },
+      create: plan,
+    });
+    if (plan.code === "FREE") {
+      freePlanId = p.id;
+    }
+  }
+
+  if (freePlanId) {
+    const oneYearFromNow = new Date();
+    oneYearFromNow.setFullYear(oneYearFromNow.getFullYear() + 1);
+
+    await prisma.studentSubscription.upsert({
+      where: { studentId: studentUser.id },
+      update: {},
+      create: {
+        studentId: studentUser.id,
+        planId: freePlanId,
+        status: "ACTIVE",
+        currentPeriodStart: new Date(),
+        currentPeriodEnd: oneYearFromNow,
+      },
+    });
+  }
+  console.log("✅ Seeded subscription plans (Free, Starter, Professional, Business) & student subscription");
+
+  // 10. Admin portal reference data
+  await prisma.siteSetting.upsert({
+    where: { id: "singleton" },
+    update: {},
+    create: {
+      siteName: "Are You Ready To Sales",
+      tagline: "Train, launch, and scale your own e-commerce store",
+      supportEmail: "support@platform.local",
+      supportPhone: "+8809600000000",
+      address: "Dhaka, Bangladesh",
+    },
+  });
+  await prisma.aboutContent.upsert({
+    where: { id: "singleton" },
+    update: {},
+    create: {
+      headline: "Building Bangladesh's next generation of e-commerce entrepreneurs",
+      story: "We pair hands-on training with a real reseller storefront so every student learns by selling.",
+      leadershipTeam: [],
+    },
+  });
+
+  const returnTypes = [
+    { code: "DAMAGED", name: "Damaged in Transit" },
+    { code: "DEFECTIVE", name: "Manufacturing Defect" },
+    { code: "WRONG_ITEM", name: "Wrong Item Supplied" },
+    { code: "EXCESS", name: "Excess Quantity" },
+  ];
+  for (const rt of returnTypes) {
+    await prisma.purchaseReturnType.upsert({ where: { code: rt.code }, update: {}, create: rt });
+  }
+
+  const sizes = [
+    { code: "S", name: "Small", sortOrder: 1 },
+    { code: "M", name: "Medium", sortOrder: 2 },
+    { code: "L", name: "Large", sortOrder: 3 },
+    { code: "XL", name: "Extra Large", sortOrder: 4 },
+  ];
+  for (const size of sizes) {
+    await prisma.size.upsert({ where: { code: size.code }, update: {}, create: size });
+  }
+  const colors = [
+    { code: "RED", name: "Red", hexCode: "#DC2626" },
+    { code: "BLUE", name: "Blue", hexCode: "#2563EB" },
+    { code: "BLACK", name: "Black", hexCode: "#111827" },
+  ];
+  for (const color of colors) {
+    await prisma.color.upsert({ where: { code: color.code }, update: {}, create: color });
+  }
+  console.log("✅ Seeded site settings, About Us, purchase return types, sizes & colors");
 
   console.log("🎉 Seeding completed successfully!");
 }

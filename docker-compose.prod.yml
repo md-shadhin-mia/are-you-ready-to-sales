@@ -1,0 +1,191 @@
+services:
+  # ---------------------------------------------------------------------------
+  # Database & State Infrastructure
+  # ---------------------------------------------------------------------------
+  postgres:
+    image: postgres:16-alpine
+    container_name: platform-postgres-prod
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-ecommerce_platform}
+    volumes:
+      - postgres_prod_data:/var/lib/postgresql/data
+    networks:
+      - platform-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-ecommerce_platform}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: platform-redis-prod
+    restart: always
+    volumes:
+      - redis_prod_data:/data
+    networks:
+      - platform-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  minio:
+    image: minio/minio:latest
+    container_name: platform-minio-prod
+    restart: always
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:-minioadmin}
+    volumes:
+      - minio_prod_data:/data
+    networks:
+      - platform-network
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  minio-init:
+    image: minio/mc:latest
+    container_name: platform-minio-init-prod
+    depends_on:
+      minio:
+        condition: service_started
+    networks:
+      - platform-network
+    entrypoint: >
+      /bin/sh -c "
+      sleep 2;
+      /usr/bin/mc alias set myminio http://minio:9000 ${MINIO_ACCESS_KEY:-minioadmin} ${MINIO_SECRET_KEY:-minioadmin};
+      /usr/bin/mc mb myminio/${MINIO_BUCKET_NAME:-platform-media} || true;
+      /usr/bin/mc anonymous set download myminio/${MINIO_BUCKET_NAME:-platform-media};
+      exit 0;
+      "
+
+  # ---------------------------------------------------------------------------
+  # Backend API Monolith (NestJS on Bun Runtime)
+  # ---------------------------------------------------------------------------
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    image: are-you-ready-to-sales/api:prod
+    container_name: platform-api-prod
+    restart: always
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-ecommerce_platform}?schema=public
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_URL: redis://redis:6379
+      MINIO_ENDPOINT: minio
+      MINIO_PORT: 9000
+      MINIO_USE_SSL: "false"
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-minioadmin}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-minioadmin}
+      MINIO_BUCKET_NAME: ${MINIO_BUCKET_NAME:-platform-media}
+      MINIO_PUBLIC_URL: ${MINIO_PUBLIC_URL:-http://localhost:81/storage}
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-dev-access-super-secret-key-at-least-32-chars-long}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-dev-refresh-super-secret-key-at-least-32-chars-long}
+      JWT_ACCESS_EXPIRES_IN: ${JWT_ACCESS_EXPIRES_IN:-15m}
+      JWT_REFRESH_EXPIRES_IN: ${JWT_REFRESH_EXPIRES_IN:-7d}
+      PLATFORM_DOMAIN: ${PLATFORM_DOMAIN:-platform.local}
+      SECRETS_ENCRYPTION_KEY: ${SECRETS_ENCRYPTION_KEY:-0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef}
+      COURIER_WEBHOOK_SECRET: ${COURIER_WEBHOOK_SECRET:-dev-courier-webhook-secret}
+      ENABLE_SCHEDULED_JOBS: ${ENABLE_SCHEDULED_JOBS:-false}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    networks:
+      - platform-network
+
+  # ---------------------------------------------------------------------------
+  # Next.js Storefront (Bun Runtime)
+  # ---------------------------------------------------------------------------
+  storefront:
+    build:
+      context: .
+      dockerfile: apps/storefront/Dockerfile
+    image: are-you-ready-to-sales/storefront:prod
+    container_name: platform-storefront-prod
+    restart: always
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      API_URL: http://api:4000
+      PLATFORM_DOMAIN: ${PLATFORM_DOMAIN:-platform.local}
+    depends_on:
+      - api
+    networks:
+      - platform-network
+
+  # ---------------------------------------------------------------------------
+  # Student Dashboard (Ultralight Nginx Static SPA)
+  # ---------------------------------------------------------------------------
+  student-dashboard:
+    build:
+      context: .
+      dockerfile: apps/student-dashboard/Dockerfile
+    image: are-you-ready-to-sales/student-dashboard:prod
+    container_name: platform-student-dashboard-prod
+    restart: always
+    depends_on:
+      - api
+    networks:
+      - platform-network
+
+  # ---------------------------------------------------------------------------
+  # Admin Dashboard (Ultralight Nginx Static SPA)
+  # ---------------------------------------------------------------------------
+  admin-dashboard:
+    build:
+      context: .
+      dockerfile: apps/admin-dashboard/Dockerfile
+    image: are-you-ready-to-sales/admin-dashboard:prod
+    container_name: platform-admin-dashboard-prod
+    restart: always
+    depends_on:
+      - api
+    networks:
+      - platform-network
+
+  # ---------------------------------------------------------------------------
+  # Nginx Gateway Orchestrator (Exposing Port 81)
+  # ---------------------------------------------------------------------------
+  nginx:
+    build:
+      context: .
+      dockerfile: docker/nginx/Dockerfile
+    image: are-you-ready-to-sales/nginx-gateway:prod
+    container_name: platform-nginx-gateway-prod
+    restart: always
+    ports:
+      - "${HTTP_PORT:-81}:80"
+    depends_on:
+      - api
+      - storefront
+      - student-dashboard
+      - admin-dashboard
+    networks:
+      - platform-network
+
+networks:
+  platform-network:
+    driver: bridge
+
+volumes:
+  postgres_prod_data:
+  redis_prod_data:
+  minio_prod_data:

@@ -3,11 +3,10 @@
 import React, { useEffect, useState } from "react";
 import { Sparkles, ArrowRight } from "lucide-react";
 
+import { API_BASE } from "../../lib/api-base";
 interface AnnouncementBarProps {
   storeSlug: string;
 }
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
 export function AnnouncementBar({ storeSlug }: AnnouncementBarProps) {
   const [banner, setBanner] = useState<{
@@ -37,7 +36,7 @@ export function AnnouncementBar({ storeSlug }: AnnouncementBarProps) {
 
   const content = (
     <div
-      style={{ backgroundColor: banner.bannerBgColor || "#2563eb" }}
+      style={{ backgroundColor: banner.bannerBgColor || "hsl(var(--primary))" }}
       className="text-white text-xs font-semibold px-4 py-2 text-center flex items-center justify-center gap-2 transition-all shadow-xs"
     >
       <Sparkles className="h-3.5 w-3.5 flex-shrink-0 animate-pulse" />

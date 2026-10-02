@@ -1,7 +1,9 @@
 import React, { useState } from "react";
-import { Button, Input, Card, CardHeader, CardTitle, CardContent } from "@repo/ui";
+import { Alert, AlertDescription, Button, Input, Label } from "@repo/ui";
 import { apiClient } from "@repo/api-client";
 import { ShieldCheck, AlertCircle, Loader2 } from "lucide-react";
+
+import { WinLogo } from "../../components/WinLogo";
 
 interface LoginPageProps {
   onLoginSuccess: (user: any, token: string) => void;
@@ -29,78 +31,88 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md shadow-2xl border-slate-800 bg-slate-950 text-slate-100">
-        <CardHeader className="text-center pb-2">
-          <div className="mx-auto h-12 w-12 rounded-xl bg-blue-600/20 border border-blue-500/30 flex items-center justify-center mb-3">
-            <ShieldCheck className="h-6 w-6 text-blue-400" />
-          </div>
-          <CardTitle className="text-xl text-white">Institute Administration</CardTitle>
-          <p className="text-xs text-slate-400 mt-1">
-            Access the master catalog and centralized platform controls
+    <div className="grid min-h-screen lg:grid-cols-2">
+      {/* Brand panel */}
+      <div className="relative hidden overflow-hidden bg-sidebar p-12 text-sidebar-foreground lg:flex lg:flex-col lg:justify-between">
+        <div className="pointer-events-none absolute -left-24 -top-24 h-96 w-96 rounded-full bg-[#0052FF]/20 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-32 right-0 h-96 w-96 rounded-full bg-[#0052FF]/10 blur-3xl" />
+        <div className="relative">
+          <WinLogo theme="dark" />
+        </div>
+        <div className="relative space-y-4">
+          <h1 className="max-w-md font-heading text-4xl font-bold leading-tight text-white">
+            Run the entire reseller network from one command center.
+          </h1>
+          <p className="max-w-md text-sm leading-relaxed text-slate-300">
+            Fulfill orders, curate master products, approve payouts and maintain full operational oversight.
           </p>
-        </CardHeader>
+        </div>
+        <p className="relative text-xs text-slate-400">WIN Freelancer Master Platform</p>
+      </div>
 
-        <CardContent className="pt-4">
-          {error && (
-            <div className="mb-4 p-3 rounded-lg bg-red-950/50 border border-red-800/60 flex items-center gap-2.5 text-red-300 text-xs">
-              <AlertCircle className="h-4 w-4 shrink-0" />
-              <span>{error}</span>
+      {/* Form */}
+      <div className="flex items-center justify-center bg-background p-6">
+        <div className="w-full max-w-sm space-y-6">
+          <div className="space-y-2">
+            <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-[#0052FF]/10 text-[#0052FF]">
+              <ShieldCheck className="h-5 w-5" />
             </div>
+            <h2 className="text-2xl font-bold text-slate-900">WIN Freelancer Admin</h2>
+            <p className="text-sm text-muted-foreground">
+              Access the master catalog and centralized platform controls.
+            </p>
+          </div>
+
+          {error && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-xs font-medium text-slate-300 mb-1.5">
-                Staff Email Address
-              </label>
+            <div className="space-y-2">
+              <Label htmlFor="email">Staff email address</Label>
               <Input
+                id="email"
                 type="email"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="name@platform.local"
-                className="bg-slate-900 border-slate-700 text-white placeholder:text-slate-500"
               />
             </div>
 
-            <div>
-              <label className="block text-xs font-medium text-slate-300 mb-1.5">
-                Password
-              </label>
+            <div className="space-y-2">
+              <Label htmlFor="password">Password</Label>
               <Input
+                id="password"
                 type="password"
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
-                className="bg-slate-900 border-slate-700 text-white placeholder:text-slate-500"
               />
             </div>
 
-            <Button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-blue-600 hover:bg-blue-500 text-white font-medium"
-            >
+            <Button type="submit" disabled={loading} className="w-full">
               {loading ? (
                 <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  <Loader2 className="h-4 w-4 animate-spin" />
                   Authenticating...
                 </>
               ) : (
-                "Sign In to Master Portal"
+                "Sign in to WIN Freelancer Admin"
               )}
             </Button>
           </form>
 
-          <div className="mt-6 pt-4 border-t border-slate-800 text-center text-[11px] text-slate-500">
-            Default credentials for testing: <br />
-            <code className="text-slate-400 font-mono">admin@platform.local</code> /{" "}
-            <code className="text-slate-400 font-mono">Password123!</code>
+          <div className="rounded-lg border border-dashed bg-muted/40 p-3 text-center text-xs text-muted-foreground">
+            Test credentials: <code className="font-mono text-foreground">admin@platform.local</code> /{" "}
+            <code className="font-mono text-foreground">Password123!</code>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 };

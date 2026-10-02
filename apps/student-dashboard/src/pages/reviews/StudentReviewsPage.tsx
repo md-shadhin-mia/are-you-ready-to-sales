@@ -17,6 +17,7 @@ import {
   ReviewDimensionBreakdown,
 } from "@repo/api-client";
 
+import { Input, PageHeader } from "@repo/ui";
 interface StudentReviewsPageProps {
   token: string;
 }
@@ -65,61 +66,57 @@ export function StudentReviewsPage({ token }: StudentReviewsPageProps) {
   };
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-8">
+    <div className="space-y-8">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-black text-slate-900 flex items-center gap-2.5">
-          <MessageSquare className="h-6 w-6 text-blue-600" />
-          Customer Reviews & 3D Feedback
-        </h1>
-        <p className="text-xs text-slate-500 mt-1">
-          Monitor your customer satisfaction across Product Quality, Seller Service, and Courier Delivery.
-        </p>
-      </div>
+      <PageHeader
+        title="Customer Reviews & 3D Feedback"
+        description="Monitor your customer satisfaction across Product Quality, Seller Service, and Courier Delivery."
+        icon={MessageSquare}
+      />
 
       {/* 3D Aggregate Breakdown Cards */}
       {breakdown && (
         <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-          <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-xs space-y-1">
-            <span className="text-xs font-bold text-slate-500 uppercase">
+          <div className="bg-card border border-border/80 rounded-xl p-5 shadow-xs space-y-1">
+            <span className="text-xs font-bold text-muted-foreground uppercase">
               Total Reviews
             </span>
-            <p className="text-2xl font-black text-slate-900">
+            <p className="text-2xl font-bold text-foreground">
               {breakdown.totalReviews}
             </p>
             <p className="text-[11px] text-slate-400">100% verified purchasers</p>
           </div>
 
-          <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-xs space-y-1">
-            <span className="text-xs font-bold text-slate-500 uppercase flex items-center gap-1.5">
-              <Package className="h-3.5 w-3.5 text-blue-600" />
+          <div className="bg-card border border-border/80 rounded-xl p-5 shadow-xs space-y-1">
+            <span className="text-xs font-bold text-muted-foreground uppercase flex items-center gap-1.5">
+              <Package className="h-3.5 w-3.5 text-primary" />
               Product Quality
             </span>
-            <p className="text-2xl font-black text-slate-900 flex items-baseline gap-1">
+            <p className="text-2xl font-bold text-foreground flex items-baseline gap-1">
               {breakdown.averageProductRating}
               <Star className="h-4 w-4 fill-amber-400 text-amber-500" />
             </p>
             <p className="text-[11px] text-slate-400">Master catalog score</p>
           </div>
 
-          <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-xs space-y-1">
-            <span className="text-xs font-bold text-slate-500 uppercase flex items-center gap-1.5">
-              <Store className="h-3.5 w-3.5 text-purple-600" />
+          <div className="bg-card border border-border/80 rounded-xl p-5 shadow-xs space-y-1">
+            <span className="text-xs font-bold text-muted-foreground uppercase flex items-center gap-1.5">
+              <Store className="h-3.5 w-3.5 text-sky-600" />
               Seller Service
             </span>
-            <p className="text-2xl font-black text-slate-900 flex items-baseline gap-1">
+            <p className="text-2xl font-bold text-foreground flex items-baseline gap-1">
               {breakdown.averageStoreRating}
               <Star className="h-4 w-4 fill-amber-400 text-amber-500" />
             </p>
             <p className="text-[11px] text-slate-400">Your store responsiveness</p>
           </div>
 
-          <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-xs space-y-1">
-            <span className="text-xs font-bold text-slate-500 uppercase flex items-center gap-1.5">
+          <div className="bg-card border border-border/80 rounded-xl p-5 shadow-xs space-y-1">
+            <span className="text-xs font-bold text-muted-foreground uppercase flex items-center gap-1.5">
               <Truck className="h-3.5 w-3.5 text-emerald-600" />
               Delivery Speed
             </span>
-            <p className="text-2xl font-black text-slate-900 flex items-baseline gap-1">
+            <p className="text-2xl font-bold text-foreground flex items-baseline gap-1">
               {breakdown.averageDeliveryRating}
               <Star className="h-4 w-4 fill-amber-400 text-amber-500" />
             </p>
@@ -129,7 +126,7 @@ export function StudentReviewsPage({ token }: StudentReviewsPageProps) {
       )}
 
       {/* Filter Tabs & Search Bar */}
-      <div className="bg-white border border-slate-200/80 rounded-3xl p-6 shadow-xs space-y-4">
+      <div className="bg-card border border-border/80 rounded-xl p-6 shadow-xs space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex flex-wrap gap-2">
             <button
@@ -140,7 +137,7 @@ export function StudentReviewsPage({ token }: StudentReviewsPageProps) {
               className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
                 ratingFilter === "ALL"
                   ? "bg-slate-900 text-white shadow-xs"
-                  : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                  : "bg-muted text-slate-600 hover:bg-slate-200"
               }`}
             >
               All Reviews ({total})
@@ -166,8 +163,8 @@ export function StudentReviewsPage({ token }: StudentReviewsPageProps) {
               }}
               className={`px-4 py-2 rounded-xl text-xs font-bold inline-flex items-center gap-1.5 transition-all ${
                 ratingFilter === "CRITICAL"
-                  ? "bg-red-600 text-white shadow-xs"
-                  : "bg-red-50 text-red-700 hover:bg-red-100"
+                  ? "bg-destructive text-white shadow-xs"
+                  : "bg-destructive/5 text-destructive hover:bg-red-100"
               }`}
             >
               <AlertTriangle className="h-3.5 w-3.5" />
@@ -178,17 +175,17 @@ export function StudentReviewsPage({ token }: StudentReviewsPageProps) {
           <form onSubmit={handleSearchSubmit} className="flex gap-2">
             <div className="relative">
               <Search className="h-3.5 w-3.5 text-slate-400 absolute left-3 top-3" />
-              <input
+              <Input
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search feedback or customer..."
-                className="pl-9 pr-3 py-1.5 rounded-xl border border-slate-200 text-xs focus:outline-hidden focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 w-60"
+                className="pl-9 pr-3 text-xs w-60"
               />
             </div>
             <button
               type="submit"
-              className="px-3 py-1.5 bg-blue-600 text-white text-xs font-bold rounded-xl hover:bg-blue-700 transition-colors"
+              className="px-3 py-1.5 bg-primary text-primary-foreground text-xs font-bold rounded-xl hover:bg-primary/90 transition-colors"
             >
               Search
             </button>
@@ -209,21 +206,21 @@ export function StudentReviewsPage({ token }: StudentReviewsPageProps) {
             {reviews.map((rev) => (
               <div
                 key={rev.id}
-                className="border border-slate-200/80 rounded-2xl p-5 hover:border-slate-300 transition-colors space-y-3"
+                className="border border-border/80 rounded-2xl p-5 hover:border-input transition-colors space-y-3"
               >
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                   <div className="flex items-center gap-3">
-                    <div className="h-9 w-9 rounded-xl bg-blue-50 text-blue-700 font-bold text-xs flex items-center justify-center">
+                    <div className="h-9 w-9 rounded-xl bg-primary/5 text-primary font-bold text-xs flex items-center justify-center">
                       {rev.customer?.fullName?.[0] || "C"}
                     </div>
                     <div>
-                      <p className="font-bold text-xs text-slate-900 flex items-center gap-2">
+                      <p className="font-bold text-xs text-foreground flex items-center gap-2">
                         {rev.customer?.fullName}
                         <span className="text-slate-400 font-normal text-[11px]">
                           ({rev.customer?.phone})
                         </span>
                       </p>
-                      <p className="text-[11px] text-slate-500">
+                      <p className="text-[11px] text-muted-foreground">
                         Order #{rev.order?.orderNumber} •{" "}
                         {new Date(rev.createdAt).toLocaleDateString()}
                       </p>
@@ -238,37 +235,37 @@ export function StudentReviewsPage({ token }: StudentReviewsPageProps) {
 
                 {/* 3D Breakdown Scores */}
                 <div className="flex flex-wrap gap-2 text-xs">
-                  <span className="inline-flex items-center gap-1 bg-slate-100 text-slate-700 text-[11px] font-semibold px-2.5 py-1 rounded-lg">
-                    <Package className="h-3 w-3 text-blue-600" />
+                  <span className="inline-flex items-center gap-1 bg-muted text-slate-700 text-[11px] font-semibold px-2.5 py-1 rounded-lg">
+                    <Package className="h-3 w-3 text-primary" />
                     Product: {rev.productRating} ★
                   </span>
-                  <span className="inline-flex items-center gap-1 bg-slate-100 text-slate-700 text-[11px] font-semibold px-2.5 py-1 rounded-lg">
-                    <Store className="h-3 w-3 text-purple-600" />
+                  <span className="inline-flex items-center gap-1 bg-muted text-slate-700 text-[11px] font-semibold px-2.5 py-1 rounded-lg">
+                    <Store className="h-3 w-3 text-sky-600" />
                     Store Service: {rev.storeRating} ★
                   </span>
-                  <span className="inline-flex items-center gap-1 bg-slate-100 text-slate-700 text-[11px] font-semibold px-2.5 py-1 rounded-lg">
+                  <span className="inline-flex items-center gap-1 bg-muted text-slate-700 text-[11px] font-semibold px-2.5 py-1 rounded-lg">
                     <Truck className="h-3 w-3 text-emerald-600" />
                     Delivery: {rev.deliveryRating} ★
                   </span>
                 </div>
 
                 {/* Feedback Comments */}
-                <div className="bg-slate-50/70 rounded-xl p-3 text-xs space-y-1 text-slate-700 border border-slate-100">
+                <div className="bg-muted/50/70 rounded-xl p-3 text-xs space-y-1 text-slate-700 border border-slate-100">
                   {rev.productComment && (
                     <p>
-                      <span className="font-semibold text-slate-900">Product: </span>
+                      <span className="font-semibold text-foreground">Product: </span>
                       {rev.productComment}
                     </p>
                   )}
                   {rev.storeComment && (
                     <p>
-                      <span className="font-semibold text-slate-900">Service: </span>
+                      <span className="font-semibold text-foreground">Service: </span>
                       {rev.storeComment}
                     </p>
                   )}
                   {rev.deliveryComment && (
                     <p>
-                      <span className="font-semibold text-slate-900">Delivery: </span>
+                      <span className="font-semibold text-foreground">Delivery: </span>
                       {rev.deliveryComment}
                     </p>
                   )}

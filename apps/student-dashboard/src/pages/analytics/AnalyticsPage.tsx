@@ -15,7 +15,7 @@ import {
   HelpCircle,
 } from "lucide-react";
 import { apiClient, FunnelMetrics } from "@repo/api-client";
-import { Button } from "@repo/ui";
+import { Button, PageHeader } from "@repo/ui";
 import { StudentDashboardTab } from "../../components/StudentLayout";
 
 interface AnalyticsPageProps {
@@ -56,8 +56,8 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ token, setActiveTa
 
   if (loading && !metrics) {
     return (
-      <div className="py-20 flex flex-col items-center justify-center text-slate-500 gap-3">
-        <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+      <div className="py-20 flex flex-col items-center justify-center text-muted-foreground gap-3">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
         <p className="text-xs font-semibold">Analyzing Store Funnel & Diagnostic Rules...</p>
       </div>
     );
@@ -65,7 +65,7 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ token, setActiveTa
 
   if (error && !metrics) {
     return (
-      <div className="p-6 bg-red-50 border border-red-200 rounded-2xl text-red-700 text-xs flex items-center gap-3">
+      <div className="p-6 bg-destructive/5 border border-destructive/20 rounded-2xl text-destructive text-xs flex items-center gap-3">
         <AlertCircle className="h-5 w-5 flex-shrink-0" />
         <span>{error}</span>
       </div>
@@ -79,14 +79,14 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ token, setActiveTa
       label: "Visitors",
       count: metrics.visitors,
       icon: Users,
-      color: "bg-blue-600",
+      color: "bg-primary",
       dropOff: null,
     },
     {
       label: "Product Views",
       count: metrics.productViews,
       icon: Eye,
-      color: "bg-indigo-600",
+      color: "bg-primary",
       dropOff: `${metrics.stageDropOffs.visitorToViewDropOff}% drop-off`,
     },
     {
@@ -100,7 +100,7 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ token, setActiveTa
       label: "Checkout Initiated",
       count: metrics.checkoutsInitiated,
       icon: CreditCard,
-      color: "bg-purple-600",
+      color: "bg-sky-600",
       dropOff: `${metrics.stageDropOffs.cartToCheckoutDropOff}% drop-off`,
     },
     {
@@ -117,36 +117,33 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ token, setActiveTa
   return (
     <div className="space-y-8">
       {/* Header & Range Selector */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2.5">
-            <BarChart3 className="h-7 w-7 text-blue-600" />
-            Conversion Funnel & Analytics
-          </h1>
-          <p className="text-xs text-slate-500 mt-1">
-            Track visitor journey stages from initial landing to final order delivery and inspect automated coaching advice.
-          </p>
-        </div>
-
-        <div className="flex items-center gap-1 bg-white border border-slate-200 p-1 rounded-2xl shadow-xs">
-          {(["7d", "30d", "90d"] as const).map((r) => (
-            <button
-              key={r}
-              onClick={() => setRange(r)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-colors ${
-                range === r
-                  ? "bg-slate-900 text-white"
-                  : "text-slate-600 hover:text-slate-900"
-              }`}
-            >
-              {r === "7d" ? "Last 7 Days" : r === "30d" ? "Last 30 Days" : "Last 90 Days"}
-            </button>
-          ))}
-        </div>
-      </div>
+      <PageHeader
+        title="Conversion Funnel & Analytics"
+        description="Track visitor journey stages from initial landing to final order delivery and inspect automated coaching advice."
+        icon={BarChart3}
+        actions={
+          <>
+            <div className="flex items-center gap-1 bg-card border border-border p-1 rounded-xl shadow-xs">
+              {(["7d", "30d", "90d"] as const).map((r) => (
+                <button
+                  key={r}
+                  onClick={() => setRange(r)}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-colors ${
+                    range === r
+                      ? "bg-slate-900 text-white"
+                      : "text-slate-600 hover:text-foreground"
+                  }`}
+                >
+                  {r === "7d" ? "Last 7 Days" : r === "30d" ? "Last 30 Days" : "Last 90 Days"}
+                </button>
+              ))}
+            </div>
+          </>
+        }
+      />
 
       {/* SMART BUSINESS COACH CARD */}
-      <div className="bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 rounded-3xl p-6 sm:p-8 text-white shadow-lg relative overflow-hidden border border-blue-800">
+      <div className="bg-gradient-to-r from-emerald-900 via-emerald-900 to-slate-900 rounded-3xl p-6 sm:p-8 text-white shadow-lg relative overflow-hidden border border-primary">
         <div className="flex items-start gap-4">
           <div className="h-12 w-12 rounded-2xl bg-amber-400 text-slate-950 flex items-center justify-center flex-shrink-0 shadow-md">
             <Lightbulb className="h-6 w-6" />
@@ -171,7 +168,7 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ token, setActiveTa
               </span>
             </div>
 
-            <h3 className="text-lg font-black">{metrics.coachingAdvice.diagnosis}</h3>
+            <h3 className="text-lg font-bold">{metrics.coachingAdvice.diagnosis}</h3>
             <p className="text-xs text-slate-300 leading-relaxed max-w-3xl">
               {metrics.coachingAdvice.message}
             </p>
@@ -179,7 +176,7 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ token, setActiveTa
             <div className="pt-2">
               <button
                 onClick={() => handleCoachAction(metrics.coachingAdvice.actionType)}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold bg-white text-slate-950 hover:bg-slate-100 transition-colors shadow-sm"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold bg-card text-slate-950 hover:bg-muted transition-colors shadow-sm"
               >
                 <span>{metrics.coachingAdvice.actionLabel}</span>
                 <ArrowRight className="h-3.5 w-3.5" />
@@ -191,41 +188,41 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ token, setActiveTa
 
       {/* KPI METRIC CARDS */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-1">
-          <p className="text-[11px] text-slate-500 font-bold uppercase tracking-wider">
+        <div className="bg-card p-5 rounded-xl border border-border shadow-xs space-y-1">
+          <p className="text-[11px] text-muted-foreground font-bold uppercase tracking-wider">
             Overall Conversion Rate
           </p>
-          <p className="text-2xl font-black text-slate-900">
+          <p className="text-2xl font-bold text-foreground">
             {metrics.conversionRatePercent}%
           </p>
           <p className="text-[11px] text-slate-400">Visitors to completed orders</p>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-1">
-          <p className="text-[11px] text-slate-500 font-bold uppercase tracking-wider">
+        <div className="bg-card p-5 rounded-xl border border-border shadow-xs space-y-1">
+          <p className="text-[11px] text-muted-foreground font-bold uppercase tracking-wider">
             Average Order Value (AOV)
           </p>
-          <p className="text-2xl font-black text-blue-600">
+          <p className="text-2xl font-bold text-primary">
             ৳{metrics.averageOrderValue.toLocaleString()}
           </p>
           <p className="text-[11px] text-slate-400">Per completed order</p>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-1">
-          <p className="text-[11px] text-slate-500 font-bold uppercase tracking-wider">
+        <div className="bg-card p-5 rounded-xl border border-border shadow-xs space-y-1">
+          <p className="text-[11px] text-muted-foreground font-bold uppercase tracking-wider">
             Cart Abandonment
           </p>
-          <p className="text-2xl font-black text-amber-600">
+          <p className="text-2xl font-bold text-amber-600">
             {metrics.cartAbandonmentPercent}%
           </p>
           <p className="text-[11px] text-slate-400">Carts without checkouts</p>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-1">
-          <p className="text-[11px] text-slate-500 font-bold uppercase tracking-wider">
+        <div className="bg-card p-5 rounded-xl border border-border shadow-xs space-y-1">
+          <p className="text-[11px] text-muted-foreground font-bold uppercase tracking-wider">
             Completed Orders
           </p>
-          <p className="text-2xl font-black text-emerald-600">
+          <p className="text-2xl font-bold text-emerald-600">
             {metrics.completedOrders}
           </p>
           <p className="text-[11px] text-slate-400">In selected period</p>
@@ -233,12 +230,12 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ token, setActiveTa
       </div>
 
       {/* VISUAL FUNNEL CHART */}
-      <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-xs space-y-6">
+      <div className="bg-card p-6 sm:p-8 rounded-xl border border-border shadow-xs space-y-6">
         <div>
-          <h3 className="font-extrabold text-sm text-slate-900">
+          <h3 className="font-extrabold text-sm text-foreground">
             E-Commerce Conversion Funnel Stages
           </h3>
-          <p className="text-xs text-slate-500 mt-0.5">
+          <p className="text-xs text-muted-foreground mt-0.5">
             Identify exactly where potential buyers drop out along your sales journey.
           </p>
         </div>
@@ -260,14 +257,14 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ token, setActiveTa
                         {step.dropOff}
                       </span>
                     )}
-                    <span className="font-black text-slate-900 font-mono">
+                    <span className="font-bold text-foreground font-mono">
                       {step.count.toLocaleString()}
                     </span>
                   </div>
                 </div>
 
                 {/* Funnel Bar */}
-                <div className="h-7 w-full bg-slate-100 rounded-xl overflow-hidden p-1 flex items-center">
+                <div className="h-7 w-full bg-muted rounded-xl overflow-hidden p-1 flex items-center">
                   <div
                     style={{ width: `${widthPercent}%` }}
                     className={`h-full rounded-lg ${step.color} transition-all duration-500 flex items-center justify-end pr-2 text-[10px] font-bold text-white`}

@@ -65,3 +65,11 @@ export class UpdateStoreStatusDto {
   @IsEnum(StoreStatus)
   status!: StoreStatus;
 }
+
+export class UpdateCustomDomainDto {
+  @ApiPropertyOptional({ example: "mystore.com" })
+  @IsOptional()
+  @IsString()
+  customDomain?: string | null;
+}
+

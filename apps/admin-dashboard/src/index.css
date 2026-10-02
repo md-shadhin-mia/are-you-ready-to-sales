@@ -1,3 +1,83 @@
+@import "@repo/ui/fonts.css";
+@import "@repo/ui/tokens.css";
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  :root {
+    /* Brand Primary: Vibrant Royal / Electric Blue (#0052FF / #0066FF) */
+    --primary: 221 100% 50%;
+    --primary-foreground: 0 0% 100%;
+    --ring: 221 100% 50%;
+
+    /* Background: Soft cool slate-tinted off-white (#F5F8FC) */
+    --background: 210 60% 98%;
+    --foreground: 222 47% 11%;
+
+    /* Cards: Pure White */
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+
+    /* Sidebar: Deep Midnight Navy (#051D42) */
+    --sidebar: 216 86% 14%;
+    --sidebar-foreground: 213 27% 84%;
+    --sidebar-muted: 215 20% 65%;
+    --sidebar-accent: 217 65% 20%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-primary: 221 100% 50%;
+    --sidebar-border: 217 55% 18%;
+
+    /* Accent & Status */
+    --info: 217 91% 60%;
+    --info-foreground: 0 0% 100%;
+    --success: 160 84% 39%;
+    --success-foreground: 0 0% 100%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 26 83% 14%;
+
+    /* Chart Palettes */
+    --chart-1: 221 100% 50%;
+    --chart-2: 160 84% 39%;
+    --chart-3: 265 89% 66%;
+    --chart-4: 24 95% 53%;
+    --chart-5: 215 16% 47%;
+
+    /* Modern Border Radius */
+    --radius: 0.75rem;
+
+    /* Typography */
+    --font-sans: "Inter", "Inter Variable", ui-sans-serif, system-ui, sans-serif;
+    --font-heading: "Plus Jakarta Sans", "Plus Jakarta Sans Variable", var(--font-sans);
+  }
+
+  body {
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+    font-family: var(--font-sans);
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-heading);
+    letter-spacing: -0.02em;
+  }
+}
+
+/* Custom sleek scrollbar for sidebar */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 9999px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.22);
+}

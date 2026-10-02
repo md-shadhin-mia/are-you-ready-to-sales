@@ -180,4 +180,71 @@ describe("GamificationService Unit Tests", () => {
       service.claimChallengeReward("student-1", "chal-1"),
     ).rejects.toThrow("already been claimed");
   });
+
+  it("6. Should return full student gamification status including next tier requirements", async () => {
+    mockPrisma.studentLevel.findUnique.mockResolvedValue({
+      studentId: "student-1",
+      currentLevel: 1,
+      totalXp: 100,
+      levelTitle: "Store Starter",
+      unlockedPerks: [],
+    });
+    mockPrisma.store.findFirst.mockResolvedValue(null);
+    mockPrisma.challenge.findMany.mockResolvedValue([
+      {
+        id: "chal-1",
+        code: "FIRST_SALE",
+        title: "Make 1 Sale",
+        description: "Complete your first order",
+        tierLevel: 1,
+        xpReward: 100,
+        badgeIcon: "star",
+        threshold: 1,
+      },
+      {
+        id: "chal-2",
+        code: "FIVE_SALES",
+        title: "Make 5 Sales",
+        description: "Complete 5 orders",
+        tierLevel: 1,
+        xpReward: 200,
+        badgeIcon: "star",
+        threshold: 5,
+      },
+    ]);
+    mockPrisma.studentProgress.findMany.mockResolvedValue([
+      {
+        studentId: "student-1",
+        challengeId: "chal-1",
+        currentCount: 1,
+        isCompleted: true,
+        isClaimed: false,
+        completedAt: new Date(),
+      },
+    ]);
+
+    const status = await service.getStudentStatus("student-1");
+    expect(status.currentLevel).toBe(1);
+    expect(status.challenges).toHaveLength(2);
+    expect(status.challenges[0].isCompleted).toBe(true);
+    expect(status.challenges[1].isCompleted).toBe(false);
+    expect(status.nextLevel.isMaxLevel).toBe(false);
+  });
+
+  it("7. Should mark isMaxLevel true when student reaches Level 6", async () => {
+    mockPrisma.studentLevel.findUnique.mockResolvedValue({
+      studentId: "student-top",
+      currentLevel: 6,
+      totalXp: 50000,
+      levelTitle: "Top-Tier Brand Partner",
+      unlockedPerks: [],
+    });
+    mockPrisma.store.findFirst.mockResolvedValue(null);
+    mockPrisma.challenge.findMany.mockResolvedValue([]);
+    mockPrisma.studentProgress.findMany.mockResolvedValue([]);
+
+    const status = await service.getStudentStatus("student-top");
+    expect(status.currentLevel).toBe(6);
+    expect(status.nextLevel.isMaxLevel).toBe(true);
+  });
 });

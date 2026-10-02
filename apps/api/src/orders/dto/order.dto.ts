@@ -1,5 +1,10 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 import {
+  ArrayMaxSize,
+  ArrayNotEmpty,
+  IsUUID,
+  MaxLength,
+  Min,
   IsArray,
   IsBoolean,
   IsEnum,
@@ -162,4 +167,42 @@ export class QueryOrdersDto {
   @IsOptional()
   @IsString()
   search?: string;
+}
+
+export class BulkInvoiceDto {
+  @IsArray()
+  @ArrayNotEmpty()
+  @ArrayMaxSize(500)
+  @IsUUID("all", { each: true })
+  orderIds!: string[];
+}
+
+export class AcceptedItemDto {
+  @IsUUID()
+  orderItemId!: string;
+
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  quantity!: number;
+}
+
+export class PartialDeliveryDto {
+  @IsArray()
+  @ArrayNotEmpty()
+  @ValidateNested({ each: true })
+  @Type(() => AcceptedItemDto)
+  acceptedItems!: AcceptedItemDto[];
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  reason?: string;
+}
+
+export class StatusReasonDto {
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  reason?: string;
 }

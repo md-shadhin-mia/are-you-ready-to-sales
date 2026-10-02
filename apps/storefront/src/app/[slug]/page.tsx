@@ -4,10 +4,10 @@ import { ThemeProvider } from "../../components/ThemeProvider";
 import { Navbar } from "../../components/Navbar";
 import { CartDrawer } from "../../components/CartDrawer";
 import { ProductCard } from "../../components/ProductCard";
-import { Store, ShoppingBag, Sparkles, ShieldCheck } from "lucide-react";
+import { Store, ShoppingBag, Sparkles, ShieldCheck, Truck } from "lucide-react";
+import { Card, EmptyState } from "@repo/ui";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
-
+import { API_BASE } from "../../lib/api-base";
 async function getStoreMeta(slug: string) {
   try {
     const res = await fetch(`${API_BASE}/api/v1/stores/${slug}/meta`, {
@@ -51,11 +51,6 @@ export default async function StorefrontPage({
 
   return (
     <ThemeProvider themeConfig={store.themeConfig}>
-      {/* Announcement Bar */}
-      <div className="bg-slate-900 text-white text-xs py-2 px-4 text-center font-medium">
-        🎉 Welcome to {store.storeName}! Free express shipping on orders over ৳1,500.
-      </div>
-
       <Navbar
         storeSlug={slug}
         storeName={store.storeName}
@@ -63,35 +58,43 @@ export default async function StorefrontPage({
         tagline={store.brandingInfo?.tagline}
       />
 
-      <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full space-y-10">
+      <main className="mx-auto w-full max-w-7xl flex-1 space-y-10 px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
         {/* Hero Section */}
-        <section className="relative rounded-3xl p-8 sm:p-12 overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-slate-950 text-white shadow-xl flex flex-col md:flex-row items-center justify-between gap-8">
-          <div className="space-y-4 max-w-xl text-center md:text-left z-10">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md text-white text-xs font-semibold">
-              <Sparkles className="h-3.5 w-3.5 text-yellow-400" />
-              Curated by {store.storeName}
+        <section className="relative flex flex-col items-center justify-between gap-6 overflow-hidden rounded-2xl bg-slate-950 p-6 text-white shadow-xl sm:gap-8 sm:rounded-3xl sm:p-10 md:flex-row md:p-12">
+          <div className="pointer-events-none absolute -left-20 -top-24 h-80 w-80 rounded-full bg-primary/40 blur-3xl" />
+          <div className="pointer-events-none absolute -bottom-24 right-10 h-72 w-72 rounded-full bg-accent/20 blur-3xl" />
+          <div className="relative z-10 max-w-xl space-y-4 text-center md:text-left">
+            <div className="inline-flex max-w-full items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-semibold backdrop-blur-md">
+              <Sparkles className="h-3.5 w-3.5 shrink-0 text-amber-300" />
+              <span className="truncate">Curated by {store.storeName}</span>
             </div>
-            <h2 className="text-3xl sm:text-5xl font-black tracking-tight leading-tight">
-              Premium Quality <br />
-              <span className="text-blue-400">Directly to Your Doorstep.</span>
-            </h2>
-            <p className="text-slate-300 text-sm sm:text-base leading-relaxed">
+            <h1 className="text-3xl font-extrabold leading-tight sm:text-4xl md:text-5xl">
+              Premium quality, <br />
+              <span className="text-primary brightness-125">delivered to your door.</span>
+            </h1>
+            <p className="text-sm leading-relaxed text-slate-300 sm:text-base">
               {store.brandingInfo?.tagline ||
                 "Browse our verified catalog of genuine products with Cash on Delivery and doorstep fulfillment across Bangladesh."}
             </p>
+            <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 pt-1 text-xs text-slate-300 md:justify-start">
+              <span className="inline-flex items-center gap-1.5">
+                <ShieldCheck className="h-4 w-4 text-emerald-400" /> Verified seller
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <Truck className="h-4 w-4 text-emerald-400" /> Cash on delivery
+              </span>
+            </div>
           </div>
 
-          <div className="h-44 w-44 sm:h-56 sm:w-56 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md flex items-center justify-center p-6 flex-shrink-0 shadow-2xl">
+          <div className="relative z-10 flex h-32 w-32 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/5 p-4 shadow-2xl backdrop-blur-md sm:h-44 sm:w-44 sm:p-6 md:h-56 md:w-56">
             {store.logoUrl ? (
-              <img
-                src={store.logoUrl}
-                alt={store.storeName}
-                className="max-h-full max-w-full object-contain"
-              />
+              <img src={store.logoUrl} alt={store.storeName} className="max-h-full max-w-full object-contain" />
             ) : (
-              <div className="text-center space-y-2">
-                <Store className="h-16 w-16 mx-auto text-blue-400 opacity-80" />
-                <p className="font-bold text-sm tracking-wide">{store.storeName}</p>
+              <div className="space-y-2 text-center">
+                <Store className="mx-auto h-10 w-10 text-primary brightness-125 sm:h-16 sm:w-16" />
+                <p className="max-w-[120px] truncate text-xs font-bold tracking-wide sm:max-w-none sm:text-sm">
+                  {store.storeName}
+                </p>
               </div>
             )}
           </div>
@@ -99,27 +102,32 @@ export default async function StorefrontPage({
 
         {/* Catalog Section */}
         <section className="space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-4">
+          <div className="flex flex-col justify-between gap-2 border-b pb-4 sm:flex-row sm:items-end">
             <div>
-              <h3 className="text-2xl font-extrabold text-slate-900">
-                Featured Products
-              </h3>
-              <p className="text-xs text-slate-500 mt-1">
+              <h2 className="text-2xl font-extrabold">
+                {searchParams?.search ? `Results for “${searchParams.search}”` : "Featured Products"}
+              </h2>
+              <p className="mt-1 text-sm text-muted-foreground">
                 Showing {products.length} {products.length === 1 ? "product" : "products"}
               </p>
             </div>
           </div>
 
           {products.length === 0 ? (
-            <div className="py-20 text-center space-y-3 bg-white rounded-2xl border border-slate-200">
-              <ShoppingBag className="h-12 w-12 mx-auto text-slate-300" />
-              <h4 className="text-base font-semibold text-slate-700">No products available yet</h4>
-              <p className="text-xs text-slate-500 max-w-sm mx-auto">
-                This store is currently curating items. Please check back soon or explore other collections.
-              </p>
-            </div>
+            <Card>
+              <EmptyState
+                icon={ShoppingBag}
+                title={searchParams?.search ? "No matching products" : "No products available yet"}
+                description={
+                  searchParams?.search
+                    ? "Try a different search term or browse the full catalog."
+                    : "This store is currently curating items. Please check back soon."
+                }
+                className="py-20"
+              />
+            </Card>
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-6 lg:grid-cols-4">
               {products.map((product: any) => (
                 <ProductCard key={product.id} storeSlug={slug} product={product} />
               ))}
@@ -132,8 +140,8 @@ export default async function StorefrontPage({
       <CartDrawer storeSlug={slug} />
 
       {/* Footer */}
-      <footer className="mt-auto border-t border-slate-200 bg-white py-8 text-center text-xs text-slate-500 space-y-2">
-        <p className="font-semibold text-slate-700">{store.storeName}</p>
+      <footer className="mt-auto space-y-2 border-t bg-card py-8 text-center text-xs text-muted-foreground">
+        <p className="font-heading font-semibold text-foreground">{store.storeName}</p>
         <p>
           Powered by Bangladesh Reseller Commerce Platform • All rights reserved
         </p>

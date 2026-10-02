@@ -533,68 +533,140 @@ The student experiences this as training, but every milestone represents a real 
 
 ---
 
-# 14. Institute Dashboard
+# 14. Institute Admin Portal & Operations Hub
 
-The institute sees the entire ecosystem.
+The Institute Admin Portal provides top-down oversight, centralized operational execution, and governance across all student stores, campuses, merchant suppliers, and fulfillment pipelines.
 
-### Student Management
+### Admin Portal Information Architecture & Navigation
 
-* Student registration
-* Verification
-* Activation/deactivation
-* Student profiles
-* Store status
-* Student progress
-* Account restrictions
-
-### Product Management
-
-* Products
-* Categories
-* SKU
-* Base price
-* Stock
-* Product images
-* Product status
-* Product availability for students
-
-### Seller Management
-
-* Approved sellers
-* Store status
-* Seller performance
-* Revenue
-* Orders
-* Reviews
-* Complaints
-* Suspensions
-
-### Order Management
-
-* All orders
-* Pending orders
-* Paid orders
-* Processing
-* Shipped
-* Delivered
-* Cancelled
-* Returned
-* Refunded
-
-### Analytics
+The admin sidebar and control layout features a structured, high-efficiency operational workflow with live notification badges and status volume indicators:
 
 ```text
-Total Students
-Active Stores
-Total Orders
-Gross Sales
-Platform Revenue
-Student Revenue
-Average Order Value
-Customer Reviews
-Average Rating
-Repeat Customers
+├── 1. Dashboards [🔔 01]
+├── 2. Students (Expandable Section)
+│   ├── Student Directory & Profiles
+│   ├── Verification & KYC Audit
+│   ├── Academic & Store Performance Records
+│   └── Account Governance & Restrictions
+├── 3. Branches (Physical & Digital Campuses)
+├── 4. Student Batches (Cohorts & Classes)
+├── 5. Orders (Expanded Multi-Status Operations Section)
+│   ├── Order Overview (General Sales Summary)
+│   ├── All Orders (9410)
+│   ├── New Orders (8)
+│   ├── Complete Orders (0)
+│   ├── Partial Delivered (233)
+│   ├── Unmatch Orders (4035)
+│   ├── Invoiced Orders (8778)
+│   ├── Hold Orders (29)
+│   ├── Cancelled Orders (131)
+│   ├── In Courier (9243)
+│   └── Exchange Orders
+├── 6. Seller Panel (External Merchants & Instructors)
+└── 7. Payment Requests [💳 3]
 ```
+
+---
+
+### 14.1 Dashboards (Main Overview Panel)
+
+The central mission-control screen providing immediate situational awareness of platform performance, financial health, and operational bottlenecks.
+
+* **Notification Indicator / Alert Bubble (`01`):** A high-priority visual counter highlighting active issues requiring immediate operator intervention (e.g., pending payout approvals > 24h, critical order dispatch delays, or student policy violations).
+* **Key Executive Metrics:**
+  * Platform Gross Merchandise Value (GMV) and Daily Volume.
+  * Institute Net Revenue (Wholesale Product Margins + Platform Commissions + SaaS Subscriptions).
+  * Total Active Student Stores vs Inactive / Onboarding Stores.
+  * Total Registered Students & Cohort Graduation Rates.
+  * Real-Time Conversion Funnel (Global Platform Visitors → Product Views → Cart Adds → Checkouts → Paid Orders).
+* **Operational Health Cards:**
+  * Today's New Orders & Pick-and-Pack Backlog.
+  * Courier Dispatch Velocity & 3PL SLA Compliance.
+  * Return & Exchange Rate Trends.
+
+---
+
+### 14.2 Students (Expandable Menu Section)
+
+An expandable management module dedicated to managing student records, store affiliations, identity verification, and conduct compliance:
+
+* **Student Directory & Profiles:** Searchable and filterable master roster of all enrolled students, containing contact numbers, email addresses, national IDs (NID/Passport), residential addresses, and assigned store subdomains (`{store-slug}.platform.com`).
+* **Verification & KYC Audit:** Dedicated verification workbench where compliance officers review student identification documents, proof of enrollment, and store ownership credentials before enabling public storefront checkout.
+* **Academic & Store Performance Records:** Unified view combining theoretical course progression (modules completed, quizzes passed, milestone badges) with real-world commercial performance (total GMV generated, net student profit earned, average store rating, order fulfillment rate).
+* **Account Status & Governance:** Granular control over student operational status:
+  * *Active:* Full operational rights.
+  * *Under Review / Pending:* Restrictions on importing new products or requesting payouts.
+  * *Suspended:* Storefront instantly disabled with custom maintenance screen, audit reason logged (e.g., fraudulent marketing, misleading pricing, abusive conduct).
+
+---
+
+### 14.3 Branches (Campus & Location Management)
+
+Features enabling the institute to organize platform operations across multiple physical or digital campus branches:
+
+* **Branch Directory & Profiles:** Register and maintain multiple campuses (e.g., *Dhaka Main Campus*, *Chittagong Regional Hub*, *Sylhet Digital Center*, *Online / Virtual Campus*).
+* **Branch Coordinators & Leadership:** Assign campus directors, local administrative coordinators, and branch mentors with scoped administrative access.
+* **Physical Hub & Warehouse Association:** Map specific local fulfillment hubs, warehouse pickup points, and regional logistics depots to individual branches for localized delivery optimization.
+* **Branch-Wise Comparative Analytics:** Analyze and benchmark student enrollment, active store density, aggregate order volume, and revenue contributions on a per-branch basis.
+
+---
+
+### 14.4 Student Batches (Cohorts & Classes)
+
+Features to organize students into specific structured cohorts, academic semesters, or training classes:
+
+* **Cohort Creation & Management:** Create batches with unique identifiers (e.g., *Batch-2026-A: E-Commerce Reseller Mastery*, *Batch-2026-B: Digital Brands*), assigning start dates, duration, scheduled completion dates, and student capacity caps.
+* **Batch Enrollment & Mapping:** Enroll students into batches individually or via batch CSV import. Track student enrollment status (*Enrolled*, *Active*, *Graduated*, *Dropped*).
+* **Instructor & Mentor Assignment:** Assign specialized training managers, faculty members, and operational mentors to oversee specific batches.
+* **Cohort Commercial Leaderboards:** Real-time cohort competition tracking collective sales volume, average net profit per student, order count, and milestone completion velocity across batches.
+
+---
+
+### 14.5 Orders (Expanded Section — Multi-Status Fulfillment Engine)
+
+A highly detailed, real-time tracking and fulfillment console for course enrollments, physical product purchases, and service orders across all student storefronts. Broken down into 11 distinct operational queues:
+
+1. **Order Overview:** General sales summary and pipeline diagnostic dashboard showing order flow velocity, revenue distribution, conversion ratios, average order value (AOV), and regional heatmaps.
+2. **All Orders (9410):** Total lifetime order volume across all tenant stores with full-text search (Order #, customer phone, customer name, student store), multi-parameter filters (date ranges, payment method, branch), and bulk CSV export.
+3. **New Orders (8):** Unprocessed incoming transactions awaiting initial warehouse verification, customer phone confirmation (for COD orders), or fraud screening before entering the fulfillment pipeline.
+4. **Complete Orders (0):** Transactions where products were successfully delivered by couriers, customer receipt confirmed, and the mandatory return/exchange policy window (e.g., 7 days) has closed with student profit balances officially cleared.
+5. **Partial Delivered (233):** Multi-item or bundled orders where a subset of products has been successfully delivered, while remaining packages are split into secondary courier dispatches or awaiting warehouse restock.
+6. **Unmatch Orders (4035):** Flagged or quarantined orders with discrepancies requiring manual triage:
+   * *SKU / Catalog Discrepancies:* Master product out of sync with student store product variant.
+   * *Barcode / Scan Mismatch:* Physical warehouse packing scan does not match order line items.
+   * *Courier Tracking Desync:* 3PL consignment number rejected or mismatched.
+   * *Price / Currency Mismatch:* Gateway collected amount differs from order invoice total.
+7. **Invoiced Orders (8778):** Orders with official commercial bills and tax invoices generated, locked for picking, packing, and barcode labeling in the central warehouse.
+8. **Hold Orders (29):** Paused transactions temporarily halted due to:
+   * Customer-requested delivery date postponement.
+   * Incomplete or ambiguous delivery address requiring phone verification.
+   * Temporary stock depletion awaiting scheduled vendor replenishment.
+9. **Cancelled Orders (131):** Terminated transactions (customer cancellation prior to dispatch, automated timeout for unpaid gateway orders, or administrative cancellation due to fraud/unavailability). Central stock is automatically released back to the master inventory.
+10. **In Courier (9243):** Live orders dispatched from the central warehouse and currently in transit with integrated 3PL logistics carriers (*Pathao*, *Steadfast*, *RedX*, *Paperfly*). Tracks real-time webhook updates (Out for Delivery, In Transit, Delivery Attempt Failed).
+11. **Exchange Orders:** Dedicated queue to process product replacements, apparel size/color swaps, damaged goods reshipments, or course enrollment transfers without corrupting original financial transactions.
+
+---
+
+### 14.6 Seller Panel (External Merchants & Instructors)
+
+Governance and management tools for third-party brand suppliers, wholesale merchants, and external instructors providing physical inventory or educational courses to the institute catalog:
+
+* **Merchant & Instructor Onboarding:** Comprehensive registry of external partners, tax documents (TIN/BIN), trade licenses, and banking details.
+* **Catalog & Store Permissions:** Grant or restrict seller rights to submit new master products, update stock quantities, define base wholesale costs, and select student distribution tiers.
+* **Commission & Margin Configuration:** Configure custom revenue-sharing agreements, flat supplier costs, platform markup percentages, and instructor royalty percentages.
+* **Seller Scorecards & Compliance:** Audit seller order fulfillment speeds, return/defect ratios, product authenticity complaints, customer review ratings, and store dispute histories.
+
+---
+
+### 14.7 Payment Requests (Financial Payout Settlement)
+
+A dedicated financial settlement workbench managing student, seller, and instructor earnings withdrawals:
+
+* **Pending Requests Queue with Live Badge (`3`):** High-priority queue indicating 3 pending payout requests awaiting administrative review and disbursement.
+* **Ledger Balance Verification:** Automated validation against the immutable ledger ensuring the requested withdrawal amount does not exceed the student's cleared available net profit (deducting pending holds and platform fees).
+* **Multi-Channel Disbursement:** Support for local Mobile Financial Services (*bKash Merchant/Disbursement*, *Nagad*) and electronic bank wire transfers (BEFTN/NPSB).
+* **Settlement Approval Workflow:** Input external banking transaction reference number (e.g. `BK-981123-X`), upload disbursement payment proof, and trigger automated SMS notification and ledger debit entries.
+* **Rejection & Dispute Handling:** Ability to reject non-compliant withdrawal requests with documented audit notes, instantly unlocking and returning funds to the user's available wallet balance.
 
 ---
 

@@ -1,13 +1,5 @@
 import React, { useEffect, useState } from "react";
-import {
-  Button,
-  Input,
-  Card,
-  CardHeader,
-  CardTitle,
-  CardContent,
-  Badge,
-} from "@repo/ui";
+import { Badge, Button, Card, CardContent, CardHeader, CardTitle, Dialog, DialogContent, DialogTitle, Input, Label, NativeSelect, PageHeader, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Textarea, toast } from "@repo/ui";
 import {
   apiClient,
   MasterProduct,
@@ -71,7 +63,7 @@ export const MasterCatalogPage: React.FC<MasterCatalogPageProps> = ({
       );
       setData(res);
     } catch (err: any) {
-      alert(err.message || "Failed to load master products");
+      toast.error(err.message || "Failed to load master products");
     } finally {
       setLoading(false);
     }
@@ -108,7 +100,7 @@ export const MasterCatalogPage: React.FC<MasterCatalogPageProps> = ({
 
       setUploadedImageUrl(presigned.publicUrl);
     } catch (err: any) {
-      alert(err.message || "Image upload failed");
+      toast.error(err.message || "Image upload failed");
     } finally {
       setUploadingImage(false);
     }
@@ -117,7 +109,7 @@ export const MasterCatalogPage: React.FC<MasterCatalogPageProps> = ({
   const handleCreateProduct = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!categoryId) {
-      alert("Please select a category");
+      toast("Please select a category");
       return;
     }
 
@@ -146,7 +138,7 @@ export const MasterCatalogPage: React.FC<MasterCatalogPageProps> = ({
       setUploadedImageUrl("");
       loadProducts();
     } catch (err: any) {
-      alert(err.message || "Failed to save product");
+      toast.error(err.message || "Failed to save product");
     } finally {
       setSavingProduct(false);
     }
@@ -172,7 +164,7 @@ export const MasterCatalogPage: React.FC<MasterCatalogPageProps> = ({
       setStockReason("");
       loadProducts();
     } catch (err: any) {
-      alert(err.message || "Failed to adjust stock");
+      toast.error(err.message || "Failed to adjust stock");
     } finally {
       setSavingStock(false);
     }
@@ -180,27 +172,24 @@ export const MasterCatalogPage: React.FC<MasterCatalogPageProps> = ({
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight text-slate-900">
-            Master Product Catalog
-          </h2>
-          <p className="text-sm text-slate-500">
-            Centrally sourced and fulfilled products available for student reseller stores
-          </p>
-        </div>
-
-        <Button
-          onClick={() => setIsAddOpen(true)}
-          className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white self-start sm:self-auto"
-        >
-          <Plus className="h-4 w-4" />
-          Add Master Product
-        </Button>
-      </div>
+      <PageHeader
+        title="Master Product Catalog"
+        description="Centrally sourced and fulfilled products available for student reseller stores"
+        actions={
+          <>
+            <Button
+              onClick={() => setIsAddOpen(true)}
+              className="flex items-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground self-start sm:self-auto"
+            >
+              <Plus className="h-4 w-4" />
+              Add Master Product
+            </Button>
+          </>
+        }
+      />
 
       {/* Search and Filters Bar */}
-      <Card className="shadow-sm border-slate-200">
+      <Card className="shadow-sm border-border">
         <CardContent className="p-4 flex flex-col md:flex-row items-center gap-4">
           <div className="relative flex-1 w-full">
             <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
@@ -213,10 +202,10 @@ export const MasterCatalogPage: React.FC<MasterCatalogPageProps> = ({
           </div>
 
           <div className="w-full md:w-64">
-            <select
+            <NativeSelect containerClassName="w-full"
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
-              className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="text-sm"
             >
               <option value="">All Categories</option>
               {categories.map((c) => (
@@ -224,70 +213,70 @@ export const MasterCatalogPage: React.FC<MasterCatalogPageProps> = ({
                   {c.name}
                 </option>
               ))}
-            </select>
+            </NativeSelect>
           </div>
         </CardContent>
       </Card>
 
       {/* Catalog Table */}
-      <Card className="shadow-sm border-slate-200 overflow-hidden">
+      <Card className="shadow-sm border-border overflow-hidden">
         {loading ? (
           <div className="h-64 flex items-center justify-center">
-            <Loader2 className="h-8 w-8 text-blue-600 animate-spin" />
+            <Loader2 className="h-8 w-8 text-primary animate-spin" />
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm text-slate-600">
-              <thead className="bg-slate-50 text-xs font-semibold uppercase text-slate-700 border-b border-slate-200">
-                <tr>
-                  <th className="px-6 py-3.5">Product</th>
-                  <th className="px-6 py-3.5">SKU</th>
-                  <th className="px-6 py-3.5">Category</th>
-                  <th className="px-6 py-3.5">Wholesale Base Price</th>
-                  <th className="px-6 py-3.5">Central Stock</th>
-                  <th className="px-6 py-3.5">Status</th>
-                  <th className="px-6 py-3.5 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
+            <Table className="w-full text-left text-sm text-slate-600">
+              <TableHeader className="bg-muted/50 text-xs font-semibold uppercase text-slate-700 border-b border-border">
+                <TableRow>
+                  <TableHead className="px-6 py-3.5">Product</TableHead>
+                  <TableHead className="px-6 py-3.5">SKU</TableHead>
+                  <TableHead className="px-6 py-3.5">Category</TableHead>
+                  <TableHead className="px-6 py-3.5">Wholesale Base Price</TableHead>
+                  <TableHead className="px-6 py-3.5">Central Stock</TableHead>
+                  <TableHead className="px-6 py-3.5">Status</TableHead>
+                  <TableHead className="px-6 py-3.5 text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody className="divide-y divide-border/60">
                 {data && data.items.length > 0 ? (
                   data.items.map((prod) => (
-                    <tr key={prod.id} className="hover:bg-slate-50/80 transition-colors">
-                      <td className="px-6 py-4 flex items-center gap-3">
+                    <TableRow key={prod.id} className="hover:bg-muted/50/80 transition-colors">
+                      <TableCell className="px-6 py-4 flex items-center gap-3">
                         {prod.masterImages && prod.masterImages[0] ? (
                           <img
                             src={prod.masterImages[0]}
                             alt={prod.title}
-                            className="h-10 w-10 rounded-lg object-cover border border-slate-200"
+                            className="h-10 w-10 rounded-lg object-cover border border-border"
                           />
                         ) : (
-                          <div className="h-10 w-10 rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-400">
+                          <div className="h-10 w-10 rounded-lg bg-muted border border-border flex items-center justify-center text-slate-400">
                             <Package className="h-5 w-5" />
                           </div>
                         )}
                         <div>
-                          <p className="font-semibold text-slate-900 line-clamp-1">
+                          <p className="font-semibold text-foreground line-clamp-1">
                             {prod.title}
                           </p>
                           <p className="text-xs text-slate-400 line-clamp-1">
                             {prod.masterDescription}
                           </p>
                         </div>
-                      </td>
-                      <td className="px-6 py-4 font-mono text-xs text-slate-500">
+                      </TableCell>
+                      <TableCell className="px-6 py-4 font-mono text-xs text-muted-foreground">
                         {prod.sku}
-                      </td>
-                      <td className="px-6 py-4 text-xs font-medium text-slate-700">
+                      </TableCell>
+                      <TableCell className="px-6 py-4 text-xs font-medium text-slate-700">
                         {prod.category?.name || "General"}
-                      </td>
-                      <td className="px-6 py-4 font-semibold text-slate-900">
+                      </TableCell>
+                      <TableCell className="px-6 py-4 font-semibold text-foreground">
                         ৳{Number(prod.basePrice).toLocaleString()}
-                      </td>
-                      <td className="px-6 py-4">
+                      </TableCell>
+                      <TableCell className="px-6 py-4">
                         <span
                           className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${
                             prod.stockQuantity < 20
-                              ? "bg-red-50 text-red-700 border border-red-200"
+                              ? "bg-destructive/5 text-destructive border border-destructive/20"
                               : "bg-emerald-50 text-emerald-700 border border-emerald-200"
                           }`}
                         >
@@ -296,13 +285,13 @@ export const MasterCatalogPage: React.FC<MasterCatalogPageProps> = ({
                           )}
                           {prod.stockQuantity} units
                         </span>
-                      </td>
-                      <td className="px-6 py-4">
+                      </TableCell>
+                      <TableCell className="px-6 py-4">
                         <Badge variant={prod.isActive ? "success" : "secondary"}>
                           {prod.isActive ? "Active" : "Archived"}
                         </Badge>
-                      </td>
-                      <td className="px-6 py-4 text-right">
+                      </TableCell>
+                      <TableCell className="px-6 py-4 text-right">
                         <Button
                           variant="outline"
                           size="sm"
@@ -311,26 +300,27 @@ export const MasterCatalogPage: React.FC<MasterCatalogPageProps> = ({
                         >
                           Adjust Stock
                         </Button>
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   ))
                 ) : (
-                  <tr>
-                    <td colSpan={7} className="px-6 py-12 text-center text-slate-400">
+                  <TableRow>
+                    <TableCell colSpan={7} className="px-6 py-12 text-center text-slate-400">
                       No master products found matching your query
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 )}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
         )}
       </Card>
 
       {/* Add Master Product Modal */}
-      {isAddOpen && (
-        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-          <Card className="w-full max-w-xl shadow-2xl bg-white max-h-[90vh] overflow-y-auto">
+      <Dialog open={!!isAddOpen} onOpenChange={(open) => !open && setIsAddOpen(false)}>
+        <DialogContent hideClose aria-describedby={undefined} className="max-w-xl gap-0 overflow-visible border-0 bg-transparent p-0 shadow-none">
+          <DialogTitle className="sr-only">Add Master Product</DialogTitle>
+          <Card className="w-full max-w-xl shadow-2xl bg-card max-h-[90vh] overflow-y-auto">
             <CardHeader className="border-b border-slate-100">
               <CardTitle className="text-lg">Add New Master Product</CardTitle>
             </CardHeader>
@@ -338,9 +328,9 @@ export const MasterCatalogPage: React.FC<MasterCatalogPageProps> = ({
               <form onSubmit={handleCreateProduct} className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-medium text-slate-700 mb-1">
+                    <Label className="block text-xs font-medium text-slate-700 mb-1">
                       SKU (Unique Identifier)
-                    </label>
+                    </Label>
                     <Input
                       required
                       placeholder="e.g. SKU-TECH-001"
@@ -350,14 +340,14 @@ export const MasterCatalogPage: React.FC<MasterCatalogPageProps> = ({
                   </div>
 
                   <div>
-                    <label className="block text-xs font-medium text-slate-700 mb-1">
+                    <Label className="block text-xs font-medium text-slate-700 mb-1">
                       Category
-                    </label>
-                    <select
+                    </Label>
+                    <NativeSelect containerClassName="w-full"
                       required
                       value={categoryId}
                       onChange={(e) => setCategoryId(e.target.value)}
-                      className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="text-sm"
                     >
                       <option value="">Select Category</option>
                       {categories.map((c) => (
@@ -365,14 +355,14 @@ export const MasterCatalogPage: React.FC<MasterCatalogPageProps> = ({
                           {c.name}
                         </option>
                       ))}
-                    </select>
+                    </NativeSelect>
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-slate-700 mb-1">
+                  <Label className="block text-xs font-medium text-slate-700 mb-1">
                     Product Title
-                  </label>
+                  </Label>
                   <Input
                     required
                     placeholder="e.g. Ultra-Light Mechanical Keyboard"
@@ -383,9 +373,9 @@ export const MasterCatalogPage: React.FC<MasterCatalogPageProps> = ({
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-medium text-slate-700 mb-1">
+                    <Label className="block text-xs font-medium text-slate-700 mb-1">
                       Wholesale Base Price (৳ BDT)
-                    </label>
+                    </Label>
                     <Input
                       type="number"
                       step="0.01"
@@ -398,9 +388,9 @@ export const MasterCatalogPage: React.FC<MasterCatalogPageProps> = ({
                   </div>
 
                   <div>
-                    <label className="block text-xs font-medium text-slate-700 mb-1">
+                    <Label className="block text-xs font-medium text-slate-700 mb-1">
                       Initial Warehouse Stock
-                    </label>
+                    </Label>
                     <Input
                       type="number"
                       min="0"
@@ -412,31 +402,31 @@ export const MasterCatalogPage: React.FC<MasterCatalogPageProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-slate-700 mb-1">
+                  <Label className="block text-xs font-medium text-slate-700 mb-1">
                     Master Description
-                  </label>
-                  <textarea
+                  </Label>
+                  <Textarea
                     rows={3}
                     required
                     value={masterDescription}
                     onChange={(e) => setMasterDescription(e.target.value)}
                     placeholder="Detailed wholesale product description for resellers..."
-                    className="w-full rounded-md border border-slate-300 p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full text-sm"
                   />
                 </div>
 
                 {/* MinIO Image Upload Dropzone */}
                 <div>
-                  <label className="block text-xs font-medium text-slate-700 mb-1">
+                  <Label className="block text-xs font-medium text-slate-700 mb-1">
                     Product Image (Direct MinIO S3 Presigned Upload)
-                  </label>
-                  <div className="border-2 border-dashed border-slate-300 rounded-lg p-4 text-center hover:border-blue-500 transition-colors">
+                  </Label>
+                  <div className="border-2 border-dashed border-input rounded-lg p-4 text-center hover:border-primary transition-colors">
                     {uploadedImageUrl ? (
                       <div className="flex items-center justify-center gap-3">
                         <img
                           src={uploadedImageUrl}
                           alt="Uploaded"
-                          className="h-16 w-16 object-cover rounded-md border border-slate-200"
+                          className="h-16 w-16 object-cover rounded-md border border-border"
                         />
                         <div className="text-left text-xs">
                           <p className="font-semibold text-emerald-600 flex items-center gap-1">
@@ -450,8 +440,8 @@ export const MasterCatalogPage: React.FC<MasterCatalogPageProps> = ({
                     ) : (
                       <div>
                         <Upload className="h-8 w-8 text-slate-400 mx-auto mb-2" />
-                        <label className="cursor-pointer">
-                          <span className="text-sm font-medium text-blue-600 hover:text-blue-500">
+                        <Label className="cursor-pointer">
+                          <span className="text-sm font-medium text-primary hover:text-primary">
                             {uploadingImage ? "Uploading..." : "Click to upload an image"}
                           </span>
                           <input
@@ -461,7 +451,7 @@ export const MasterCatalogPage: React.FC<MasterCatalogPageProps> = ({
                             className="hidden"
                             disabled={uploadingImage}
                           />
-                        </label>
+                        </Label>
                         <p className="text-xs text-slate-400 mt-1">
                           PNG, JPG, or WEBP up to 5 MB
                         </p>
@@ -485,27 +475,30 @@ export const MasterCatalogPage: React.FC<MasterCatalogPageProps> = ({
               </form>
             </CardContent>
           </Card>
-        </div>
-      )}
+        </DialogContent>
+      </Dialog>
 
       {/* Adjust Stock Modal */}
-      {adjustingProduct && (
-        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-          <Card className="w-full max-w-md shadow-xl bg-white">
+      <Dialog open={!!adjustingProduct} onOpenChange={(open) => !open && setAdjustingProduct(null)}>
+        <DialogContent hideClose aria-describedby={undefined} className="max-w-md gap-0 overflow-visible border-0 bg-transparent p-0 shadow-none">
+            {adjustingProduct && (
+            <>
+          <DialogTitle className="sr-only">Adjust Stock</DialogTitle>
+          <Card className="w-full max-w-md shadow-xl bg-card">
             <CardHeader className="border-b border-slate-100">
               <CardTitle className="text-base font-semibold">
                 Adjust Inventory: {adjustingProduct.title}
               </CardTitle>
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-muted-foreground">
                 Current stock: <strong>{adjustingProduct.stockQuantity} units</strong>
               </p>
             </CardHeader>
             <CardContent className="pt-4">
               <form onSubmit={handleAdjustStock} className="space-y-4">
                 <div>
-                  <label className="block text-xs font-medium text-slate-700 mb-1">
+                  <Label className="block text-xs font-medium text-slate-700 mb-1">
                     Stock Change Amount (+ to add, - to subtract)
-                  </label>
+                  </Label>
                   <Input
                     type="number"
                     required
@@ -516,9 +509,9 @@ export const MasterCatalogPage: React.FC<MasterCatalogPageProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-slate-700 mb-1">
+                  <Label className="block text-xs font-medium text-slate-700 mb-1">
                     Reason for Adjustment
-                  </label>
+                  </Label>
                   <Input
                     required
                     placeholder="e.g. Supplier PO receipt, damaged goods write-off"
@@ -542,8 +535,10 @@ export const MasterCatalogPage: React.FC<MasterCatalogPageProps> = ({
               </form>
             </CardContent>
           </Card>
-        </div>
-      )}
+            </>
+            )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

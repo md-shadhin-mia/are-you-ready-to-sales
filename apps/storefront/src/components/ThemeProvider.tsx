@@ -1,51 +1,39 @@
-"use client";
-
 import React from "react";
 import { StoreThemeConfig } from "@repo/api-client";
+import { hexToHslChannels, readableForegroundChannels } from "@repo/ui";
 
 interface ThemeProviderProps {
   themeConfig?: StoreThemeConfig;
   children: React.ReactNode;
 }
 
-export function ThemeProvider({ themeConfig, children }: ThemeProviderProps) {
-  const primaryColor = themeConfig?.primaryColor || "#2563eb"; // default blue-600
-  const secondaryColor = themeConfig?.secondaryColor || "#475569"; // slate-600
-  const fontFamily = themeConfig?.fontFamily || "Inter, system-ui, sans-serif";
-  const borderRadius = themeConfig?.borderRadius || "0.75rem"; // 12px rounded-xl
+const SAFE_RADIUS = /^\d*\.?\d+(rem|px|em)$/;
+const SAFE_FONT = /^[\w\s,"'-]+$/;
 
-  const styleVariables = {
-    "--store-primary": primaryColor,
-    "--store-secondary": secondaryColor,
-    "--store-radius": borderRadius,
-    fontFamily: fontFamily,
-  } as React.CSSProperties;
+/**
+ * Applies a store's branding by overriding the shared design tokens (see @repo/ui tokens.css).
+ * Overrides go on :root so portaled overlays (cart sheet, dialogs) pick them up too.
+ * Anything the store hasn't customised falls back to the platform's emerald theme.
+ */
+export function ThemeProvider({ themeConfig, children }: ThemeProviderProps) {
+  const vars: string[] = [];
+
+  const primaryHex = themeConfig?.primaryColor;
+  const primary = primaryHex ? hexToHslChannels(primaryHex) : null;
+  if (primaryHex && primary) {
+    vars.push(`--primary: ${primary};`, `--ring: ${primary};`);
+    vars.push(`--primary-foreground: ${readableForegroundChannels(primaryHex)};`);
+  }
+  if (themeConfig?.borderRadius && SAFE_RADIUS.test(themeConfig.borderRadius)) {
+    vars.push(`--radius: ${themeConfig.borderRadius};`);
+  }
+  if (themeConfig?.fontFamily && SAFE_FONT.test(themeConfig.fontFamily)) {
+    vars.push(`--font-sans: ${themeConfig.fontFamily};`);
+  }
 
   return (
-    <div style={styleVariables} className="min-h-screen flex flex-col font-sans">
-      <style jsx global>{`
-        :root {
-          --store-primary: ${primaryColor};
-          --store-secondary: ${secondaryColor};
-          --store-radius: ${borderRadius};
-        }
-        .btn-store-primary {
-          background-color: var(--store-primary);
-          color: #ffffff;
-        }
-        .btn-store-primary:hover {
-          filter: brightness(0.92);
-        }
-        .text-store-primary {
-          color: var(--store-primary);
-        }
-        .border-store-primary {
-          border-color: var(--store-primary);
-        }
-        .bg-store-primary-soft {
-          background-color: color-mix(in srgb, var(--store-primary) 12%, transparent);
-        }
-      `}</style>
+    <div className="flex min-h-screen flex-col bg-background font-sans text-foreground">
+      {vars.length > 0 && <style dangerouslySetInnerHTML={{ __html: `:root { ${vars.join(" ")} }` }} />}
       {children}
     </div>
   );

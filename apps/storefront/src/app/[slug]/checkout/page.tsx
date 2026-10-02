@@ -4,8 +4,7 @@ import { ThemeProvider } from "../../../components/ThemeProvider";
 import { Navbar } from "../../../components/Navbar";
 import { CheckoutFormClient } from "./CheckoutFormClient";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
-
+import { API_BASE } from "../../../lib/api-base";
 async function getStoreMeta(slug: string) {
   try {
     const res = await fetch(`${API_BASE}/api/v1/stores/${slug}/meta`, {
@@ -41,10 +40,10 @@ export default async function CheckoutPage({
 
       <main className="flex-1 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
         <div className="mb-6">
-          <h1 className="text-2xl sm:text-3xl font-black text-slate-900">
+          <h1 className="text-2xl sm:text-3xl font-black text-foreground">
             Secure Checkout
           </h1>
-          <p className="text-xs text-slate-500 mt-1">
+          <p className="text-xs text-muted-foreground mt-1">
             Complete your order with Cash on Delivery or Mobile Financial Services (bKash/Nagad).
           </p>
         </div>

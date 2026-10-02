@@ -1,13 +1,5 @@
 import React, { useEffect, useState } from "react";
-import {
-  Button,
-  Input,
-  Card,
-  CardHeader,
-  CardTitle,
-  CardContent,
-  Badge,
-} from "@repo/ui";
+import { Badge, Button, Card, CardContent, CardHeader, CardTitle, Dialog, DialogContent, DialogTitle, Input, toast } from "@repo/ui";
 import { apiClient, MasterProduct, PaginatedResult } from "@repo/api-client";
 import {
   Search,
@@ -43,7 +35,7 @@ export const MarketplacePage: React.FC<MarketplacePageProps> = ({ token }) => {
       );
       setData(res);
     } catch (err: any) {
-      alert(err.message || "Failed to load marketplace products");
+      toast.error(err.message || "Failed to load marketplace products");
     } finally {
       setLoading(false);
     }
@@ -56,15 +48,15 @@ export const MarketplacePage: React.FC<MarketplacePageProps> = ({ token }) => {
   return (
     <div className="space-y-6">
       {/* Hero Banner */}
-      <div className="rounded-2xl bg-linear-to-r from-blue-700 via-blue-800 to-indigo-900 p-8 text-white shadow-md relative overflow-hidden">
+      <div className="rounded-2xl bg-gradient-to-r from-emerald-700 via-emerald-800 to-teal-900 p-8 text-primary-foreground shadow-md relative overflow-hidden">
         <div className="max-w-2xl relative z-10 space-y-2">
-          <Badge className="bg-blue-500/30 text-blue-100 border-blue-400/30 text-[11px] mb-2">
+          <Badge className="bg-primary/30 text-primary-foreground/90 border-primary/30 text-[11px] mb-2">
             Central Sourcing & Logistics
           </Badge>
           <h2 className="text-3xl font-extrabold tracking-tight">
             Institute Product Marketplace
           </h2>
-          <p className="text-sm text-blue-100/90 leading-relaxed">
+          <p className="text-sm text-primary-foreground/90 leading-relaxed">
             Browse wholesale physical inventory held centrally at the institute warehouse.
             In Phase 2, import any of these products to your store, set your retail margin, and earn net profits when customers order!
           </p>
@@ -79,11 +71,11 @@ export const MarketplacePage: React.FC<MarketplacePageProps> = ({ token }) => {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search wholesale products..."
-            className="pl-9 bg-white"
+            className="pl-9 bg-card"
           />
         </div>
 
-        <div className="text-xs text-slate-500 font-medium">
+        <div className="text-xs text-muted-foreground font-medium">
           Showing <strong>{data?.items.length || 0}</strong> products available for reselling
         </div>
       </div>
@@ -91,7 +83,7 @@ export const MarketplacePage: React.FC<MarketplacePageProps> = ({ token }) => {
       {/* Products Grid */}
       {loading ? (
         <div className="h-64 flex items-center justify-center">
-          <Loader2 className="h-8 w-8 text-blue-600 animate-spin" />
+          <Loader2 className="h-8 w-8 text-primary animate-spin" />
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
@@ -99,10 +91,10 @@ export const MarketplacePage: React.FC<MarketplacePageProps> = ({ token }) => {
             data.items.map((prod) => (
               <Card
                 key={prod.id}
-                className="group flex flex-col justify-between overflow-hidden shadow-xs hover:shadow-md transition-all border-slate-200 bg-white"
+                className="group flex flex-col justify-between overflow-hidden shadow-xs hover:shadow-md transition-all border-border bg-card"
               >
                 <div>
-                  <div className="relative aspect-square w-full bg-slate-100 overflow-hidden">
+                  <div className="relative aspect-square w-full bg-muted overflow-hidden">
                     {prod.masterImages && prod.masterImages[0] ? (
                       <img
                         src={prod.masterImages[0]}
@@ -114,17 +106,17 @@ export const MarketplacePage: React.FC<MarketplacePageProps> = ({ token }) => {
                         <Package className="h-10 w-10" />
                       </div>
                     )}
-                    <span className="absolute top-2.5 right-2.5 bg-white/95 backdrop-blur-xs text-slate-700 text-[11px] font-semibold px-2 py-0.5 rounded-full shadow-xs border border-slate-200">
+                    <span className="absolute top-2.5 right-2.5 bg-card/95 backdrop-blur-sm text-slate-700 text-[11px] font-semibold px-2 py-0.5 rounded-full shadow-xs border border-border">
                       {prod.category?.name || "General"}
                     </span>
                   </div>
 
                   <div className="p-4 space-y-2">
                     <p className="text-[11px] font-mono text-slate-400">{prod.sku}</p>
-                    <h3 className="font-semibold text-sm text-slate-900 line-clamp-1 group-hover:text-blue-600 transition-colors">
+                    <h3 className="font-semibold text-sm text-foreground line-clamp-1 group-hover:text-primary transition-colors">
                       {prod.title}
                     </h3>
-                    <p className="text-xs text-slate-500 line-clamp-2">
+                    <p className="text-xs text-muted-foreground line-clamp-2">
                       {prod.masterDescription}
                     </p>
                   </div>
@@ -136,7 +128,7 @@ export const MarketplacePage: React.FC<MarketplacePageProps> = ({ token }) => {
                       <p className="text-[10px] text-slate-400 uppercase font-semibold">
                         Wholesale Base Price
                       </p>
-                      <p className="text-base font-bold text-slate-900">
+                      <p className="text-base font-bold text-foreground">
                         ৳{Number(prod.basePrice).toLocaleString()}
                       </p>
                     </div>
@@ -155,7 +147,7 @@ export const MarketplacePage: React.FC<MarketplacePageProps> = ({ token }) => {
                     variant="outline"
                     size="sm"
                     onClick={() => setSelectedProduct(prod)}
-                    className="w-full flex items-center justify-center gap-1.5 text-xs text-slate-700 hover:text-blue-600 hover:border-blue-300"
+                    className="w-full flex items-center justify-center gap-1.5 text-xs text-slate-700 hover:text-primary hover:border-primary/30"
                   >
                     <Eye className="h-3.5 w-3.5" />
                     Inspect Details
@@ -173,9 +165,12 @@ export const MarketplacePage: React.FC<MarketplacePageProps> = ({ token }) => {
       )}
 
       {/* Inspect Product Modal */}
-      {selectedProduct && (
-        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-          <Card className="w-full max-w-xl shadow-2xl bg-white max-h-[90vh] overflow-y-auto">
+      <Dialog open={!!selectedProduct} onOpenChange={(open) => !open && setSelectedProduct(null)}>
+        <DialogContent hideClose aria-describedby={undefined} className="max-w-xl gap-0 overflow-visible border-0 bg-transparent p-0 shadow-none">
+            {selectedProduct && (
+            <>
+          <DialogTitle className="sr-only">Inspect Product</DialogTitle>
+          <Card className="w-full max-w-xl shadow-2xl bg-card max-h-[90vh] overflow-y-auto">
             <CardHeader className="border-b border-slate-100 flex flex-row items-center justify-between">
               <div>
                 <p className="text-xs font-mono text-slate-400">
@@ -190,7 +185,7 @@ export const MarketplacePage: React.FC<MarketplacePageProps> = ({ token }) => {
 
             <CardContent className="pt-4 space-y-4">
               {selectedProduct.masterImages && selectedProduct.masterImages[0] && (
-                <div className="aspect-video w-full rounded-lg overflow-hidden border border-slate-200 bg-slate-100">
+                <div className="aspect-video w-full rounded-lg overflow-hidden border border-border bg-muted">
                   <img
                     src={selectedProduct.masterImages[0]}
                     alt={selectedProduct.title}
@@ -199,15 +194,15 @@ export const MarketplacePage: React.FC<MarketplacePageProps> = ({ token }) => {
                 </div>
               )}
 
-              <div className="grid grid-cols-2 gap-4 p-3 bg-slate-50 rounded-lg border border-slate-200">
+              <div className="grid grid-cols-2 gap-4 p-3 bg-muted/50 rounded-lg border border-border">
                 <div>
-                  <p className="text-xs text-slate-500">Institute Wholesale Price</p>
-                  <p className="text-lg font-bold text-slate-900">
+                  <p className="text-xs text-muted-foreground">Institute Wholesale Price</p>
+                  <p className="text-lg font-bold text-foreground">
                     ৳{Number(selectedProduct.basePrice).toLocaleString()}
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs text-slate-500">Warehouse Available Stock</p>
+                  <p className="text-xs text-muted-foreground">Warehouse Available Stock</p>
                   <p className="text-lg font-bold text-emerald-600">
                     {selectedProduct.stockQuantity} units
                   </p>
@@ -237,8 +232,10 @@ export const MarketplacePage: React.FC<MarketplacePageProps> = ({ token }) => {
               </div>
             </CardContent>
           </Card>
-        </div>
-      )}
+            </>
+            )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

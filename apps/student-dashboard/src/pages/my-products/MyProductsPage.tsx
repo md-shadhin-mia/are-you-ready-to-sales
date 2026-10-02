@@ -14,7 +14,7 @@ import {
   X,
   Search,
 } from "lucide-react";
-import { Button } from "@repo/ui";
+import { Button, Dialog, DialogContent, DialogTitle, Input, Label, PageHeader, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Textarea, toast } from "@repo/ui";
 
 interface MyProductsPageProps {
   token: string;
@@ -136,7 +136,7 @@ export const MyProductsPage: React.FC<MyProductsPageProps> = ({ token }) => {
         prev.map((p) => (p.id === product.id ? { ...p, isVisible: !p.isVisible } : p)),
       );
     } catch (err: any) {
-      alert(err.message || "Failed to toggle visibility");
+      toast.error(err.message || "Failed to toggle visibility");
     }
   };
 
@@ -147,65 +147,61 @@ export const MyProductsPage: React.FC<MyProductsPageProps> = ({ token }) => {
       await apiClient.storeProducts.delete(id, token);
       setProducts((prev) => prev.filter((p) => p.id !== id));
     } catch (err: any) {
-      alert(err.message || "Failed to delete product");
+      toast.error(err.message || "Failed to delete product");
     }
   };
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto">
+    <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-xl sm:text-2xl font-black text-slate-900">
-            My Store Products
-          </h2>
-          <p className="text-xs text-slate-500 mt-0.5">
-            Manage your imported reseller catalog, customize product copy, and configure retail markup margins.
-          </p>
-        </div>
-
-        {/* Search */}
-        <div className="relative w-full sm:w-72">
-          <Search className="h-4 w-4 text-slate-400 absolute left-3 top-3" />
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search my products..."
-            className="w-full text-xs pl-9 pr-3.5 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-          />
-        </div>
-      </div>
+      <PageHeader
+        title="My Store Products"
+        description="Manage your imported reseller catalog, customize product copy, and configure retail markup margins."
+        actions={
+          <>
+            <div className="relative w-full sm:w-72">
+              <Search className="h-4 w-4 text-slate-400 absolute left-3 top-3" />
+              <Input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search my products..."
+                className="w-full text-xs pl-9 pr-3.5"
+              />
+            </div>
+          </>
+        }
+      />
 
       {/* Products Table */}
       {loading ? (
-        <div className="py-20 text-center text-xs text-slate-500 flex items-center justify-center gap-2 bg-white rounded-3xl border border-slate-200">
-          <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
+        <div className="py-20 text-center text-xs text-muted-foreground flex items-center justify-center gap-2 bg-card rounded-xl border border-border">
+          <Loader2 className="h-4 w-4 animate-spin text-primary" />
           Loading your reseller products...
         </div>
       ) : products.length === 0 ? (
-        <div className="py-20 text-center space-y-3 bg-white rounded-3xl border border-slate-200 p-8">
+        <div className="py-20 text-center space-y-3 bg-card rounded-xl border border-border p-8">
           <ShoppingBag className="h-12 w-12 text-slate-300 mx-auto" />
           <h3 className="text-base font-bold text-slate-800">No products imported yet</h3>
-          <p className="text-xs text-slate-500 max-w-sm mx-auto">
+          <p className="text-xs text-muted-foreground max-w-sm mx-auto">
             Browse the Institute Marketplace catalog to select products and start selling in your store.
           </p>
         </div>
       ) : (
-        <div className="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-xs">
+        <div className="bg-card rounded-xl border border-border overflow-hidden shadow-xs">
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs text-slate-700 divide-y divide-slate-100">
-              <thead className="bg-slate-50 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                <tr>
-                  <th className="py-3.5 px-6">Product</th>
-                  <th className="py-3.5 px-6">Base Cost</th>
-                  <th className="py-3.5 px-6">Retail Price</th>
-                  <th className="py-3.5 px-6">Est. Net Profit</th>
-                  <th className="py-3.5 px-6">Status</th>
-                  <th className="py-3.5 px-6 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 font-medium">
+            <Table className="w-full text-left text-xs text-slate-700 divide-y divide-border/60">
+              <TableHeader className="bg-muted/50 text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+                <TableRow>
+                  <TableHead className="py-3.5 px-6">Product</TableHead>
+                  <TableHead className="py-3.5 px-6">Base Cost</TableHead>
+                  <TableHead className="py-3.5 px-6">Retail Price</TableHead>
+                  <TableHead className="py-3.5 px-6">Est. Net Profit</TableHead>
+                  <TableHead className="py-3.5 px-6">Status</TableHead>
+                  <TableHead className="py-3.5 px-6 text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody className="divide-y divide-border/60 font-medium">
                 {products.map((p) => {
                   const basePrice = Number(p.masterProduct.basePrice);
                   const retailPrice = Number(p.sellingPrice);
@@ -214,9 +210,9 @@ export const MyProductsPage: React.FC<MyProductsPageProps> = ({ token }) => {
                   const img = p.customImages?.[0] || p.masterProduct.masterImages?.[0];
 
                   return (
-                    <tr key={p.id} className="hover:bg-slate-50/70 transition-colors">
-                      <td className="py-4 px-6 flex items-center gap-3">
-                        <div className="h-12 w-12 rounded-xl bg-slate-100 border border-slate-200 overflow-hidden flex-shrink-0 flex items-center justify-center">
+                    <TableRow key={p.id} className="hover:bg-muted/50/70 transition-colors">
+                      <TableCell className="py-4 px-6 flex items-center gap-3">
+                        <div className="h-12 w-12 rounded-xl bg-muted border border-border overflow-hidden flex-shrink-0 flex items-center justify-center">
                           {img ? (
                             <img src={img} alt={p.customTitle || p.masterProduct.title} className="h-full w-full object-cover" />
                           ) : (
@@ -224,37 +220,37 @@ export const MyProductsPage: React.FC<MyProductsPageProps> = ({ token }) => {
                           )}
                         </div>
                         <div className="min-w-0 max-w-xs">
-                          <p className="font-bold text-slate-900 truncate">
+                          <p className="font-bold text-foreground truncate">
                             {p.customTitle || p.masterProduct.title}
                           </p>
                           <p className="text-[11px] text-slate-400 font-mono mt-0.5">
                             SKU: {p.masterProduct.sku}
                           </p>
                         </div>
-                      </td>
+                      </TableCell>
 
-                      <td className="py-4 px-6 font-semibold text-slate-600">
+                      <TableCell className="py-4 px-6 font-semibold text-slate-600">
                         ৳{basePrice.toLocaleString()}
-                      </td>
+                      </TableCell>
 
-                      <td className="py-4 px-6 font-bold text-slate-900">
+                      <TableCell className="py-4 px-6 font-bold text-foreground">
                         ৳{retailPrice.toLocaleString()}
-                      </td>
+                      </TableCell>
 
-                      <td className="py-4 px-6">
+                      <TableCell className="py-4 px-6">
                         <span className="inline-flex items-center gap-1 font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full text-xs border border-emerald-200">
                           <TrendingUp className="h-3.5 w-3.5" />
                           +৳{estProfit.toLocaleString()}
                         </span>
-                      </td>
+                      </TableCell>
 
-                      <td className="py-4 px-6">
+                      <TableCell className="py-4 px-6">
                         <button
                           onClick={() => handleToggleVisibility(p)}
                           className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold transition-colors ${
                             p.isVisible
-                              ? "bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100"
-                              : "bg-slate-100 text-slate-500 hover:bg-slate-200"
+                              ? "bg-primary/5 text-primary border border-primary/20 hover:bg-primary/10"
+                              : "bg-muted text-muted-foreground hover:bg-slate-200"
                           }`}
                         >
                           {p.isVisible ? (
@@ -269,49 +265,51 @@ export const MyProductsPage: React.FC<MyProductsPageProps> = ({ token }) => {
                             </>
                           )}
                         </button>
-                      </td>
+                      </TableCell>
 
-                      <td className="py-4 px-6 text-right space-x-2">
+                      <TableCell className="py-4 px-6 text-right space-x-2">
                         <button
                           onClick={() => openPricingModal(p)}
-                          className="p-1.5 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-colors"
+                          className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
                           title="Edit Pricing & Marketing Copy"
                         >
                           <Edit3 className="h-4 w-4" />
                         </button>
                         <button
                           onClick={() => handleDeleteProduct(p.id)}
-                          className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+                          className="p-1.5 rounded-lg text-slate-400 hover:text-destructive hover:bg-destructive/5 transition-colors"
                           title="Remove from Store"
                         >
                           <Trash2 className="h-4 w-4" />
                         </button>
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   );
                 })}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
         </div>
       )}
 
       {/* Pricing & Markup Modal */}
-      {modalOpen && selectedProduct && (
-        <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 space-y-6 shadow-2xl relative">
+      <Dialog open={modalOpen && !!selectedProduct} onOpenChange={(open) => !open && setModalOpen(false)}>
+        <DialogContent hideClose aria-describedby={undefined} className="max-w-lg gap-0 overflow-visible border-0 bg-transparent p-0 shadow-none">
+          <DialogTitle className="sr-only">Pricing & Markup</DialogTitle>
+          {selectedProduct && (
+          <div className="bg-card rounded-3xl max-w-lg w-full p-6 sm:p-8 space-y-6 shadow-2xl relative">
             <div className="flex items-center justify-between border-b border-slate-100 pb-4">
               <div>
-                <h3 className="font-extrabold text-base text-slate-900">
+                <h3 className="font-extrabold text-base text-foreground">
                   Configure Price & Margin
                 </h3>
-                <p className="text-xs text-slate-500">
+                <p className="text-xs text-muted-foreground">
                   Wholesale Base Price: <strong>৳{Number(selectedProduct.masterProduct.basePrice).toLocaleString()}</strong>
                 </p>
               </div>
               <button
                 onClick={() => setModalOpen(false)}
-                className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100"
+                className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-muted"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -319,22 +317,22 @@ export const MyProductsPage: React.FC<MyProductsPageProps> = ({ token }) => {
 
             <form onSubmit={handleSaveProduct} className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
+                <Label className="block text-xs font-bold text-slate-700 mb-1">
                   Retail Selling Price (৳) *
-                </label>
-                <input
+                </Label>
+                <Input
                   type="number"
                   min={Number(selectedProduct.masterProduct.basePrice)}
                   required
                   value={sellingPrice}
                   onChange={(e) => handlePriceChange(Number(e.target.value))}
-                  className="w-full text-sm font-bold px-3.5 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full text-sm font-bold"
                 />
               </div>
 
               {/* Real-time Profit Calculation Breakdown Card */}
               {preview ? (
-                <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-2 text-xs">
+                <div className="p-4 bg-muted/50 rounded-2xl border border-border space-y-2 text-xs">
                   <div className="flex justify-between text-slate-600">
                     <span>Wholesale Base Cost:</span>
                     <span>৳{preview.basePrice}</span>
@@ -343,7 +341,7 @@ export const MyProductsPage: React.FC<MyProductsPageProps> = ({ token }) => {
                     <span>Platform Commission (5%):</span>
                     <span>-৳{preview.platformCommission}</span>
                   </div>
-                  <div className="pt-2 border-t border-slate-200 flex justify-between font-bold text-sm text-emerald-800">
+                  <div className="pt-2 border-t border-border flex justify-between font-bold text-sm text-emerald-800">
                     <span>Your Net Profit:</span>
                     <span>+৳{preview.studentNetProfit}</span>
                   </div>
@@ -355,33 +353,33 @@ export const MyProductsPage: React.FC<MyProductsPageProps> = ({ token }) => {
               )}
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
+                <Label className="block text-xs font-bold text-slate-700 mb-1">
                   Custom Marketing Title
-                </label>
-                <input
+                </Label>
+                <Input
                   type="text"
                   value={customTitle}
                   onChange={(e) => setCustomTitle(e.target.value)}
                   placeholder={selectedProduct.masterProduct.title}
-                  className="w-full text-xs px-3.5 py-2 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full text-xs"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
+                <Label className="block text-xs font-bold text-slate-700 mb-1">
                   Custom Sales Description
-                </label>
-                <textarea
+                </Label>
+                <Textarea
                   rows={3}
                   value={customDescription}
                   onChange={(e) => setCustomDescription(e.target.value)}
                   placeholder="Add your own compelling pitch..."
-                  className="w-full text-xs px-3.5 py-2 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full text-xs"
                 />
               </div>
 
               {actionMessage && (
-                <div className="p-3 bg-red-50 border border-red-200 text-xs text-red-700 rounded-xl">
+                <div className="p-3 bg-destructive/5 border border-destructive/20 text-xs text-destructive rounded-xl">
                   {actionMessage}
                 </div>
               )}
@@ -398,15 +396,16 @@ export const MyProductsPage: React.FC<MyProductsPageProps> = ({ token }) => {
                 <Button
                   type="submit"
                   disabled={updating || !preview}
-                  className="flex-1 text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-xl"
+                  className="flex-1 text-xs font-bold bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl"
                 >
                   {updating ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save Pricing"}
                 </Button>
               </div>
             </form>
           </div>
-        </div>
-      )}
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

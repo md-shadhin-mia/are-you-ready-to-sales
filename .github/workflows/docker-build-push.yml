@@ -1,0 +1,132 @@
+name: Build and Push Docker Images to Docker Hub
+
+on:
+  push:
+    branches:
+      - main
+      - master
+      - ai/phase-5-platform-operations
+    tags:
+      - 'v*.*.*'
+  pull_request:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Custom version tag (e.g. v1.0.0, 1.2.3, beta-1). Defaults to latest + commit SHA.'
+        required: false
+        default: 'latest'
+      push:
+        description: 'Push to Docker Hub (true/false)'
+        type: boolean
+        required: true
+        default: true
+
+env:
+  DOCKERHUB_REPO: mdshadhinkn/artifact
+
+jobs:
+  build-and-push:
+    name: Build & Push ${{ matrix.name }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: api
+            type: backend
+            dockerfile: apps/api/Dockerfile
+            context: .
+          - name: storefront
+            type: frontend
+            dockerfile: apps/storefront/Dockerfile
+            context: .
+          - name: student-dashboard
+            type: frontend
+            dockerfile: apps/student-dashboard/Dockerfile
+            context: .
+          - name: admin-dashboard
+            type: frontend
+            dockerfile: apps/admin-dashboard/Dockerfile
+            context: .
+          - name: nginx-gateway
+            type: gateway
+            dockerfile: docker/nginx/Dockerfile
+            context: .
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        if: ${{ github.event_name != 'pull_request' && (github.event.inputs.push != 'false') }}
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME || 'mdshadhinkn' }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Compute Image Tags
+        id: tags
+        run: |
+          SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
+          
+          # Determine version tag
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ -n "${{ github.event.inputs.version }}" ] && [ "${{ github.event.inputs.version }}" != "latest" ]; then
+            VERSION="${{ github.event.inputs.version }}"
+          elif [ "${{ startsWith(github.ref, 'refs/tags/v') }}" = "true" ]; then
+            VERSION="${GITHUB_REF_NAME}"
+          else
+            VERSION="${SHORT_SHA}"
+          fi
+
+          PREFIX="aurts"
+          TYPE="${{ matrix.type }}"
+          NAME="${{ matrix.name }}"
+          REPO="${{ env.DOCKERHUB_REPO }}"
+
+          # Build comma-separated tag list with aurts prefix
+          # 1. Type + Name + Latest: mdshadhinkn/artifact:aurts-backend-api-latest
+          # 2. Type + Name + Version: mdshadhinkn/artifact:aurts-backend-api-v1.0.0 (or short sha)
+          # 3. Name + Latest: mdshadhinkn/artifact:aurts-api-latest
+          # 4. Name + Version: mdshadhinkn/artifact:aurts-api-v1.0.0 (or short sha)
+          TAG_LIST="${REPO}:${PREFIX}-${TYPE}-${NAME}-latest"
+          TAG_LIST="${TAG_LIST},${REPO}:${PREFIX}-${TYPE}-${NAME}-${VERSION}"
+          TAG_LIST="${TAG_LIST},${REPO}:${PREFIX}-${NAME}-latest"
+          TAG_LIST="${TAG_LIST},${REPO}:${PREFIX}-${NAME}-${VERSION}"
+
+          # Add nginx aliases if name is nginx-gateway
+          if [ "${NAME}" = "nginx-gateway" ]; then
+            TAG_LIST="${TAG_LIST},${REPO}:${PREFIX}-gateway-nginx-latest"
+            TAG_LIST="${TAG_LIST},${REPO}:${PREFIX}-gateway-nginx-${VERSION}"
+            TAG_LIST="${TAG_LIST},${REPO}:${PREFIX}-nginx-latest"
+            TAG_LIST="${TAG_LIST},${REPO}:${PREFIX}-nginx-${VERSION}"
+          fi
+
+          # Add commit SHA tag if version was a semver tag
+          if [ "${VERSION}" != "${SHORT_SHA}" ]; then
+            TAG_LIST="${TAG_LIST},${REPO}:${PREFIX}-${TYPE}-${NAME}-${SHORT_SHA}"
+            TAG_LIST="${TAG_LIST},${REPO}:${PREFIX}-${NAME}-${SHORT_SHA}"
+            if [ "${NAME}" = "nginx-gateway" ]; then
+              TAG_LIST="${TAG_LIST},${REPO}:${PREFIX}-gateway-nginx-${SHORT_SHA}"
+              TAG_LIST="${TAG_LIST},${REPO}:${PREFIX}-nginx-${SHORT_SHA}"
+            fi
+          fi
+
+          echo "tags=${TAG_LIST}" >> $GITHUB_OUTPUT
+          echo "Computed tags for ${NAME}:"
+          echo "${TAG_LIST}" | tr ',' '\n'
+
+      - name: Build and Push Docker Image
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.dockerfile }}
+          push: ${{ github.event_name != 'pull_request' && (github.event.inputs.push != 'false') }}
+          tags: ${{ steps.tags.outputs.tags }}
+          cache-from: type=gha,scope=${{ matrix.name }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.name }}

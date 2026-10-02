@@ -34,7 +34,19 @@ coverage/
 # IDE & OS
 .vscode/
 .idea/
+.claude/
 *.swp
 *.swo
 .DS_Store
 Thumbs.db
+
+# Cloudflared tunnels
+.tunnels/
+
+# MCP artifacts
+.playwright-mcp/
+
+# Local binaries
+scripts/bin/
+
+

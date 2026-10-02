@@ -1,0 +1,26 @@
+# Cloudflare Tunnel Configuration for E-Commerce Platform Frontends
+# Docs: https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/configure-tunnels/local-management/configuration-file/
+
+# Replace with your Cloudflare Tunnel UUID or Name
+tunnel: YOUR_TUNNEL_UUID_OR_NAME
+credentials-file: /etc/cloudflared/credentials.json # or ~/.cloudflared/<UUID>.json
+
+ingress:
+  # Customer-facing storefront (Next.js)
+  - hostname: shop.yourdomain.com
+    service: http://localhost:3000
+
+  # Student Reseller Dashboard (Vite + React)
+  - hostname: student.yourdomain.com
+    service: http://localhost:3001
+
+  # Institute & Super Admin Dashboard (Vite + React)
+  - hostname: admin.yourdomain.com
+    service: http://localhost:3002
+
+  # Platform Backend API & Swagger
+  - hostname: api.yourdomain.com
+    service: http://localhost:4000
+
+  # Catch-all rule (required by Cloudflare)
+  - service: http_status:404

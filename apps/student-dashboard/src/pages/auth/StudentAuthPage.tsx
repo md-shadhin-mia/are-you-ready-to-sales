@@ -1,7 +1,8 @@
 import React, { useState } from "react";
-import { Button, Input, Card, CardHeader, CardTitle, CardContent } from "@repo/ui";
+import { Alert, AlertDescription, Button, Input, Label } from "@repo/ui";
 import { apiClient } from "@repo/api-client";
-import { GraduationCap, AlertCircle, Loader2 } from "lucide-react";
+import { GraduationCap, AlertCircle, Loader2, CheckCircle2 } from "lucide-react";
+import { WinLogo } from "../../components/WinLogo";
 
 interface StudentAuthPageProps {
   onAuthSuccess: (user: any, token: string) => void;
@@ -44,38 +45,65 @@ export const StudentAuthPage: React.FC<StudentAuthPageProps> = ({
   };
 
   return (
-    <div className="min-h-screen bg-slate-100 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md shadow-xl bg-white border-slate-200">
-        <CardHeader className="text-center pb-2">
-          <div className="mx-auto h-12 w-12 rounded-2xl bg-blue-100 border border-blue-200 flex items-center justify-center mb-3">
-            <GraduationCap className="h-6 w-6 text-blue-600" />
-          </div>
-          <CardTitle className="text-xl font-bold text-slate-900">
-            {isRegister ? "Join as a Student Reseller" : "Student Reseller Portal"}
-          </CardTitle>
-          <p className="text-xs text-slate-500 mt-1">
-            {isRegister
-              ? "Start learning e-commerce by launching your live commercial store"
-              : "Sign in to manage your reseller business and view the central catalog"}
-          </p>
-        </CardHeader>
+    <div className="grid min-h-screen lg:grid-cols-2">
+      {/* Brand panel */}
+      <div className="relative hidden overflow-hidden bg-sidebar p-12 text-sidebar-foreground lg:flex lg:flex-col lg:justify-between">
+        <div className="pointer-events-none absolute -left-24 -top-24 h-96 w-96 rounded-full bg-[#0052FF]/20 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-32 right-0 h-96 w-96 rounded-full bg-[#0052FF]/10 blur-3xl" />
+        <div className="relative">
+          <WinLogo theme="dark" />
+        </div>
+        <div className="relative space-y-6">
+          <h1 className="max-w-md font-heading text-4xl font-bold leading-tight text-white">
+            Learn e-commerce by running a real business.
+          </h1>
+          <ul className="space-y-3 text-sm text-slate-300">
+            {[
+              "Launch your own branded storefront in minutes",
+              "Source from a verified wholesale catalog",
+              "Track profits, payouts and growth in one dashboard",
+            ].map((line) => (
+              <li key={line} className="flex items-center gap-3">
+                <CheckCircle2 className="h-4 w-4 shrink-0 text-[#0052FF]" />
+                {line}
+              </li>
+            ))}
+          </ul>
+        </div>
+        <p className="relative text-xs text-slate-400">WIN Freelancer Reseller Commerce Platform</p>
+      </div>
 
-        <CardContent className="pt-4">
-          {error && (
-            <div className="mb-4 p-3 rounded-lg bg-red-50 border border-red-200 flex items-center gap-2.5 text-red-700 text-xs">
-              <AlertCircle className="h-4 w-4 shrink-0" />
-              <span>{error}</span>
+      {/* Form */}
+      <div className="flex items-center justify-center bg-background p-6">
+        <div className="w-full max-w-sm space-y-6">
+          <div className="space-y-2">
+            <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-primary/10 text-primary lg:hidden">
+              <GraduationCap className="h-5 w-5" />
             </div>
+            <h2 className="text-2xl font-bold">
+              {isRegister ? "Join as a Student Reseller" : "Welcome back"}
+            </h2>
+            <p className="text-sm text-muted-foreground">
+              {isRegister
+                ? "Start learning e-commerce by launching your live commercial store."
+                : "Sign in to manage your reseller business and browse the central catalog."}
+            </p>
+          </div>
+
+          {error && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
             {isRegister && (
               <>
-                <div>
-                  <label className="block text-xs font-medium text-slate-700 mb-1">
-                    Full Name
-                  </label>
+                <div className="space-y-2">
+                  <Label htmlFor="fullName">Full name</Label>
                   <Input
+                    id="fullName"
                     required
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
@@ -83,11 +111,12 @@ export const StudentAuthPage: React.FC<StudentAuthPageProps> = ({
                   />
                 </div>
 
-                <div>
-                  <label className="block text-xs font-medium text-slate-700 mb-1">
-                    Phone Number (Optional)
-                  </label>
+                <div className="space-y-2">
+                  <Label htmlFor="phone">
+                    Phone number <span className="font-normal text-muted-foreground">(optional)</span>
+                  </Label>
                   <Input
+                    id="phone"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                     placeholder="+8801700000000"
@@ -96,11 +125,10 @@ export const StudentAuthPage: React.FC<StudentAuthPageProps> = ({
               </>
             )}
 
-            <div>
-              <label className="block text-xs font-medium text-slate-700 mb-1">
-                Student Email Address
-              </label>
+            <div className="space-y-2">
+              <Label htmlFor="email">Student email address</Label>
               <Input
+                id="email"
                 type="email"
                 required
                 value={email}
@@ -109,11 +137,10 @@ export const StudentAuthPage: React.FC<StudentAuthPageProps> = ({
               />
             </div>
 
-            <div>
-              <label className="block text-xs font-medium text-slate-700 mb-1">
-                Password
-              </label>
+            <div className="space-y-2">
+              <Label htmlFor="password">Password</Label>
               <Input
+                id="password"
                 type="password"
                 required
                 value={password}
@@ -122,40 +149,36 @@ export const StudentAuthPage: React.FC<StudentAuthPageProps> = ({
               />
             </div>
 
-            <Button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium"
-            >
+            <Button type="submit" disabled={loading} className="w-full">
               {loading ? (
                 <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  <Loader2 className="h-4 w-4 animate-spin" />
                   Please wait...
                 </>
               ) : isRegister ? (
-                "Create Student Account"
+                "Create student account"
               ) : (
-                "Sign In"
+                "Sign in"
               )}
             </Button>
           </form>
 
-          <div className="mt-6 pt-4 border-t border-slate-100 text-center">
-            <button
+          <p className="text-center text-sm text-muted-foreground">
+            {isRegister ? "Already have an account?" : "Don't have an account yet?"}{" "}
+            <Button
               type="button"
+              variant="link"
+              className="h-auto p-0"
               onClick={() => {
                 setIsRegister(!isRegister);
                 setError(null);
               }}
-              className="text-xs text-blue-600 hover:underline font-medium"
             >
-              {isRegister
-                ? "Already have an account? Sign in"
-                : "Don't have an account yet? Register here"}
-            </button>
-          </div>
-        </CardContent>
-      </Card>
+              {isRegister ? "Sign in" : "Register here"}
+            </Button>
+          </p>
+        </div>
+      </div>
     </div>
   );
 };

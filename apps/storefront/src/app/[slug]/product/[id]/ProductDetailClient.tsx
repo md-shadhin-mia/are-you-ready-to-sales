@@ -101,35 +101,35 @@ export function ProductDetailClient({ storeSlug, product }: ProductDetailClientP
       {/* Left: Gallery */}
       <div className="space-y-4">
         {/* Main Display Image */}
-        <div className="aspect-square bg-slate-50 rounded-3xl border border-slate-200 overflow-hidden flex items-center justify-center p-4">
+        <div className="aspect-square bg-muted/50 rounded-2xl sm:rounded-3xl border border-border overflow-hidden flex items-center justify-center p-3 sm:p-4">
           {selectedImage ? (
             <img
               src={selectedImage}
               alt={product.title}
-              className="max-h-full max-w-full object-contain rounded-2xl"
+              className="max-h-full max-w-full object-contain rounded-xl sm:rounded-2xl"
             />
           ) : (
-            <ShoppingBag className="h-20 w-20 text-slate-300" />
+            <ShoppingBag className="h-16 w-16 sm:h-20 sm:w-20 text-slate-300" />
           )}
         </div>
 
         {/* Thumbnails */}
         {product.images && product.images.length > 1 && (
-          <div className="flex gap-3 overflow-x-auto pb-2">
+          <div className="flex gap-2 sm:gap-3 overflow-x-auto pb-2">
             {product.images.map((img, idx) => (
               <button
                 key={idx}
                 onClick={() => setSelectedImage(img)}
-                className={`h-20 w-20 flex-shrink-0 rounded-2xl border-2 p-1 overflow-hidden transition-all ${
+                className={`h-16 w-16 sm:h-20 sm:w-20 flex-shrink-0 rounded-xl sm:rounded-2xl border-2 p-1 overflow-hidden transition-all ${
                   selectedImage === img
-                    ? "border-store-primary shadow-sm"
-                    : "border-slate-200 hover:border-slate-300"
+                    ? "border-primary shadow-sm"
+                    : "border-border hover:border-input"
                 }`}
               >
                 <img
                   src={img}
                   alt={`Thumbnail ${idx + 1}`}
-                  className="h-full w-full object-cover rounded-xl"
+                  className="h-full w-full object-cover rounded-lg sm:rounded-xl"
                 />
               </button>
             ))}
@@ -138,21 +138,21 @@ export function ProductDetailClient({ storeSlug, product }: ProductDetailClientP
       </div>
 
       {/* Right: Info & Purchase */}
-      <div className="space-y-6 flex flex-col justify-center">
+      <div className="space-y-5 sm:space-y-6 flex flex-col justify-center">
         <div>
           {product.category && (
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
+            <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
               {product.category.name}
             </span>
           )}
-          <h1 className="text-2xl sm:text-4xl font-extrabold text-slate-900 mt-1 leading-tight">
+          <h1 className="text-xl sm:text-3xl md:text-4xl font-extrabold text-foreground mt-1 leading-tight">
             {product.title}
           </h1>
         </div>
 
         {/* Price & Discounts */}
         <div className="flex items-center gap-3">
-          <span className="text-3xl font-black text-slate-900">
+          <span className="text-3xl font-black text-foreground">
             ৳{product.sellingPrice.toLocaleString()}
           </span>
           {product.compareAtPrice && product.compareAtPrice > product.sellingPrice && (
@@ -175,8 +175,8 @@ export function ProductDetailClient({ storeSlug, product }: ProductDetailClientP
               In Stock ({product.stockQuantity} units available)
             </div>
           ) : (
-            <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-red-700 bg-red-50 border border-red-200 px-3 py-1 rounded-full">
-              <AlertCircle className="h-3.5 w-3.5 text-red-600" />
+            <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-destructive bg-destructive/5 border border-destructive/20 px-3 py-1 rounded-full">
+              <AlertCircle className="h-3.5 w-3.5 text-destructive" />
               Currently Out of Stock
             </div>
           )}
@@ -187,18 +187,18 @@ export function ProductDetailClient({ storeSlug, product }: ProductDetailClientP
           <div className="space-y-4 pt-2">
             <div className="flex items-center gap-4">
               <span className="text-xs font-bold text-slate-700">Quantity</span>
-              <div className="flex items-center border border-slate-300 rounded-xl bg-white overflow-hidden shadow-sm">
+              <div className="flex items-center border border-input rounded-xl bg-card overflow-hidden shadow-sm">
                 <button
                   onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                  className="p-2 hover:bg-slate-100 text-slate-600 transition-colors"
+                  className="p-2 hover:bg-muted text-slate-600 transition-colors"
                 >
                   <Minus className="h-4 w-4" />
                 </button>
-                <span className="px-4 text-sm font-bold text-slate-900">{quantity}</span>
+                <span className="px-4 text-sm font-bold text-foreground">{quantity}</span>
                 <button
                   onClick={() => setQuantity((q) => Math.min(product.stockQuantity, q + 1))}
                   disabled={quantity >= product.stockQuantity}
-                  className="p-2 hover:bg-slate-100 text-slate-600 disabled:opacity-40 transition-colors"
+                  className="p-2 hover:bg-muted text-slate-600 disabled:opacity-40 transition-colors"
                 >
                   <Plus className="h-4 w-4" />
                 </button>
@@ -208,7 +208,7 @@ export function ProductDetailClient({ storeSlug, product }: ProductDetailClientP
             <div className="flex flex-col sm:flex-row gap-3 pt-2">
               <button
                 onClick={handleAddToCart}
-                className="flex-1 py-3.5 px-6 rounded-2xl font-bold text-sm border-2 border-slate-300 hover:border-slate-400 bg-white text-slate-900 flex items-center justify-center gap-2 shadow-sm transition-all"
+                className="flex-1 py-3.5 px-6 rounded-2xl font-bold text-sm border-2 border-input hover:border-slate-400 bg-card text-foreground flex items-center justify-center gap-2 shadow-sm transition-all"
               >
                 {added ? (
                   <>
@@ -225,7 +225,7 @@ export function ProductDetailClient({ storeSlug, product }: ProductDetailClientP
 
               <button
                 onClick={handleBuyNow}
-                className="flex-1 py-3.5 px-6 rounded-2xl font-bold text-sm btn-store-primary flex items-center justify-center gap-2 shadow-sm hover:opacity-95 transition-opacity"
+                className="flex-1 py-3.5 px-6 rounded-2xl font-bold text-sm bg-primary text-primary-foreground hover:bg-primary/90 flex items-center justify-center gap-2 shadow-sm hover:opacity-95 transition-opacity"
               >
                 <Zap className="h-4 w-4 fill-current" />
                 Buy Now
@@ -235,8 +235,8 @@ export function ProductDetailClient({ storeSlug, product }: ProductDetailClientP
         )}
 
         {/* Product Description */}
-        <div className="pt-6 border-t border-slate-200 space-y-2">
-          <h3 className="font-bold text-sm text-slate-900">About this Product</h3>
+        <div className="pt-6 border-t border-border space-y-2">
+          <h3 className="font-bold text-sm text-foreground">About this Product</h3>
           <p className="text-slate-600 text-xs sm:text-sm leading-relaxed whitespace-pre-line">
             {product.description || "High quality guaranteed product ready for instant delivery."}
           </p>
@@ -244,14 +244,14 @@ export function ProductDetailClient({ storeSlug, product }: ProductDetailClientP
       </div>
 
       {/* Tri-Dimensional Reviews Section */}
-      <div className="lg:col-span-2 pt-12 border-t border-slate-200/80 space-y-8">
+      <div className="lg:col-span-2 pt-12 border-t border-border/80 space-y-8">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h2 className="text-xl sm:text-2xl font-bold text-slate-900 flex items-center gap-2.5">
-              <MessageSquare className="h-6 w-6 text-store-primary" />
+            <h2 className="text-xl sm:text-2xl font-bold text-foreground flex items-center gap-2.5">
+              <MessageSquare className="h-6 w-6 text-primary" />
               Verified Customer Reviews
             </h2>
-            <p className="text-xs text-slate-500 mt-1">
+            <p className="text-xs text-muted-foreground mt-1">
               Independent ratings for product quality, student seller service, and delivery speed.
             </p>
           </div>
@@ -270,17 +270,17 @@ export function ProductDetailClient({ storeSlug, product }: ProductDetailClientP
             Loading reviews and rating breakdown...
           </div>
         ) : !reviewsData || reviewsData.breakdown.totalReviews === 0 ? (
-          <div className="bg-slate-50 border border-slate-200 rounded-3xl p-8 text-center space-y-3">
-            <div className="h-12 w-12 bg-white rounded-2xl border border-slate-200 shadow-xs flex items-center justify-center mx-auto text-slate-400">
+          <div className="bg-muted/50 border border-border rounded-3xl p-8 text-center space-y-3">
+            <div className="h-12 w-12 bg-card rounded-2xl border border-border shadow-xs flex items-center justify-center mx-auto text-slate-400">
               <Star className="h-6 w-6" />
             </div>
-            <h3 className="font-bold text-sm text-slate-900">No Reviews Yet</h3>
-            <p className="text-xs text-slate-500 max-w-sm mx-auto">
+            <h3 className="font-bold text-sm text-foreground">No Reviews Yet</h3>
+            <p className="text-xs text-muted-foreground max-w-sm mx-auto">
               Be the first to review this product after your order is delivered!
             </p>
             <button
               onClick={() => router.push(`/${storeSlug}/review`)}
-              className="text-xs font-semibold text-store-primary hover:underline inline-flex items-center gap-1 pt-1"
+              className="text-xs font-semibold text-primary hover:underline inline-flex items-center gap-1 pt-1"
             >
               Submit an order review
               <ArrowRight className="h-3 w-3" />
@@ -291,13 +291,13 @@ export function ProductDetailClient({ storeSlug, product }: ProductDetailClientP
             {/* 3D Breakdown Overview Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {/* Product Quality Card */}
-              <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-xs flex items-center gap-3">
-                <div className="p-2.5 rounded-xl bg-blue-50 text-blue-600">
+              <div className="bg-card border border-border rounded-2xl p-4 shadow-xs flex items-center gap-3">
+                <div className="p-2.5 rounded-xl bg-primary/5 text-primary">
                   <Package className="h-5 w-5" />
                 </div>
                 <div>
-                  <p className="text-[11px] font-semibold text-slate-500 uppercase">Product Quality</p>
-                  <p className="text-lg font-bold text-slate-900 flex items-center gap-1.5">
+                  <p className="text-[11px] font-semibold text-muted-foreground uppercase">Product Quality</p>
+                  <p className="text-lg font-bold text-foreground flex items-center gap-1.5">
                     {reviewsData.breakdown.averageProductRating} ★
                     <span className="text-xs font-normal text-slate-400">/ 5.0</span>
                   </p>
@@ -305,13 +305,13 @@ export function ProductDetailClient({ storeSlug, product }: ProductDetailClientP
               </div>
 
               {/* Store Service Card */}
-              <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-xs flex items-center gap-3">
-                <div className="p-2.5 rounded-xl bg-purple-50 text-purple-600">
+              <div className="bg-card border border-border rounded-2xl p-4 shadow-xs flex items-center gap-3">
+                <div className="p-2.5 rounded-xl bg-sky-50 text-sky-600">
                   <Store className="h-5 w-5" />
                 </div>
                 <div>
-                  <p className="text-[11px] font-semibold text-slate-500 uppercase">Seller Service</p>
-                  <p className="text-lg font-bold text-slate-900 flex items-center gap-1.5">
+                  <p className="text-[11px] font-semibold text-muted-foreground uppercase">Seller Service</p>
+                  <p className="text-lg font-bold text-foreground flex items-center gap-1.5">
                     {reviewsData.breakdown.averageStoreRating} ★
                     <span className="text-xs font-normal text-slate-400">/ 5.0</span>
                   </p>
@@ -319,13 +319,13 @@ export function ProductDetailClient({ storeSlug, product }: ProductDetailClientP
               </div>
 
               {/* Delivery Speed Card */}
-              <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-xs flex items-center gap-3">
+              <div className="bg-card border border-border rounded-2xl p-4 shadow-xs flex items-center gap-3">
                 <div className="p-2.5 rounded-xl bg-emerald-50 text-emerald-600">
                   <Truck className="h-5 w-5" />
                 </div>
                 <div>
-                  <p className="text-[11px] font-semibold text-slate-500 uppercase">Delivery & Packing</p>
-                  <p className="text-lg font-bold text-slate-900 flex items-center gap-1.5">
+                  <p className="text-[11px] font-semibold text-muted-foreground uppercase">Delivery & Packing</p>
+                  <p className="text-lg font-bold text-foreground flex items-center gap-1.5">
                     {reviewsData.breakdown.averageDeliveryRating} ★
                     <span className="text-xs font-normal text-slate-400">/ 5.0</span>
                   </p>
@@ -334,8 +334,8 @@ export function ProductDetailClient({ storeSlug, product }: ProductDetailClientP
             </div>
 
             {/* Star Distribution Meter */}
-            <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-5 max-w-md">
-              <p className="text-xs font-bold text-slate-900 mb-3">Rating Breakdown</p>
+            <div className="bg-muted/50 border border-border/80 rounded-2xl p-5 max-w-md">
+              <p className="text-xs font-bold text-foreground mb-3">Rating Breakdown</p>
               <div className="space-y-2">
                 {[5, 4, 3, 2, 1].map((stars) => {
                   const count =
@@ -367,15 +367,15 @@ export function ProductDetailClient({ storeSlug, product }: ProductDetailClientP
               {reviewsData.reviews.map((rev) => (
                 <div
                   key={rev.id}
-                  className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs space-y-3"
+                  className="bg-card border border-border rounded-2xl p-5 shadow-xs space-y-3"
                 >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2.5">
-                      <div className="h-8 w-8 rounded-full bg-blue-100 text-blue-700 font-bold text-xs flex items-center justify-center">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                      <div className="h-8 w-8 rounded-full bg-primary/10 text-primary font-bold text-xs flex items-center justify-center shrink-0">
                         {rev.customer?.fullName?.[0] || "C"}
                       </div>
-                      <div>
-                        <p className="text-xs font-bold text-slate-900">
+                      <div className="min-w-0 truncate">
+                        <p className="text-xs font-bold text-foreground truncate">
                           {rev.customer?.fullName}
                         </p>
                         <p className="text-[11px] text-slate-400">
@@ -384,9 +384,9 @@ export function ProductDetailClient({ storeSlug, product }: ProductDetailClientP
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2">
-                      <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-                        <ShieldCheck className="h-3.5 w-3.5" />
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className="inline-flex items-center gap-1 text-[10px] sm:text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                        <ShieldCheck className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                         Verified Purchase
                       </span>
                     </div>
@@ -394,13 +394,13 @@ export function ProductDetailClient({ storeSlug, product }: ProductDetailClientP
 
                   {/* 3D Score Pills */}
                   <div className="flex flex-wrap gap-2 pt-1">
-                    <span className="inline-flex items-center gap-1 bg-slate-100 text-slate-700 text-[11px] font-semibold px-2.5 py-0.5 rounded-md">
+                    <span className="inline-flex items-center gap-1 bg-muted text-slate-700 text-[11px] font-semibold px-2.5 py-0.5 rounded-md">
                       Product: {rev.productRating} ★
                     </span>
-                    <span className="inline-flex items-center gap-1 bg-slate-100 text-slate-700 text-[11px] font-semibold px-2.5 py-0.5 rounded-md">
+                    <span className="inline-flex items-center gap-1 bg-muted text-slate-700 text-[11px] font-semibold px-2.5 py-0.5 rounded-md">
                       Service: {rev.storeRating} ★
                     </span>
-                    <span className="inline-flex items-center gap-1 bg-slate-100 text-slate-700 text-[11px] font-semibold px-2.5 py-0.5 rounded-md">
+                    <span className="inline-flex items-center gap-1 bg-muted text-slate-700 text-[11px] font-semibold px-2.5 py-0.5 rounded-md">
                       Delivery: {rev.deliveryRating} ★
                     </span>
                   </div>
@@ -409,19 +409,19 @@ export function ProductDetailClient({ storeSlug, product }: ProductDetailClientP
                   <div className="space-y-1.5 pt-1 text-xs text-slate-700">
                     {rev.productComment && (
                       <p>
-                        <span className="font-semibold text-slate-900">Product: </span>
+                        <span className="font-semibold text-foreground">Product: </span>
                         {rev.productComment}
                       </p>
                     )}
                     {rev.storeComment && (
                       <p>
-                        <span className="font-semibold text-slate-900">Service: </span>
+                        <span className="font-semibold text-foreground">Service: </span>
                         {rev.storeComment}
                       </p>
                     )}
                     {rev.deliveryComment && (
                       <p>
-                        <span className="font-semibold text-slate-900">Delivery: </span>
+                        <span className="font-semibold text-foreground">Delivery: </span>
                         {rev.deliveryComment}
                       </p>
                     )}

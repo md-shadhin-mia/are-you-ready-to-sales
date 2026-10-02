@@ -4,8 +4,7 @@ import { ThemeProvider } from "../../../components/ThemeProvider";
 import { Navbar } from "../../../components/Navbar";
 import { ReviewFormClient } from "./ReviewFormClient";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
-
+import { API_BASE } from "../../../lib/api-base";
 async function getStoreMeta(slug: string) {
   try {
     const res = await fetch(`${API_BASE}/api/v1/stores/${slug}/meta`, {
@@ -39,7 +38,7 @@ export default async function ReviewPage({
         tagline={store.brandingInfo?.tagline}
       />
 
-      <main className="flex-1 w-full bg-slate-50/50 min-h-[calc(100vh-64px)]">
+      <main className="flex-1 w-full bg-muted/50/50 min-h-[calc(100vh-64px)]">
         <Suspense
           fallback={
             <div className="py-20 text-center text-slate-400 text-sm">

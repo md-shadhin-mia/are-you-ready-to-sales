@@ -29,7 +29,7 @@ This document sequences the 18 feature groups from `features.md` into build phas
 | 5 | **Student Product Management (Reseller Layer)** | Lets a student pull a catalog product into their store, set their own selling price, and customize its title/images/description. |
 | 6 | **Pricing & Financial Model** | Calculates the customer price from base price + markup, and works out what the student actually earns after fees. |
 | 7 | **Storefront & Customer Shopping Experience** | The public-facing shopping flow — browse, cart, checkout, payment — that real customers use on a student's store. |
-| 8 | **Order Management & Fulfillment** | Tracks every order from placement through payment, shipping, and delivery, and gives staff a dashboard to fulfill them. |
+| 8 | **Order Management & Fulfillment** | Tracks every order through 11 granular operational states (New, Invoiced, In Courier, Partial Delivered, Complete, Hold, Cancelled, Unmatch, Exchange), with dispatch workflows and live queues. |
 | 9 | **Customer Management (CRM per store)** | Gives each student a private view of their own customers — contact info, order history, spend — isolated from other stores. |
 
 ---
@@ -60,11 +60,11 @@ This document sequences the 18 feature groups from `features.md` into build phas
 
 ## Phase 5 — Platform Operations & Monetization
 *Scales the institute's ability to run and profit from the whole ecosystem once many stores are active.*  
-📋 **Detailed Implementation Plan:** [`docs/tasks/phase_5_platform_operations.md`](./tasks/phase_5_platform_operations.md)
+📋 **Detailed Implementation Plan:** [`docs/tasks/phase_5_platform_operations.md`](./tasks/phase_5_platform_operations.md) | [**Overall Admin Portal Plan**](./admin_portal_task_plan.md)
 
 | # | Feature | What it does |
 |---|---|---|
-| 16 | **Institute Dashboard** | Gives the institute a top-down view across all students, stores, products, and orders on the platform. |
+| 16 | **Institute Admin Portal & Operations Hub** | Central mission control featuring Dashboards (with urgent alert badge `01`), Students expandable management, Campus Branches, Student Batches/Cohorts, Orders 11-status fulfillment engine, External Seller Panel, and Payment Requests (badge `3`). |
 | 17 | **Business Model / Monetization** | Implements how the institute earns — product margin, platform commission, and student subscription plans. |
 | 18 | **Platform Roles & Permissions** | Upgrades the initial hard-coded roles into a flexible, granular permission system as the team and platform grow. |
 

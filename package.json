@@ -13,12 +13,31 @@
     "db:migrate": "pnpm --filter @repo/db migrate:dev",
     "db:seed": "pnpm --filter @repo/db seed",
     "docker:up": "docker compose up -d",
-    "docker:down": "docker compose down",
-    "format": "prettier --write \"**/*.{ts,tsx,md,json}\""
+    "docker:down": "docker compose --profile tunnels down",
+    "docker:up:tunnels": "docker compose --profile tunnels up -d && bash scripts/tunnel-urls.sh",
+    "docker:prod:build": "docker compose -f docker-compose.prod.yml build",
+    "docker:prod:up": "docker compose -f docker-compose.prod.yml up -d",
+    "docker:prod:down": "docker compose -f docker-compose.prod.yml down",
+    "docker:prod:logs": "docker compose -f docker-compose.prod.yml logs -f",
+    "docker:hub:pull": "docker compose -f docker-compose.hub.yml pull",
+    "docker:hub:up": "docker compose -f docker-compose.hub.yml up -d",
+    "docker:hub:down": "docker compose -f docker-compose.hub.yml down",
+    "docker:hub:logs": "docker compose -f docker-compose.hub.yml logs -f",
+    "tunnel:urls": "bash scripts/tunnel-urls.sh",
+    "format": "prettier --write \"**/*.{ts,tsx,md,json}\"",
+    "tunnel": "bash scripts/start-tunnels.sh",
+    "tunnel:storefront": "cloudflared tunnel --url http://localhost:3000",
+    "tunnel:student": "cloudflared tunnel --url http://localhost:3001",
+    "tunnel:admin": "cloudflared tunnel --url http://localhost:3002",
+    "tunnel:all": "bash scripts/start-tunnels.sh full"
   },
   "devDependencies": {
     "prettier": "^3.3.3",
     "turbo": "^2.1.2",
     "typescript": "^5.5.4"
-  }
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ]
 }

@@ -7,9 +7,58 @@ import {
 import { PrismaService } from "../prisma/prisma.service";
 import { CreateCategoryDto, UpdateCategoryDto } from "./dto/category.dto";
 
+export const MAX_CATEGORY_DEPTH = 3;
+
+export class CircularDependencyException extends BadRequestException {
+  constructor() {
+    super("Circular category hierarchy: a category cannot be placed under itself or its descendants");
+  }
+}
+
+type ParentLookup = (id: string) => Promise<string | null>;
+type ChildrenLookup = (id: string) => Promise<string[]>;
+
+async function subtreeHeight(id: string, childrenOf: ChildrenLookup): Promise<number> {
+  const children = await childrenOf(id);
+  if (children.length === 0) return 1;
+  const heights = await Promise.all(children.map((c) => subtreeHeight(c, childrenOf)));
+  return 1 + Math.max(...heights);
+}
+
+/**
+ * Validates placing `categoryId` (null for a new category) under `parentId`.
+ * Rejects cycles and any placement that makes the tree deeper than Root -> Category -> Subcategory.
+ * Returns the level the category will occupy (1 = root).
+ */
+export async function validateCategoryPlacement(
+  categoryId: string | null,
+  parentId: string | null,
+  parentOf: ParentLookup,
+  childrenOf: ChildrenLookup,
+): Promise<number> {
+  let parentLevel = 0;
+  for (let cursor = parentId; cursor; cursor = await parentOf(cursor)) {
+    if (cursor === categoryId) throw new CircularDependencyException();
+    if (++parentLevel > MAX_CATEGORY_DEPTH) break;
+  }
+
+  const level = parentLevel + 1;
+  const height = categoryId ? await subtreeHeight(categoryId, childrenOf) : 1;
+  if (level + height - 1 > MAX_CATEGORY_DEPTH) {
+    throw new BadRequestException(`Category hierarchy cannot exceed ${MAX_CATEGORY_DEPTH} levels`);
+  }
+  return level;
+}
+
 @Injectable()
 export class CategoriesService {
   constructor(private readonly prisma: PrismaService) {}
+
+  private parentOf = async (id: string) =>
+    (await this.prisma.category.findUnique({ where: { id }, select: { parentId: true } }))?.parentId ?? null;
+
+  private childrenOf = async (id: string) =>
+    (await this.prisma.category.findMany({ where: { parentId: id }, select: { id: true } })).map((c) => c.id);
 
   async findAllTree() {
     return this.prisma.category.findMany({
@@ -57,6 +106,7 @@ export class CategoriesService {
       if (!parent) {
         throw new NotFoundException("Parent category not found");
       }
+      await validateCategoryPlacement(null, dto.parentId, this.parentOf, this.childrenOf);
     }
 
     return this.prisma.category.create({
@@ -80,8 +130,8 @@ export class CategoriesService {
       }
     }
 
-    if (dto.parentId === id) {
-      throw new BadRequestException("Category cannot be its own parent");
+    if (dto.parentId) {
+      await validateCategoryPlacement(id, dto.parentId, this.parentOf, this.childrenOf);
     }
 
     return this.prisma.category.update({
@@ -90,6 +140,7 @@ export class CategoriesService {
         ...(dto.name && { name: dto.name }),
         ...(dto.slug && { slug: dto.slug.toLowerCase() }),
         ...(dto.parentId !== undefined && { parentId: dto.parentId }),
+        ...(dto.isActive !== undefined && { isActive: dto.isActive }),
       },
     });
   }
@@ -111,8 +162,8 @@ export class CategoriesService {
       where: { categoryId: id },
     });
     if (linkedProducts > 0) {
-      throw new BadRequestException(
-        "Cannot delete category that has associated products",
+      throw new ConflictException(
+        `Category has ${linkedProducts} linked product(s); deactivate it instead of deleting`,
       );
     }
 

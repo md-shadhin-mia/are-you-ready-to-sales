@@ -14,7 +14,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { apiClient, StudentGamificationStatus } from "@repo/api-client";
-import { Button } from "@repo/ui";
+import { Button, PageHeader } from "@repo/ui";
 
 interface GamificationPageProps {
   token: string;
@@ -64,8 +64,8 @@ export const GamificationPage: React.FC<GamificationPageProps> = ({ token }) => 
 
   if (loading && !status) {
     return (
-      <div className="py-20 flex flex-col items-center justify-center text-slate-500 gap-3">
-        <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+      <div className="py-20 flex flex-col items-center justify-center text-muted-foreground gap-3">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
         <p className="text-xs font-semibold">Loading Career Roadmap & Milestones...</p>
       </div>
     );
@@ -73,7 +73,7 @@ export const GamificationPage: React.FC<GamificationPageProps> = ({ token }) => 
 
   if (error && !status) {
     return (
-      <div className="p-6 bg-red-50 border border-red-200 rounded-2xl text-red-700 text-xs flex items-center gap-3">
+      <div className="p-6 bg-destructive/5 border border-destructive/20 rounded-2xl text-destructive text-xs flex items-center gap-3">
         <AlertCircle className="h-5 w-5 flex-shrink-0" />
         <span>{error}</span>
       </div>
@@ -105,15 +105,11 @@ export const GamificationPage: React.FC<GamificationPageProps> = ({ token }) => 
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2.5">
-          <Trophy className="h-7 w-7 text-amber-500" />
-          Entrepreneurial Career Progression
-        </h1>
-        <p className="text-xs text-slate-500 mt-1">
-          Complete verified commercial milestones to gain XP, unlock premium reseller perks, and reduce platform commissions.
-        </p>
-      </div>
+      <PageHeader
+        title="Entrepreneurial Career Progression"
+        description="Complete verified commercial milestones to gain XP, unlock premium reseller perks, and reduce platform commissions."
+        icon={Trophy}
+      />
 
       {celebrationMessage && (
         <div className="p-4 bg-emerald-50 border border-emerald-300 rounded-2xl flex items-center justify-between text-xs text-emerald-800 font-bold shadow-xs animate-in fade-in">
@@ -131,18 +127,18 @@ export const GamificationPage: React.FC<GamificationPageProps> = ({ token }) => 
       )}
 
       {/* Hero Level & XP Banner */}
-      <div className="bg-gradient-to-br from-slate-900 via-indigo-950 to-blue-950 rounded-3xl p-6 sm:p-8 text-white shadow-xl relative overflow-hidden">
+      <div className="bg-gradient-to-br from-slate-900 via-emerald-950 to-teal-950 rounded-3xl p-6 sm:p-8 text-white shadow-xl relative overflow-hidden">
         <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
           {/* Left: Current Tier */}
           <div className="lg:col-span-4 flex items-center gap-5">
-            <div className="h-20 w-20 rounded-2xl bg-gradient-to-tr from-amber-400 to-yellow-500 flex items-center justify-center text-slate-950 shadow-lg font-black text-3xl">
+            <div className="h-20 w-20 rounded-2xl bg-gradient-to-tr from-amber-400 to-yellow-500 flex items-center justify-center text-slate-950 shadow-lg font-bold text-3xl">
               L{status.currentLevel}
             </div>
             <div>
-              <span className="text-[11px] font-bold uppercase tracking-wider text-blue-300 bg-blue-900/50 px-2.5 py-1 rounded-md border border-blue-700/50">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-primary bg-primary/50 px-2.5 py-1 rounded-md border border-primary/50">
                 Level {status.currentLevel} Reseller
               </span>
-              <h2 className="text-xl sm:text-2xl font-black mt-1.5 leading-tight">
+              <h2 className="text-xl sm:text-2xl font-bold mt-1.5 leading-tight">
                 {status.levelTitle}
               </h2>
               <p className="text-xs text-slate-300 mt-1">
@@ -190,22 +186,22 @@ export const GamificationPage: React.FC<GamificationPageProps> = ({ token }) => 
           </div>
 
           {/* Right: Metrics Snapshot */}
-          <div className="lg:col-span-3 grid grid-cols-3 gap-2 bg-white/5 p-3.5 rounded-2xl border border-white/10 text-center">
+          <div className="lg:col-span-3 grid grid-cols-3 gap-2 bg-card/5 p-3.5 rounded-xl border border-white/10 text-center">
             <div>
               <p className="text-[10px] text-slate-400 uppercase font-semibold">Orders</p>
-              <p className="text-sm font-black text-white mt-0.5">
+              <p className="text-sm font-bold text-white mt-0.5">
                 {status.metrics.completedOrders}
               </p>
             </div>
             <div>
               <p className="text-[10px] text-slate-400 uppercase font-semibold">Sales</p>
-              <p className="text-sm font-black text-white mt-0.5">
+              <p className="text-sm font-bold text-white mt-0.5">
                 ৳{(status.metrics.grossRevenue / 1000).toFixed(1)}k
               </p>
             </div>
             <div>
               <p className="text-[10px] text-slate-400 uppercase font-semibold">Rating</p>
-              <p className="text-sm font-black text-amber-400 mt-0.5 flex items-center justify-center gap-0.5">
+              <p className="text-sm font-bold text-amber-400 mt-0.5 flex items-center justify-center gap-0.5">
                 <Star className="h-3 w-3 fill-amber-400" />
                 {Number(status.metrics.ratingAvg).toFixed(1)}
               </p>
@@ -215,9 +211,9 @@ export const GamificationPage: React.FC<GamificationPageProps> = ({ token }) => 
       </div>
 
       {/* 6-Tier Career Roadmap */}
-      <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-xs space-y-4">
-        <h3 className="font-extrabold text-sm text-slate-900 flex items-center gap-2">
-          <Award className="h-4 w-4 text-blue-600" />
+      <div className="bg-card p-6 rounded-xl border border-border shadow-xs space-y-4">
+        <h3 className="font-extrabold text-sm text-foreground flex items-center gap-2">
+          <Award className="h-4 w-4 text-primary" />
           Qualification Roadmap (Level 1 → Level 6)
         </h3>
 
@@ -230,20 +226,20 @@ export const GamificationPage: React.FC<GamificationPageProps> = ({ token }) => 
                 key={t.level}
                 className={`p-3.5 rounded-2xl border transition-all ${
                   isCurrent
-                    ? "bg-blue-50 border-blue-500 shadow-sm ring-2 ring-blue-500/20"
+                    ? "bg-primary/5 border-primary shadow-sm ring-2 ring-primary/20"
                     : isUnlocked
-                      ? "bg-slate-50 border-slate-200"
-                      : "bg-slate-50/50 border-slate-100 opacity-60"
+                      ? "bg-muted/50 border-border"
+                      : "bg-muted/50/50 border-slate-100 opacity-60"
                 }`}
               >
                 <div className="flex items-center justify-between">
                   <span
-                    className={`h-6 w-6 rounded-lg text-xs font-black flex items-center justify-center ${
+                    className={`h-6 w-6 rounded-lg text-xs font-bold flex items-center justify-center ${
                       isCurrent
-                        ? "bg-blue-600 text-white"
+                        ? "bg-primary text-primary-foreground"
                         : isUnlocked
-                          ? "bg-slate-800 text-white"
-                          : "bg-slate-200 text-slate-500"
+                          ? "bg-slate-800 text-primary-foreground"
+                          : "bg-slate-200 text-muted-foreground"
                     }`}
                   >
                     {t.level}
@@ -255,13 +251,13 @@ export const GamificationPage: React.FC<GamificationPageProps> = ({ token }) => 
                   )}
                 </div>
 
-                <p className="font-extrabold text-xs text-slate-900 mt-2 truncate">
+                <p className="font-extrabold text-xs text-foreground mt-2 truncate">
                   {t.title}
                 </p>
-                <p className="text-[10px] text-slate-500 mt-1">
+                <p className="text-[10px] text-muted-foreground mt-1">
                   {t.xp.toLocaleString()} XP • {t.orders} Orders
                 </p>
-                <p className="text-[10px] text-slate-500">
+                <p className="text-[10px] text-muted-foreground">
                   {t.sales} Sales {t.rating ? `• ${t.rating}` : ""}
                 </p>
               </div>
@@ -272,7 +268,7 @@ export const GamificationPage: React.FC<GamificationPageProps> = ({ token }) => 
 
       {/* Unlocked Perks vs Next Perks */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-xs space-y-3">
+        <div className="bg-card p-6 rounded-xl border border-border shadow-xs space-y-3">
           <div className="flex items-center gap-2 text-emerald-700 font-extrabold text-sm">
             <CheckCircle2 className="h-4 w-4 text-emerald-600" />
             Currently Active Perks (Level {status.currentLevel})
@@ -281,7 +277,7 @@ export const GamificationPage: React.FC<GamificationPageProps> = ({ token }) => 
             {status.unlockedPerks.map((perk, i) => (
               <li
                 key={i}
-                className="flex items-center gap-2.5 text-xs text-slate-700 bg-slate-50 p-2.5 rounded-xl border border-slate-100"
+                className="flex items-center gap-2.5 text-xs text-slate-700 bg-muted/50 p-2.5 rounded-xl border border-slate-100"
               >
                 <div className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
                 <span>{perk}</span>
@@ -290,8 +286,8 @@ export const GamificationPage: React.FC<GamificationPageProps> = ({ token }) => 
           </ul>
         </div>
 
-        <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-xs space-y-3">
-          <div className="flex items-center gap-2 text-slate-900 font-extrabold text-sm">
+        <div className="bg-card p-6 rounded-xl border border-border shadow-xs space-y-3">
+          <div className="flex items-center gap-2 text-foreground font-extrabold text-sm">
             <Lock className="h-4 w-4 text-slate-400" />
             {status.nextLevel && !status.nextLevel.isMaxLevel
               ? `Upcoming Perks (Level ${status.nextLevel.level}: ${status.nextLevel.title})`
@@ -299,8 +295,8 @@ export const GamificationPage: React.FC<GamificationPageProps> = ({ token }) => 
           </div>
           {status.nextLevel && !status.nextLevel.isMaxLevel ? (
             <div className="space-y-3 text-xs text-slate-600">
-              <div className="bg-blue-50 border border-blue-200 p-3 rounded-xl text-blue-900">
-                <p className="font-bold text-[11px] uppercase tracking-wider text-blue-700">
+              <div className="bg-primary/5 border border-primary/20 p-3 rounded-xl text-primary">
+                <p className="font-bold text-[11px] uppercase tracking-wider text-primary">
                   Requirements for Level {status.nextLevel.level}:
                 </p>
                 <ul className="mt-1 space-y-1 text-xs">
@@ -314,7 +310,7 @@ export const GamificationPage: React.FC<GamificationPageProps> = ({ token }) => 
               </div>
             </div>
           ) : (
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-muted-foreground">
               Congratulations! You have reached the pinnacle tier of the incubator program.
             </p>
           )}
@@ -322,25 +318,25 @@ export const GamificationPage: React.FC<GamificationPageProps> = ({ token }) => 
       </div>
 
       {/* Challenges & Milestones Section */}
-      <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-xs space-y-6">
+      <div className="bg-card p-6 sm:p-8 rounded-xl border border-border shadow-xs space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
           <div>
-            <h2 className="font-extrabold text-base text-slate-900 flex items-center gap-2">
-              <Gift className="h-4 w-4 text-blue-600" />
+            <h2 className="font-extrabold text-base text-foreground flex items-center gap-2">
+              <Gift className="h-4 w-4 text-primary" />
               Verified Business Challenges ({status.challenges.length})
             </h2>
-            <p className="text-xs text-slate-500 mt-0.5">
+            <p className="text-xs text-muted-foreground mt-0.5">
               Achieve real commercial milestones to claim XP and advance your rank.
             </p>
           </div>
 
-          <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl">
+          <div className="flex items-center gap-1 bg-muted p-1 rounded-xl">
             <button
               onClick={() => setActiveTab("active")}
               className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${
                 activeTab === "active"
-                  ? "bg-white text-slate-900 shadow-xs"
-                  : "text-slate-500 hover:text-slate-900"
+                  ? "bg-card text-foreground shadow-xs"
+                  : "text-muted-foreground hover:text-foreground"
               }`}
             >
               In Progress ({activeChallenges.length})
@@ -349,8 +345,8 @@ export const GamificationPage: React.FC<GamificationPageProps> = ({ token }) => 
               onClick={() => setActiveTab("completed")}
               className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${
                 activeTab === "completed"
-                  ? "bg-white text-slate-900 shadow-xs"
-                  : "text-slate-500 hover:text-slate-900"
+                  ? "bg-card text-foreground shadow-xs"
+                  : "text-muted-foreground hover:text-foreground"
               }`}
             >
               Completed ({completedChallenges.length})
@@ -374,45 +370,45 @@ export const GamificationPage: React.FC<GamificationPageProps> = ({ token }) => 
                 className={`p-5 rounded-2xl border transition-all flex flex-col justify-between ${
                   isFinished
                     ? isClaimed
-                      ? "bg-slate-50 border-slate-200"
+                      ? "bg-muted/50 border-border"
                       : "bg-emerald-50/50 border-emerald-300 ring-2 ring-emerald-500/20"
-                    : "bg-white border-slate-200 hover:border-slate-300"
+                    : "bg-card border-border hover:border-input"
                 }`}
               >
                 <div>
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground bg-muted px-2 py-0.5 rounded-md">
                         Tier {chal.tierLevel}
                       </span>
-                      <h4 className="font-extrabold text-sm text-slate-900 mt-1.5">
+                      <h4 className="font-extrabold text-sm text-foreground mt-1.5">
                         {chal.title}
                       </h4>
                     </div>
-                    <span className="font-black text-xs text-amber-600 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-xl flex items-center gap-1 flex-shrink-0">
+                    <span className="font-bold text-xs text-amber-600 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-xl flex items-center gap-1 flex-shrink-0">
                       <Sparkles className="h-3.5 w-3.5" />
                       +{chal.xpReward} XP
                     </span>
                   </div>
 
-                  <p className="text-xs text-slate-500 mt-1.5 line-clamp-2">
+                  <p className="text-xs text-muted-foreground mt-1.5 line-clamp-2">
                     {chal.description}
                   </p>
                 </div>
 
                 <div className="mt-5 space-y-2">
-                  <div className="flex justify-between text-[11px] text-slate-500">
+                  <div className="flex justify-between text-[11px] text-muted-foreground">
                     <span>Progress</span>
                     <span className="font-bold text-slate-700">
                       {chal.currentCount} / {chal.threshold}
                     </span>
                   </div>
 
-                  <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
+                  <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
                     <div
                       style={{ width: `${progressPercent}%` }}
                       className={`h-full rounded-full transition-all duration-300 ${
-                        isFinished ? "bg-emerald-500" : "bg-blue-600"
+                        isFinished ? "bg-emerald-500" : "bg-primary"
                       }`}
                     />
                   </div>

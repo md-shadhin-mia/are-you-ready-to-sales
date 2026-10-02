@@ -69,9 +69,11 @@ flowchart TD
 | :--- | :--- | :--- | :--- |
 | **Super Admin** | System owner / Infrastructure operator | Platform configuration, payment gateway setup, global audit logs, institute-level settings | Global System |
 | **Institute Admin** | Institute leadership / Operations head | Student admissions, central inventory oversight, overall financial settlement, dispute arbitration | Organization-wide |
+| **Branch Manager** | Regional campus / Hub director | Physical/digital branch oversight, local hub fulfillment, campus cohort monitoring, regional staff | Branch Scoped |
 | **Product Manager** | Catalog & inventory specialist | Master catalog management, SKU creation, supplier relations, central stock allocation, base pricing | Global Catalog |
-| **Order Manager** | Warehouse & logistics operator | Order processing, warehouse dispatch, shipment tracking updates, returns & refunds handling | Global Order Fulfillment |
-| **Training Manager** | Instructor / Academic evaluator | Challenge creation, milestone configuration, student cohort progress tracking, feedback & coaching | Educational & Cohort Data |
+| **Order Manager** | Warehouse & logistics operator | Order triage, invoice generation, warehouse dispatch, 3PL courier sync, returns & exchanges handling | Global Order Fulfillment |
+| **Training Manager** | Instructor / Academic evaluator | Challenge creation, milestone configuration, student cohort progress tracking, batch mentoring | Educational & Cohort Data |
+| **External Seller / Merchant** | Third-party supplier / Instructor partner | Supplying wholesale inventory, submitting course assets, monitoring seller scorecards & payouts | Seller Account Scoped |
 | **Support Agent** | Customer & student support | Resolving platform inquiries, handling escalations, mediating store disputes | Ticketing & Resolution |
 | **Student / Reseller** | Store owner & entrepreneur learner | Storefront design, product markup configuration, marketing campaigns, customer CRM, tracking net profit & training progress | Tenant/Store Isolated |
 | **Customer** | End-consumer / Product purchaser | Browsing student stores, purchasing items, tracking order deliveries, submitting verified product/store reviews | Order/Session Isolated |
@@ -162,22 +164,30 @@ classDiagram
 * **FR-03.3 Payment Gateway Processing:**
   - Multi-gateway integration (Credit/Debit Cards, Mobile Financial Services [bKash/Nagad/Rocket], Cash on Delivery [COD]).
   - Automated payment verification, webhook handling, and split-ledger recording.
-* **FR-03.4 End-to-End Order State Machine:**
-  - The platform must transition orders through clear, auditable states:
+* **FR-03.4 End-to-End Multi-Status Order Lifecycle:**
+  - The platform transitions orders through dedicated operational status queues monitored in the Admin Portal:
 
 ```mermaid
 stateDiagram-v2
-    [*] --> PENDING_PAYMENT : Customer places order
-    PENDING_PAYMENT --> PAID : Payment verified
-    PENDING_PAYMENT --> CANCELLED : Payment expired/abandoned
-    PAID --> PROCESSING : Institute warehouse picks & packs
-    PROCESSING --> SHIPPED : Dispatched with tracking #
-    SHIPPED --> DELIVERED : Confirmed receipt by courier/customer
-    DELIVERED --> COMPLETED : Return window closes (Settlement locked)
-    DELIVERED --> RETURN_REQUESTED : Customer requests return
-    RETURN_REQUESTED --> RETURNED : Items received at warehouse
-    RETURNED --> REFUNDED : Payment reversed & ledger adjusted
-    COMPLETED --> [*]
+    [*] --> NEW : Order placed by customer
+    NEW --> HOLD : Verification / Stock issue
+    HOLD --> NEW : Issue resolved
+    HOLD --> CANCELLED : Unresolved / Customer cancelled
+    NEW --> UNMATCH : Discrepancy flagged (SKU/price/scan)
+    UNMATCH --> INVOICED : Discrepancy reconciled
+    UNMATCH --> CANCELLED : Discrepancy unresolvable
+    NEW --> INVOICED : Payment confirmed / COD verified
+    INVOICED --> IN_COURIER : Picked, packed & handed to 3PL
+    IN_COURIER --> PARTIAL_DELIVERED : Split bundle delivery
+    PARTIAL_DELIVERED --> DELIVERED : Remainder delivered
+    IN_COURIER --> DELIVERED : Full consignment received
+    DELIVERED --> COMPLETE : Return/exchange window expires
+    DELIVERED --> EXCHANGE : Customer requests replacement
+    EXCHANGE --> IN_COURIER : Replacement item dispatched
+    DELIVERED --> RETURNED : Return requested & received
+    RETURNED --> REFUNDED : Ledger reversed
+    NEW --> CANCELLED : Payment failed / Cancelled
+    COMPLETE --> [*]
 ```
 
 ---
@@ -259,14 +269,52 @@ flowchart LR
 
 ---
 
-### Module 8: Institute Oversight & Global Operations (FR-08)
-* **FR-08.1 Student & Store Moderation:**
-  - Account approvals, store status toggling (Active, Under Review, Suspended), compliance monitoring against misleading claims.
-* **FR-08.2 Master Fulfillment Center:**
-  - Consolidated order queue with batch packing slips, courier dispatch manifest generation, and stock decrement triggers.
-* **FR-08.3 Global Financial & Commission Settlement:**
-  - Automated ledger tracking institute revenues, student payout liabilities, payment gateway charges, and tax withholdings.
-  - Student withdrawal/payout management system with bank/MFS transfer processing.
+### Module 8: Institute Admin Portal & Enterprise Operations (FR-08)
+
+The Institute Admin Portal serves as the centralized operations backbone, structured into primary navigation groups:
+
+* **FR-08.1 Dashboards & Operational Situational Awareness:**
+  - Executive Overview Panel displaying platform-wide GMV, net revenue, active vs inactive student stores, warehouse backlogs, and conversion funnels.
+  - **Live Urgent Notification Bubble (`01`):** Unread actionable items counter highlighting pending payout requests, delayed shipments, or critical student conduct violations.
+* **FR-08.2 Expandable Student Governance Suite:**
+  - Comprehensive student directory with multi-field search (NID, phone, store slug, enrollment date).
+  - Identity verification & KYC document audit workbench (NID/Passport check).
+  - Academic & commercial progress integration: linking course completion badges with real store GMV and net profit earned.
+  - Account restriction controls: one-click suspension with audit reason notes, disabling storefront access while maintaining database integrity.
+* **FR-08.3 Multi-Campus & Branch Management:**
+  - Physical and digital campus profile CRUD (Branch Name, Code, Physical Address, Regional Hub mapping).
+  - Branch coordinator & director assignments with branch-scoped data visibility.
+  - Regional warehouse inventory hub association and local delivery partner mapping.
+  - Comparative branch performance analytics (enrollment, active stores, commercial sales).
+* **FR-08.4 Student Batches & Cohort Scheduling:**
+  - Cohort definition engine (Batch Code, start/end dates, enrollment limits, curriculum track).
+  - Batch student enrollment mapping (individual assignment or CSV bulk upload).
+  - Faculty instructor and training mentor assignment per batch.
+  - Batch commercial leaderboard comparing aggregate revenue, order volume, and milestone completion.
+* **FR-08.5 Comprehensive Multi-Status Order Management Engine:**
+  A highly detailed tracking console broken down into 11 dedicated operational status views:
+  1. *Order Overview:* High-level sales summaries, GMV volume, pipeline conversion rates, and channel breakdown.
+  2. *All Orders (9410):* Consolidated global order registry with advanced multi-filters and CSV data export.
+  3. *New Orders (8):* Incoming unprocessed transactions requiring initial triage, fraud screening, or COD phone verification.
+  4. *Complete Orders (0):* Successfully delivered transactions past the customer return/exchange window with seller funds finalized.
+  5. *Partial Delivered (233):* Orders where partial consignments have been delivered while remaining items are in transit or backordered.
+  6. *Unmatch Orders (4035):* Quarantined transactions with catalog SKU mismatches, warehouse barcode scan errors, or payment discrepancies requiring manual audit.
+  7. *Invoiced Orders (8778):* Orders with official tax invoices generated, locked for warehouse pick-and-pack.
+  8. *Hold Orders (29):* Paused orders awaiting customer delivery rescheduling, address clarification, or inventory replenishment.
+  9. *Cancelled Orders (131):* Terminated orders with automated stock replenishment back to master catalog inventory.
+  10. *In Courier (9243):* Live dispatches with active 3PL logistics carriers (*Pathao*, *Steadfast*, *RedX*, *Paperfly*) with automated status synchronization webhooks.
+  11. *Exchange Orders:* Dedicated exchange pipeline for size/color replacements, damaged goods re-dispatch, or course swaps.
+* **FR-08.6 External Seller Panel & Merchant Governance:**
+  - Onboarding and credential verification for external third-party merchants and instructors.
+  - Listing permissions, wholesale base price submission, and catalog publishing controls.
+  - Customized commission, wholesale margin, and instructor royalty agreements.
+  - Seller performance scorecards (fulfillment SLA, defect rates, dispute logs, customer review scores).
+* **FR-08.7 Payment Requests & Financial Settlement:**
+  - Dedicated payout requests queue with real-time pending badge counter (`3`).
+  - Automated ledger balance audit ensuring withdrawal requests do not exceed available net profits.
+  - Multi-channel disbursement handling (bKash Merchant, Nagad, BEFTN/NPSB bank wire).
+  - Transaction reference ID recording (e.g. TrxID) and printable settlement vouchers.
+  - Rejection workflow with documented remarks, unlocking held funds back to the user's available wallet.
 
 ---
 
@@ -315,8 +363,13 @@ mindmap
 
 ```mermaid
 erDiagram
+    BRANCHES ||--o{ STUDENT_BATCHES : hosts
+    STUDENT_BATCHES ||--o{ BATCH_ENROLLMENTS : contains
+    USERS ||--o{ BATCH_ENROLLMENTS : enrolls
     USERS ||--o{ STORES : owns
     USERS ||--o{ USER_ROLES : assigned
+    USERS ||--o{ SELLER_PROFILES : registers
+    USERS ||--o{ PAYMENT_REQUESTS : submits
     STORES ||--o{ STORE_PRODUCTS : configures
     MASTER_PRODUCTS ||--o{ STORE_PRODUCTS : references
     CATEGORIES ||--o{ MASTER_PRODUCTS : classifies
@@ -330,6 +383,59 @@ erDiagram
     USERS ||--o{ STUDENT_PROGRESS : tracks
     CHALLENGES ||--o{ STUDENT_PROGRESS : completes
     ORDERS ||--o{ TRANSACTIONS : settles
+
+    BRANCHES {
+        uuid id PK
+        string name
+        string code UK
+        string type
+        string address
+        uuid manager_id FK
+        boolean is_active
+    }
+
+    STUDENT_BATCHES {
+        uuid id PK
+        uuid branch_id FK
+        string name
+        string batch_code UK
+        uuid instructor_id FK
+        date start_date
+        date end_date
+        int max_capacity
+        string status
+    }
+
+    BATCH_ENROLLMENTS {
+        uuid id PK
+        uuid batch_id FK
+        uuid student_id FK
+        string status
+        timestamp enrolled_at
+    }
+
+    SELLER_PROFILES {
+        uuid id PK
+        uuid user_id FK
+        string company_name
+        string seller_type
+        decimal commission_rate
+        string status
+        decimal compliance_score
+    }
+
+    PAYMENT_REQUESTS {
+        uuid id PK
+        uuid user_id FK
+        decimal amount
+        string payment_method
+        json account_details
+        string status
+        string transaction_reference
+        uuid reviewed_by_id FK
+        timestamp requested_at
+        timestamp settled_at
+    }
 
     USERS {
         uuid id PK

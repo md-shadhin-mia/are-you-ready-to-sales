@@ -158,9 +158,13 @@ Phase 2 turns the foundational system into a live commercial e-commerce platform
 
 - [ ] **Task 2.8: Order Fulfillment & Warehouse Dispatch (`orders` + `admin`)**
   - Implement fulfillment endpoints for institute order managers:
-    - `GET /api/v1/admin/orders`: Global order queue across all stores with status filters.
-    - `PATCH /api/v1/admin/orders/:id/status`: Update status (`PROCESSING` -> `SHIPPED` -> `DELIVERED`).
-    - `PATCH /api/v1/admin/orders/:id/dispatch`: Attach `courierName` (e.g. Steadfast, Pathao, RedX) and `trackingNumber`. Automatically updates status to `SHIPPED`.
+    - `GET /api/v1/admin/orders/counts`: Return count metrics across all 11 order queues (`all`, `new`, `complete`, `partialDelivered`, `unmatch`, `invoiced`, `hold`, `cancelled`, `inCourier`, `exchange`).
+    - `GET /api/v1/admin/orders`: Global order queue across all stores with status filters (`NEW`, `INVOICED`, `IN_COURIER`, `PARTIAL_DELIVERED`, `COMPLETE`, `HOLD`, `CANCELLED`, `UNMATCH`, `EXCHANGE`).
+    - `PATCH /api/v1/admin/orders/:id/status`: Update status (`NEW` -> `INVOICED` -> `IN_COURIER` -> `DELIVERED` -> `COMPLETE`).
+    - `PATCH /api/v1/admin/orders/:id/dispatch`: Attach `courierName` (e.g. Steadfast, Pathao, RedX) and `trackingNumber`. Automatically updates status to `IN_COURIER`.
+    - `PATCH /api/v1/admin/orders/:id/hold`: Transition order to `HOLD` with audit reason.
+    - `PATCH /api/v1/admin/orders/:id/unmatch`: Flag or reconcile items with `UNMATCH` status.
+    - `POST /api/v1/admin/orders/:id/exchange`: Initiate replacement transaction under `EXCHANGE`.
     - `GET /api/v1/student/orders`: Student view of their store's orders with profit breakdown.
 
 - [ ] **Task 2.9: Customer Management CRM (`customers`)**
@@ -199,9 +203,13 @@ Phase 2 turns the foundational system into a live commercial e-commerce platform
     - Customer list with phone number, orders count, total spend, and date of last purchase.
 
 - [ ] **Task 2.12: Institute Fulfillment Console (`apps/admin-dashboard`)**
-  - Global Order Operations Screen:
-    - Filter orders by: `Pending`, `Processing`, `Ready for Dispatch`, `Shipped`, `Delivered`.
+  - Expanded Orders Multi-Status Operations Screen:
+    - Status tabs with real-time counters: *Order Overview*, *All Orders (9410)*, *New Orders (8)*, *Complete Orders (0)*, *Partial Delivered (233)*, *Unmatch Orders (4035)*, *Invoiced Orders (8778)*, *Hold Orders (29)*, *Cancelled Orders (131)*, *In Courier (9243)*, *Exchange Orders*.
     - "Dispatch Order" modal: Select courier (Pathao / Steadfast / RedX / Paperfly), input tracking ID, print invoice/packing slip.
+    - "Invoice Generation" modal: Batch invoice creation transitioning new orders to `INVOICED`.
+    - "Hold Order" modal: Pause orders requiring customer address/phone confirmation.
+    - "Unmatch Resolution" modal: Reconcile barcode/SKU discrepancies.
+    - "Exchange" workflow: Swap items or courses without affecting original billing.
     - Order detail view showing student store attribution, wholesale cost, customer delivery details.
 
 ---

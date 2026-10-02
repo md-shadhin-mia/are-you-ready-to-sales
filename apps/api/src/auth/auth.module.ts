@@ -8,6 +8,9 @@ import { PasswordService } from "./password.service";
 import { JwtStrategy } from "./jwt.strategy";
 import { JwtAuthGuard } from "./jwt-auth.guard";
 import { RolesGuard } from "./roles.guard";
+import { DynamicPermissionsGuard } from "./dynamic-permissions.guard";
+import { RolesService } from "./roles.service";
+import { RolesController } from "./roles.controller";
 
 @Module({
   imports: [
@@ -26,8 +29,24 @@ import { RolesGuard } from "./roles.guard";
       }),
     }),
   ],
-  controllers: [AuthController],
-  providers: [AuthService, PasswordService, JwtStrategy, JwtAuthGuard, RolesGuard],
-  exports: [AuthService, PasswordService, JwtAuthGuard, RolesGuard],
+  controllers: [AuthController, RolesController],
+  providers: [
+    AuthService,
+    PasswordService,
+    JwtStrategy,
+    JwtAuthGuard,
+    RolesGuard,
+    DynamicPermissionsGuard,
+    RolesService,
+  ],
+  exports: [
+    AuthService,
+    PasswordService,
+    JwtAuthGuard,
+    RolesGuard,
+    DynamicPermissionsGuard,
+    RolesService,
+  ],
 })
 export class AuthModule {}
+
