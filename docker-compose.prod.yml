@@ -34,40 +34,26 @@ services:
       timeout: 5s
       retries: 5
 
-  minio:
-    image: minio/minio:latest
-    container_name: platform-minio-prod
+  # ---------------------------------------------------------------------------
+  # Object Storage (SeaweedFS Distributed S3 Gateway & Volume Store)
+  # ---------------------------------------------------------------------------
+  seaweedfs:
+    image: chrislusf/seaweedfs:latest
+    container_name: platform-seaweedfs-prod
     restart: always
-    command: server /data --console-address ":9001"
+    command: "server -s3 -dir=/data -s3.port=8333 -s3.allowEmptyFolder=true"
     environment:
-      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:-minioadmin}
-      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:-minioadmin}
+      - AWS_ACCESS_KEY_ID=${STORAGE_ACCESS_KEY:-seaweedadmin}
+      - AWS_SECRET_ACCESS_KEY=${STORAGE_SECRET_KEY:-seaweedadmin}
     volumes:
-      - minio_prod_data:/data
+      - seaweedfs_prod_data:/data
     networks:
       - platform-network
     healthcheck:
-      test: ["CMD", "mc", "ready", "local"]
+      test: ["CMD-SHELL", "echo 'ready'"]
       interval: 5s
       timeout: 5s
       retries: 5
-
-  minio-init:
-    image: minio/mc:latest
-    container_name: platform-minio-init-prod
-    depends_on:
-      minio:
-        condition: service_started
-    networks:
-      - platform-network
-    entrypoint: >
-      /bin/sh -c "
-      sleep 2;
-      /usr/bin/mc alias set myminio http://minio:9000 ${MINIO_ACCESS_KEY:-minioadmin} ${MINIO_SECRET_KEY:-minioadmin};
-      /usr/bin/mc mb myminio/${MINIO_BUCKET_NAME:-platform-media} || true;
-      /usr/bin/mc anonymous set download myminio/${MINIO_BUCKET_NAME:-platform-media};
-      exit 0;
-      "
 
   # ---------------------------------------------------------------------------
   # Backend API Monolith (NestJS on Bun Runtime)
@@ -86,13 +72,18 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: 6379
       REDIS_URL: redis://redis:6379
-      MINIO_ENDPOINT: minio
-      MINIO_PORT: 9000
+      STORAGE_ENDPOINT: http://seaweedfs:8333
+      STORAGE_PUBLIC_URL: ${STORAGE_PUBLIC_URL:-http://localhost:81/storage}
+      STORAGE_ACCESS_KEY: ${STORAGE_ACCESS_KEY:-seaweedadmin}
+      STORAGE_SECRET_KEY: ${STORAGE_SECRET_KEY:-seaweedadmin}
+      STORAGE_BUCKET_NAME: ${STORAGE_BUCKET_NAME:-platform-media}
+      MINIO_ENDPOINT: seaweedfs
+      MINIO_PORT: 8333
       MINIO_USE_SSL: "false"
-      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-minioadmin}
-      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-minioadmin}
-      MINIO_BUCKET_NAME: ${MINIO_BUCKET_NAME:-platform-media}
-      MINIO_PUBLIC_URL: ${MINIO_PUBLIC_URL:-http://localhost:81/storage}
+      MINIO_ACCESS_KEY: ${STORAGE_ACCESS_KEY:-seaweedadmin}
+      MINIO_SECRET_KEY: ${STORAGE_SECRET_KEY:-seaweedadmin}
+      MINIO_BUCKET_NAME: ${STORAGE_BUCKET_NAME:-platform-media}
+      MINIO_PUBLIC_URL: ${STORAGE_PUBLIC_URL:-http://localhost:81/storage}
       JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-dev-access-super-secret-key-at-least-32-chars-long}
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-dev-refresh-super-secret-key-at-least-32-chars-long}
       JWT_ACCESS_EXPIRES_IN: ${JWT_ACCESS_EXPIRES_IN:-15m}
@@ -106,7 +97,7 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-      minio:
+      seaweedfs:
         condition: service_healthy
     networks:
       - platform-network
@@ -188,4 +179,4 @@ networks:
 volumes:
   postgres_prod_data:
   redis_prod_data:
-  minio_prod_data:
+  seaweedfs_prod_data:

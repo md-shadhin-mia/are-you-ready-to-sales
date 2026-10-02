@@ -21,27 +21,38 @@ export class StorageService {
     const isProduction =
       this.configService.get<string>("NODE_ENV") === "production";
     const endpoint =
+      this.configService.get<string>("STORAGE_ENDPOINT") ||
       this.configService.get<string>("MINIO_PUBLIC_URL") ||
-      "http://localhost:9100";
-    const accessKey = this.configService.get<string>("MINIO_ACCESS_KEY");
-    const secretKey = this.configService.get<string>("MINIO_SECRET_KEY");
+      "http://localhost:8333";
+    const publicUrl =
+      this.configService.get<string>("STORAGE_PUBLIC_URL") ||
+      this.configService.get<string>("MINIO_PUBLIC_URL") ||
+      endpoint;
+    const accessKey =
+      this.configService.get<string>("STORAGE_ACCESS_KEY") ||
+      this.configService.get<string>("MINIO_ACCESS_KEY");
+    const secretKey =
+      this.configService.get<string>("STORAGE_SECRET_KEY") ||
+      this.configService.get<string>("MINIO_SECRET_KEY");
 
     if (isProduction && (!accessKey || !secretKey)) {
       throw new Error(
-        "MINIO_ACCESS_KEY and MINIO_SECRET_KEY must be set in production (see .env.example)",
+        "STORAGE_ACCESS_KEY and STORAGE_SECRET_KEY (or MINIO_*) must be set in production (see .env.example)",
       );
     }
 
     this.bucketName =
-      this.configService.get<string>("MINIO_BUCKET_NAME") || "platform-media";
-    this.publicUrl = endpoint;
+      this.configService.get<string>("STORAGE_BUCKET_NAME") ||
+      this.configService.get<string>("MINIO_BUCKET_NAME") ||
+      "platform-media";
+    this.publicUrl = publicUrl;
 
     this.s3Client = new S3Client({
       endpoint,
       region: "us-east-1",
       credentials: {
-        accessKeyId: accessKey || "minioadmin",
-        secretAccessKey: secretKey || "minioadmin",
+        accessKeyId: accessKey || "seaweedadmin",
+        secretAccessKey: secretKey || "seaweedadmin",
       },
       forcePathStyle: true,
     });
