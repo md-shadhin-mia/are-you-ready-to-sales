@@ -64,7 +64,8 @@ export function App() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center text-slate-500 text-sm">
+      <div className="min-h-screen bg-background flex items-center justify-center gap-3 text-sm text-muted-foreground">
+        <span className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
         Loading Student Portal...
       </div>
     );

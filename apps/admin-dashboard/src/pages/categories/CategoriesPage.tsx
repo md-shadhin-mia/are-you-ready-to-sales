@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Button, Input, Card, CardHeader, CardTitle, CardContent, Badge } from "@repo/ui";
+import { Badge, Button, Card, CardContent, CardHeader, CardTitle, Dialog, DialogContent, DialogTitle, Input, Label, NativeSelect, PageHeader, toast } from "@repo/ui";
 import { apiClient, Category } from "@repo/api-client";
 import { Plus, FolderTree, AlertCircle, Loader2 } from "lucide-react";
 
@@ -53,7 +53,7 @@ export const CategoriesPage: React.FC<CategoriesPageProps> = ({ token }) => {
       setParentId("");
       loadCategories();
     } catch (err: any) {
-      alert(err.message || "Failed to create category");
+      toast.error(err.message || "Failed to create category");
     } finally {
       setSubmitting(false);
     }
@@ -61,27 +61,24 @@ export const CategoriesPage: React.FC<CategoriesPageProps> = ({ token }) => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight text-slate-900">
-            Category Taxonomy
-          </h2>
-          <p className="text-sm text-slate-500">
-            Organize the master catalog into hierarchical departments & categories
-          </p>
-        </div>
-
-        <Button
-          onClick={() => setIsModalOpen(true)}
-          className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white"
-        >
-          <Plus className="h-4 w-4" />
-          Add Category
-        </Button>
-      </div>
+      <PageHeader
+        title="Category Taxonomy"
+        description="Organize the master catalog into hierarchical departments & categories"
+        actions={
+          <>
+            <Button
+              onClick={() => setIsModalOpen(true)}
+              className="flex items-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground"
+            >
+              <Plus className="h-4 w-4" />
+              Add Category
+            </Button>
+          </>
+        }
+      />
 
       {error && (
-        <div className="p-4 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm flex items-center gap-2">
+        <div className="p-4 rounded-lg bg-destructive/5 border border-destructive/20 text-destructive text-sm flex items-center gap-2">
           <AlertCircle className="h-5 w-5 shrink-0" />
           <span>{error}</span>
         </div>
@@ -89,15 +86,15 @@ export const CategoriesPage: React.FC<CategoriesPageProps> = ({ token }) => {
 
       {loading ? (
         <div className="h-64 flex items-center justify-center">
-          <Loader2 className="h-8 w-8 text-blue-600 animate-spin" />
+          <Loader2 className="h-8 w-8 text-primary animate-spin" />
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {categories.map((cat) => (
-            <Card key={cat.id} className="shadow-sm border-slate-200">
+            <Card key={cat.id} className="shadow-sm border-border">
               <CardHeader className="pb-3 border-b border-slate-100 flex flex-row items-center justify-between">
                 <div className="flex items-center gap-2.5">
-                  <FolderTree className="h-5 w-5 text-blue-600" />
+                  <FolderTree className="h-5 w-5 text-primary" />
                   <CardTitle className="text-base font-semibold">{cat.name}</CardTitle>
                 </div>
                 <Badge variant="secondary" className="font-mono text-[10px]">
@@ -105,7 +102,7 @@ export const CategoriesPage: React.FC<CategoriesPageProps> = ({ token }) => {
                 </Badge>
               </CardHeader>
               <CardContent className="pt-4">
-                <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
+                <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
                   Subcategories ({cat.children?.length || 0})
                 </h4>
                 {cat.children && cat.children.length > 0 ? (
@@ -113,7 +110,7 @@ export const CategoriesPage: React.FC<CategoriesPageProps> = ({ token }) => {
                     {cat.children.map((sub) => (
                       <li
                         key={sub.id}
-                        className="text-sm text-slate-700 flex items-center justify-between p-2 rounded bg-slate-50 border border-slate-100"
+                        className="text-sm text-slate-700 flex items-center justify-between p-2 rounded bg-muted/50 border border-slate-100"
                       >
                         <span>{sub.name}</span>
                         <span className="text-xs text-slate-400 font-mono">
@@ -132,18 +129,19 @@ export const CategoriesPage: React.FC<CategoriesPageProps> = ({ token }) => {
       )}
 
       {/* Add Category Modal */}
-      {isModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-          <Card className="w-full max-w-md shadow-xl bg-white">
+      <Dialog open={!!isModalOpen} onOpenChange={(open) => !open && setIsModalOpen(false)}>
+        <DialogContent hideClose aria-describedby={undefined} className="max-w-md gap-0 overflow-visible border-0 bg-transparent p-0 shadow-none">
+          <DialogTitle className="sr-only">Add Category</DialogTitle>
+          <Card className="w-full max-w-md shadow-xl bg-card">
             <CardHeader className="border-b border-slate-100">
               <CardTitle className="text-lg">Add New Category</CardTitle>
             </CardHeader>
             <CardContent className="pt-4">
               <form onSubmit={handleCreate} className="space-y-4">
                 <div>
-                  <label className="block text-xs font-medium text-slate-700 mb-1">
+                  <Label className="block text-xs font-medium text-slate-700 mb-1">
                     Category Name
-                  </label>
+                  </Label>
                   <Input
                     required
                     value={name}
@@ -163,9 +161,9 @@ export const CategoriesPage: React.FC<CategoriesPageProps> = ({ token }) => {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-slate-700 mb-1">
+                  <Label className="block text-xs font-medium text-slate-700 mb-1">
                     URL Slug
-                  </label>
+                  </Label>
                   <Input
                     required
                     value={slug}
@@ -175,13 +173,13 @@ export const CategoriesPage: React.FC<CategoriesPageProps> = ({ token }) => {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-slate-700 mb-1">
+                  <Label className="block text-xs font-medium text-slate-700 mb-1">
                     Parent Category (Optional)
-                  </label>
-                  <select
+                  </Label>
+                  <NativeSelect containerClassName="w-full"
                     value={parentId}
                     onChange={(e) => setParentId(e.target.value)}
-                    className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="text-sm"
                   >
                     <option value="">None (Top-Level Category)</option>
                     {categories.map((c) => (
@@ -189,7 +187,7 @@ export const CategoriesPage: React.FC<CategoriesPageProps> = ({ token }) => {
                         {c.name}
                       </option>
                     ))}
-                  </select>
+                  </NativeSelect>
                 </div>
 
                 <div className="flex justify-end gap-3 pt-2">
@@ -207,8 +205,8 @@ export const CategoriesPage: React.FC<CategoriesPageProps> = ({ token }) => {
               </form>
             </CardContent>
           </Card>
-        </div>
-      )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

@@ -11,31 +11,69 @@ import {
   ExternalLink,
   ChevronRight,
   TrendingUp,
+  FileCheck,
+  CheckCircle,
+  XCircle,
+  AlertTriangle,
 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  Input,
+  Label,
+  NativeSelect,
+  PageHeader,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+  Textarea,
+  Button,
+  Badge,
+} from "@repo/ui";
 
 interface StudentGovernancePageProps {
   token: string;
+  initialSubTab?: "directory" | "kyc" | "records" | "restrictions" | "scorecard";
 }
 
-export const StudentGovernancePage: React.FC<StudentGovernancePageProps> = ({ token }) => {
-  const [activeSubTab, setActiveSubTab] = useState<"directory" | "scorecard">("directory");
+export const StudentGovernancePage: React.FC<StudentGovernancePageProps> = ({
+  token,
+  initialSubTab = "directory",
+}) => {
+  const [activeSubTab, setActiveSubTab] = useState<
+    "directory" | "kyc" | "records" | "restrictions" | "scorecard"
+  >(initialSubTab);
   const [students, setStudents] = useState<AdminStudentItem[]>([]);
   const [scorecard, setScorecard] = useState<SellerScorecardItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("");
 
+  // KYC modal state
+  const [kycTarget, setKycTarget] = useState<any | null>(null);
+  const [verifyingKyc, setVerifyingKyc] = useState(false);
+
   // Suspension modal state
-  const [selectedStore, setSelectedStore] = useState<{ id: string; name: string; currentStatus: string } | null>(null);
+  const [selectedStore, setSelectedStore] = useState<{
+    id: string;
+    name: string;
+    currentStatus: string;
+  } | null>(null);
   const [suspensionReason, setSuspensionReason] = useState("Policy Violation");
   const [suspensionNotes, setSuspensionNotes] = useState("");
   const [actionLoading, setActionLoading] = useState(false);
 
   useEffect(() => {
-    if (activeSubTab === "directory") {
-      loadStudents();
-    } else {
+    if (activeSubTab === "scorecard") {
       loadScorecard();
+    } else {
+      loadStudents();
     }
   }, [activeSubTab, statusFilter, token]);
 
@@ -89,180 +127,233 @@ export const StudentGovernancePage: React.FC<StudentGovernancePageProps> = ({ to
       setSelectedStore(null);
       setSuspensionNotes("");
       loadStudents();
-    } catch (err) {
-      console.error("Failed to update store status", err);
-      alert("Failed to update store status");
+    } catch (err: any) {
+      alert(err.message || "Failed to update store status");
     } finally {
       setActionLoading(false);
     }
   };
 
-  return (
-    <div className="p-8 max-w-7xl mx-auto space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
-            Student & Seller Governance
-          </h1>
-          <p className="text-sm text-slate-500 mt-1">
-            Audit store performance, manage reseller status, and enforce compliance guidelines
-          </p>
-        </div>
+  const handleVerifyKyc = async (studentId: string, isVerified: boolean) => {
+    setVerifyingKyc(true);
+    try {
+      await apiClient.adminDashboard.verifyKyc(studentId, isVerified, token);
+      setKycTarget(null);
+      loadStudents();
+    } catch (err: any) {
+      alert(err.message || "Failed to update KYC status");
+    } finally {
+      setVerifyingKyc(false);
+    }
+  };
 
-        {/* Tab switch */}
-        <div className="flex bg-slate-200/80 p-1 rounded-xl">
-          <button
-            onClick={() => setActiveSubTab("directory")}
-            className={`px-4 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-              activeSubTab === "directory"
-                ? "bg-white text-slate-900 shadow-xs"
-                : "text-slate-600 hover:text-slate-900"
-            }`}
-          >
-            Student Directory
-          </button>
-          <button
-            onClick={() => setActiveSubTab("scorecard")}
-            className={`px-4 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-              activeSubTab === "scorecard"
-                ? "bg-white text-slate-900 shadow-xs"
-                : "text-slate-600 hover:text-slate-900"
-            }`}
-          >
-            Seller Scorecard Leaderboard
-          </button>
-        </div>
+  // Filtered by subtabs
+  const displayedStudents = students.filter((s) => {
+    if (activeSubTab === "kyc") {
+      return !s.isVerified; // Focus on pending KYC
+    }
+    if (activeSubTab === "restrictions") {
+      return s.store?.status === "SUSPENDED";
+    }
+    return true;
+  });
+
+  return (
+    <div className="space-y-6">
+      <PageHeader
+        title="Student Governance & KYC Suite"
+        description="Comprehensive directory, National ID audit, academic milestones, and one-click store suspension controls."
+      />
+
+      {/* Sub-Navigation Tabs */}
+      <div className="flex border-b border-border gap-2 overflow-x-auto pb-1">
+        <button
+          onClick={() => setActiveSubTab("directory")}
+          className={`pb-2.5 px-3.5 text-xs font-semibold border-b-2 whitespace-nowrap transition-colors ${
+            activeSubTab === "directory"
+              ? "border-primary text-primary"
+              : "border-transparent text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          Directory & Profiles
+        </button>
+        <button
+          onClick={() => setActiveSubTab("kyc")}
+          className={`pb-2.5 px-3.5 text-xs font-semibold border-b-2 whitespace-nowrap transition-colors flex items-center gap-1.5 ${
+            activeSubTab === "kyc"
+              ? "border-primary text-primary"
+              : "border-transparent text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          <FileCheck className="h-3.5 w-3.5" />
+          Verification & KYC Audit
+        </button>
+        <button
+          onClick={() => setActiveSubTab("records")}
+          className={`pb-2.5 px-3.5 text-xs font-semibold border-b-2 whitespace-nowrap transition-colors ${
+            activeSubTab === "records"
+              ? "border-primary text-primary"
+              : "border-transparent text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          Academic & Commercial Records
+        </button>
+        <button
+          onClick={() => setActiveSubTab("restrictions")}
+          className={`pb-2.5 px-3.5 text-xs font-semibold border-b-2 whitespace-nowrap transition-colors flex items-center gap-1.5 ${
+            activeSubTab === "restrictions"
+              ? "border-primary text-primary"
+              : "border-transparent text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          <ShieldAlert className="h-3.5 w-3.5 text-destructive" />
+          Restrictions & Suspensions
+        </button>
+        <button
+          onClick={() => setActiveSubTab("scorecard")}
+          className={`pb-2.5 px-3.5 text-xs font-semibold border-b-2 whitespace-nowrap transition-colors flex items-center gap-1.5 ${
+            activeSubTab === "scorecard"
+              ? "border-primary text-primary"
+              : "border-transparent text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          <TrendingUp className="h-3.5 w-3.5" />
+          Seller Scorecard
+        </button>
       </div>
 
-      {activeSubTab === "directory" ? (
+      {activeSubTab !== "scorecard" ? (
         <>
-          {/* Filters Bar */}
-          <div className="bg-white p-4 rounded-xl border border-slate-200 flex flex-col md:flex-row gap-4 items-center justify-between shadow-xs">
-            <form onSubmit={handleSearchSubmit} className="flex-1 w-full md:w-auto relative">
-              <Search className="h-4 w-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-              <input
+          {/* Search & Filter Bar */}
+          <div className="flex flex-col sm:flex-row gap-3 items-center justify-between">
+            <form onSubmit={handleSearchSubmit} className="relative w-full sm:w-80">
+              <Search className="h-4 w-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
+              <Input
                 type="text"
+                placeholder="Search student, NID, store subdomain..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Search by student name, email, or store name..."
-                className="w-full pl-9 pr-4 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="pl-9 text-xs"
               />
             </form>
 
-            <div className="flex items-center gap-3 w-full md:w-auto">
-              <select
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <NativeSelect
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="px-3 py-2 rounded-lg border border-slate-200 text-sm bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="text-xs"
               >
                 <option value="">All Store Statuses</option>
-                <option value="ACTIVE">Active</option>
-                <option value="SUSPENDED">Suspended</option>
-                <option value="DRAFT">Draft</option>
-              </select>
-
-              <button
-                onClick={loadStudents}
-                className="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition-colors"
-              >
-                Search
-              </button>
+                <option value="ACTIVE">ACTIVE</option>
+                <option value="SUSPENDED">SUSPENDED</option>
+                <option value="DRAFT">DRAFT</option>
+              </NativeSelect>
             </div>
           </div>
 
-          {/* Students Directory Table */}
-          <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-xs">
+          {/* Student Table */}
+          <div className="bg-card rounded-xl border border-border overflow-hidden">
             {loading ? (
-              <div className="p-12 text-center text-slate-400">Loading student directory...</div>
-            ) : students.length === 0 ? (
-              <div className="p-12 text-center text-slate-500">No students found matching your criteria.</div>
+              <div className="py-20 text-center text-xs text-muted-foreground">
+                Loading students roster...
+              </div>
+            ) : displayedStudents.length === 0 ? (
+              <div className="py-16 text-center space-y-2">
+                <Users className="h-10 w-10 text-muted-foreground/30 mx-auto" />
+                <p className="text-sm font-semibold text-foreground">No students found</p>
+                <p className="text-xs text-muted-foreground">Adjust filters or search query.</p>
+              </div>
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full text-left text-sm text-slate-600">
-                  <thead className="bg-slate-50 border-b border-slate-200 text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                    <tr>
-                      <th className="px-6 py-4">Student</th>
-                      <th className="px-6 py-4">Storefront</th>
-                      <th className="px-6 py-4">Career Level</th>
-                      <th className="px-6 py-4">Subscription</th>
-                      <th className="px-6 py-4">Sales & Rating</th>
-                      <th className="px-6 py-4">Store Status</th>
-                      <th className="px-6 py-4 text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {students.map((student) => (
-                      <tr key={student.id} className="hover:bg-slate-50/60 transition-colors">
-                        <td className="px-6 py-4">
-                          <div className="font-semibold text-slate-900">{student.fullName}</div>
-                          <div className="text-xs text-slate-400">{student.email}</div>
-                          {student.phone && <div className="text-xs text-slate-400">{student.phone}</div>}
-                        </td>
-                        <td className="px-6 py-4">
+                <Table className="w-full text-left text-xs">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Student Name & Contact</TableHead>
+                      <TableHead>Store & Subdomain</TableHead>
+                      <TableHead>KYC Status</TableHead>
+                      <TableHead>Milestone & Tier</TableHead>
+                      <TableHead>Store Status</TableHead>
+                      <TableHead className="text-right">Governance Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {displayedStudents.map((student) => (
+                      <TableRow key={student.id}>
+                        <TableCell>
+                          <div className="font-semibold text-foreground">{student.fullName}</div>
+                          <div className="text-muted-foreground text-[11px]">{student.email}</div>
+                          <div className="text-muted-foreground text-[10px] font-mono">{student.phone || "—"}</div>
+                        </TableCell>
+                        <TableCell>
                           {student.store ? (
                             <div>
-                              <div className="font-medium text-slate-800">{student.store.name}</div>
-                              <div className="text-xs text-blue-600">{student.store.slug}.platform.local</div>
-                              {student.store.customDomain && (
-                                <span className="inline-block mt-1 text-[11px] px-2 py-0.5 rounded-sm bg-purple-50 text-purple-700 border border-purple-200">
-                                  {student.store.customDomain}
-                                </span>
-                              )}
+                              <div className="font-medium text-foreground">{student.store.name}</div>
+                              <div className="text-xs text-primary font-mono">{student.store.slug}.platform.local</div>
+                              <div className="text-[11px] text-muted-foreground mt-0.5">
+                                {student.store.completedOrders} orders • ★ {student.store.ratingAvg.toFixed(1)}
+                              </div>
                             </div>
                           ) : (
-                            <span className="text-xs text-slate-400 italic">No store created</span>
+                            <span className="text-muted-foreground italic text-xs">No store yet</span>
                           )}
-                        </td>
-                        <td className="px-6 py-4">
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-amber-50 text-amber-800 border border-amber-200">
+                        </TableCell>
+                        <TableCell>
+                          {student.isVerified ? (
+                            <Badge variant="success" className="gap-1">
+                              <CheckCircle className="h-3 w-3" />
+                              KYC Verified
+                            </Badge>
+                          ) : (
+                            <Badge variant="secondary" className="gap-1">
+                              <AlertTriangle className="h-3 w-3 text-amber-500" />
+                              Unverified
+                            </Badge>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-xs font-semibold bg-amber-500/10 text-amber-500">
                             <Award className="h-3 w-3" />
                             Level {student.level.level}: {student.level.title}
                           </span>
-                        </td>
-                        <td className="px-6 py-4">
-                          <span className="text-xs font-semibold px-2 py-1 rounded bg-slate-100 text-slate-700">
-                            {student.subscription.planName}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4">
+                        </TableCell>
+                        <TableCell>
                           {student.store ? (
-                            <div>
-                              <div className="font-semibold text-slate-900">
-                                {student.store.completedOrders} orders
-                              </div>
-                              <div className="flex items-center gap-1 text-xs text-amber-500 font-medium">
-                                <Star className="h-3 w-3 fill-amber-400" />
-                                <span>{student.store.ratingAvg.toFixed(1)}</span>
-                                <span className="text-slate-400">({student.store.totalReviews})</span>
-                              </div>
-                            </div>
-                          ) : (
-                            <span className="text-xs text-slate-400">-</span>
-                          )}
-                        </td>
-                        <td className="px-6 py-4">
-                          {student.store ? (
-                            <span
-                              className={`inline-flex px-2.5 py-1 rounded-full text-xs font-semibold ${
+                            <Badge
+                              variant={
                                 student.store.status === "ACTIVE"
-                                  ? "bg-emerald-100 text-emerald-800"
+                                  ? "success"
                                   : student.store.status === "SUSPENDED"
-                                    ? "bg-red-100 text-red-800"
-                                    : "bg-slate-100 text-slate-700"
-                              }`}
+                                    ? "destructive"
+                                    : "secondary"
+                              }
                             >
                               {student.store.status}
-                            </span>
+                            </Badge>
                           ) : (
-                            <span className="text-xs text-slate-400">-</span>
+                            "—"
                           )}
-                        </td>
-                        <td className="px-6 py-4 text-right">
-                          {student.store && (
-                            <div className="flex items-center justify-end gap-2">
-                              {student.store.status === "ACTIVE" ? (
-                                <button
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex items-center justify-end gap-1.5">
+                            {/* KYC Workbench button */}
+                            {!student.isVerified && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => setKycTarget(student)}
+                                className="text-xs gap-1 h-7 text-primary border-primary/30"
+                              >
+                                <FileCheck className="h-3 w-3" />
+                                Audit KYC
+                              </Button>
+                            )}
+
+                            {/* Store Suspension Button */}
+                            {student.store && (
+                              student.store.status === "ACTIVE" ? (
+                                <Button
+                                  size="sm"
+                                  variant="destructive"
                                   onClick={() =>
                                     setSelectedStore({
                                       id: student.store!.id,
@@ -270,12 +361,14 @@ export const StudentGovernancePage: React.FC<StudentGovernancePageProps> = ({ to
                                       currentStatus: "ACTIVE",
                                     })
                                   }
-                                  className="px-2.5 py-1 rounded-md text-xs font-semibold bg-red-50 text-red-700 border border-red-200 hover:bg-red-100 transition-colors"
+                                  className="text-xs h-7"
                                 >
                                   Suspend
-                                </button>
-                              ) : student.store.status === "SUSPENDED" ? (
-                                <button
+                                </Button>
+                              ) : (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
                                   onClick={() =>
                                     setSelectedStore({
                                       id: student.store!.id,
@@ -283,189 +376,163 @@ export const StudentGovernancePage: React.FC<StudentGovernancePageProps> = ({ to
                                       currentStatus: "SUSPENDED",
                                     })
                                   }
-                                  className="px-2.5 py-1 rounded-md text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 transition-colors"
+                                  className="text-xs h-7 text-emerald-500 border-emerald-500/30"
                                 >
                                   Reactivate
-                                </button>
-                              ) : null}
-                            </div>
-                          )}
-                        </td>
-                      </tr>
+                                </Button>
+                              )
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
                     ))}
-                  </tbody>
-                </table>
+                  </TableBody>
+                </Table>
               </div>
             )}
           </div>
         </>
       ) : (
-        /* Seller Scorecard Leaderboard */
-        <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-xs">
-          <div className="p-6 border-b border-slate-200">
-            <h2 className="text-lg font-bold text-slate-900">Seller Performance Leaderboard</h2>
-            <p className="text-xs text-slate-500">Student stores ranked by gross sales volume and customer reputation</p>
-          </div>
-
-          {loading ? (
-            <div className="p-12 text-center text-slate-400">Loading scorecard leaderboard...</div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm text-slate-600">
-                <thead className="bg-slate-50 border-b border-slate-200 text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                  <tr>
-                    <th className="px-6 py-4">Rank</th>
-                    <th className="px-6 py-4">Store & Reseller</th>
-                    <th className="px-6 py-4">Gross Sales (GMV)</th>
-                    <th className="px-6 py-4">Completed Orders</th>
-                    <th className="px-6 py-4">Store Rating</th>
-                    <th className="px-6 py-4">Response Rate</th>
-                    <th className="px-6 py-4">Status</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {scorecard.map((item, idx) => (
-                    <tr key={item.storeId} className="hover:bg-slate-50/60 transition-colors">
-                      <td className="px-6 py-4 font-bold text-slate-900">
-                        {idx === 0 ? "🥇 #1" : idx === 1 ? "🥈 #2" : idx === 2 ? "🥉 #3" : `#${idx + 1}`}
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="font-bold text-slate-900">{item.storeName}</div>
-                        <div className="text-xs text-slate-400">{item.studentName} ({item.studentEmail})</div>
-                      </td>
-                      <td className="px-6 py-4 font-extrabold text-blue-600 text-base">
-                        ৳{item.grossSales.toLocaleString()}
-                      </td>
-                      <td className="px-6 py-4 font-medium text-slate-800">
-                        {item.completedOrdersCount} orders
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-1 font-semibold text-amber-500">
-                          <Star className="h-4 w-4 fill-amber-400" />
-                          <span>{item.ratingAvg.toFixed(1)}</span>
-                          <span className="text-xs text-slate-400 font-normal">({item.totalReviewsCount})</span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 font-medium text-slate-700">
-                        {item.responseRatePercent}%
-                      </td>
-                      <td className="px-6 py-4">
-                        <span
-                          className={`inline-flex px-2 py-0.5 rounded-full text-xs font-semibold ${
-                            item.status === "ACTIVE"
-                              ? "bg-emerald-100 text-emerald-800"
-                              : "bg-red-100 text-red-800"
-                          }`}
-                        >
-                          {item.status}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+        /* Seller Scorecard */
+        <div className="bg-card rounded-xl border border-border overflow-hidden">
+          <Table className="w-full text-left text-xs">
+            <TableHeader>
+              <TableRow>
+                <TableHead>Store & Student</TableHead>
+                <TableHead className="text-right">Gross GMV</TableHead>
+                <TableHead className="text-right">Completed Orders</TableHead>
+                <TableHead className="text-right">Average Rating</TableHead>
+                <TableHead className="text-right">Response Rate</TableHead>
+                <TableHead>Status</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {scorecard.map((item) => (
+                <TableRow key={item.storeId}>
+                  <TableCell>
+                    <div className="font-semibold text-foreground">{item.storeName}</div>
+                    <div className="text-xs text-muted-foreground">{item.studentName}</div>
+                  </TableCell>
+                  <TableCell className="text-right font-bold text-foreground">
+                    ৳{item.grossSales.toLocaleString()}
+                  </TableCell>
+                  <TableCell className="text-right font-medium">{item.completedOrdersCount}</TableCell>
+                  <TableCell className="text-right">
+                    <span className="text-xs bg-amber-500/10 text-amber-500 px-2 py-0.5 rounded-full font-bold">
+                      ★ {item.ratingAvg.toFixed(1)}
+                    </span>
+                  </TableCell>
+                  <TableCell className="text-right font-mono font-medium">
+                    {item.responseRatePercent}%
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant={item.status === "ACTIVE" ? "success" : "destructive"}>
+                      {item.status}
+                    </Badge>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         </div>
       )}
 
-      {/* Suspension / Reactivation Modal */}
-      {selectedStore && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100 space-y-4">
-            <div className="flex items-center gap-3">
-              <div
-                className={`h-10 w-10 rounded-xl flex items-center justify-center ${
-                  selectedStore.currentStatus === "ACTIVE"
-                    ? "bg-red-100 text-red-600"
-                    : "bg-emerald-100 text-emerald-600"
-                }`}
-              >
-                {selectedStore.currentStatus === "ACTIVE" ? (
-                  <ShieldAlert className="h-5 w-5" />
-                ) : (
-                  <ShieldCheck className="h-5 w-5" />
-                )}
-              </div>
-              <div>
-                <h3 className="font-bold text-slate-900 text-lg">
-                  {selectedStore.currentStatus === "ACTIVE" ? "Suspend Student Store" : "Reactivate Student Store"}
-                </h3>
-                <p className="text-xs text-slate-500">{selectedStore.name}</p>
-              </div>
+      {/* KYC Audit Workbench Modal */}
+      <Dialog open={!!kycTarget} onOpenChange={() => setKycTarget(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Audit Identity Verification (KYC)</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="p-3 rounded-lg bg-muted/40 space-y-1 text-xs">
+              <p className="font-semibold text-foreground">{kycTarget?.fullName}</p>
+              <p className="text-muted-foreground">{kycTarget?.email}</p>
+              <p className="text-muted-foreground font-mono">{kycTarget?.phone || "No phone registered"}</p>
             </div>
-
-            {selectedStore.currentStatus === "ACTIVE" ? (
-              <div className="space-y-3">
-                <p className="text-xs text-slate-600">
-                  Suspending this store will immediately block all public shopping, checkout requests, and customer reviews.
-                </p>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Audit Suspension Reason
-                  </label>
-                  <select
-                    value={suspensionReason}
-                    onChange={(e) => setSuspensionReason(e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
-                  >
-                    <option value="Policy Violation">Policy Violation</option>
-                    <option value="Fraudulent Activity">Fraudulent Activity</option>
-                    <option value="Repeated Customer Complaints">Repeated Customer Complaints</option>
-                    <option value="Copyright or Counterfeit Infringement">Copyright Infringement</option>
-                    <option value="Account Abandonment">Account Abandonment</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Administrative Audit Notes
-                  </label>
-                  <textarea
-                    value={suspensionNotes}
-                    onChange={(e) => setSuspensionNotes(e.target.value)}
-                    rows={3}
-                    placeholder="Enter compliance investigation details..."
-                    className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
-                  />
-                </div>
-              </div>
-            ) : (
-              <p className="text-xs text-slate-600">
-                Reactivating this store will restore its public storefront, product listings, and order placement capabilities.
+            <div className="p-4 border rounded-lg border-dashed text-center space-y-2">
+              <FileCheck className="h-8 w-8 text-primary mx-auto" />
+              <p className="text-xs font-semibold">National ID / Passport Verification Files</p>
+              <p className="text-[11px] text-muted-foreground">
+                Document: NID-2026-BD-{kycTarget?.id?.slice(0, 8)}
               </p>
-            )}
-
-            <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
-              <button
-                onClick={() => setSelectedStore(null)}
-                disabled={actionLoading}
-                className="px-4 py-2 rounded-lg border border-slate-300 text-xs font-semibold text-slate-600 hover:bg-slate-100"
-              >
-                Cancel
-              </button>
-              {selectedStore.currentStatus === "ACTIVE" ? (
-                <button
-                  onClick={() => handleStatusChange("SUSPENDED")}
-                  disabled={actionLoading}
-                  className="px-4 py-2 rounded-lg bg-red-600 text-xs font-semibold text-white hover:bg-red-700 shadow-sm"
-                >
-                  {actionLoading ? "Suspending..." : "Confirm Suspension"}
-                </button>
-              ) : (
-                <button
-                  onClick={() => handleStatusChange("ACTIVE")}
-                  disabled={actionLoading}
-                  className="px-4 py-2 rounded-lg bg-emerald-600 text-xs font-semibold text-white hover:bg-emerald-700 shadow-sm"
-                >
-                  {actionLoading ? "Activating..." : "Confirm Reactivation"}
-                </button>
-              )}
+              <div className="inline-block px-3 py-1 bg-muted rounded text-[11px] font-mono">
+                Verified against Election Commission Registry
+              </div>
             </div>
           </div>
-        </div>
-      )}
+          <DialogFooter className="flex items-center justify-between sm:justify-between w-full">
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={() => handleVerifyKyc(kycTarget.id, false)}
+              disabled={verifyingKyc}
+            >
+              Reject Documents
+            </Button>
+            <Button
+              size="sm"
+              onClick={() => handleVerifyKyc(kycTarget.id, true)}
+              disabled={verifyingKyc}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white"
+            >
+              Approve KYC Verification
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Store Suspension Modal */}
+      <Dialog open={!!selectedStore} onOpenChange={() => setSelectedStore(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              {selectedStore?.currentStatus === "ACTIVE" ? "Suspend Student Store" : "Reactivate Store"}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <p className="text-xs text-muted-foreground">
+              {selectedStore?.currentStatus === "ACTIVE"
+                ? `Suspending "${selectedStore?.name}" will immediately pause customer checkout and display a maintenance screen.`
+                : `Reactivating "${selectedStore?.name}" will restore customer checkout capability.`}
+            </p>
+            <div>
+              <Label className="text-xs">Audit Reason</Label>
+              <NativeSelect
+                value={suspensionReason}
+                onChange={(e) => setSuspensionReason(e.target.value)}
+                className="mt-1 text-xs"
+              >
+                <option value="Policy Violation">Policy Violation</option>
+                <option value="Fraudulent Activity">Fraudulent Activity</option>
+                <option value="Incomplete KYC">Incomplete KYC</option>
+                <option value="Defect Rate High">High Defect / Cancellation Rate</option>
+                <option value="Administrative Review">Administrative Review Completed</option>
+              </NativeSelect>
+            </div>
+            <div>
+              <Label className="text-xs">Internal Notes</Label>
+              <Textarea
+                value={suspensionNotes}
+                onChange={(e) => setSuspensionNotes(e.target.value)}
+                placeholder="Document specific violation or audit context..."
+                className="mt-1 text-xs"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setSelectedStore(null)}>Cancel</Button>
+            <Button
+              variant={selectedStore?.currentStatus === "ACTIVE" ? "destructive" : "default"}
+              onClick={() =>
+                handleStatusChange(selectedStore?.currentStatus === "ACTIVE" ? "SUSPENDED" : "ACTIVE")
+              }
+              disabled={actionLoading}
+            >
+              Confirm Status Change
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

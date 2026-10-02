@@ -74,6 +74,22 @@ flowchart LR
 * **US-5.2 (Operational Recommendations):** As a student, if my cart-to-checkout dropoff exceeds 80%, I want the dashboard to suggest actionable conversion optimization tips.
   * *Acceptance Criteria:* Rule engine evaluates analytics rollup nightly and generates prescriptive feedback cards.
 
+### Epic 6: Unified Admin Operations Portal & Governance
+* **US-6.1 (Executive Dashboard & Real-Time Alerts):** As an institute executive, I want an executive overview panel with real-time GMV, conversion metrics, and a high-priority notification bubble (`01`) indicating urgent operational tasks.
+  * *Acceptance Criteria:* Dashboard aggregates cross-store GMV, active stores, order pipeline volume; alert badge displays real-time unread/urgent operational actions.
+* **US-6.2 (Student Governance Suite):** As an administrator, I want an expandable Students navigation menu to review student profiles, verify KYC documentation, monitor student records, and apply account suspensions with audit logs.
+  * *Acceptance Criteria:* Searchable student directory, document verification workflow, one-click store suspension toggling storefront visibility with audit reasons.
+* **US-6.3 (Campus & Branch Operations):** As an operations director, I want to manage physical and digital campus branches, assign branch managers, and associate regional warehouse hubs.
+  * *Acceptance Criteria:* Branch CRUD, manager assignment, regional delivery zone linking, and branch-wise revenue/enrollment analytics.
+* **US-6.4 (Student Batches & Cohort Scheduling):** As an academic lead, I want to organize students into batches/classes, configure capacity and schedules, assign mentors, and benchmark cohort performance.
+  * *Acceptance Criteria:* Batch creation with start/end dates, student enrollment mapping, batch mentor assignment, and cohort commercial sales leaderboards.
+* **US-6.5 (Granular Order Operations & Multi-Queue Fulfillment):** As an order manager, I want an expanded Orders section supporting 11 distinct operational queues (Order Overview, All Orders [9410], New Orders [8], Complete Orders [0], Partial Delivered [233], Unmatch Orders [4035], Invoiced Orders [8778], Hold Orders [29], Cancelled Orders [131], In Courier [9243], Exchange Orders).
+  * *Acceptance Criteria:* Real-time order volume counters per status tab; batch invoice generation; barcode scan discrepancy quarantine (`UNMATCH`); 3PL courier sync (`IN_COURIER`); item/course swap workflow (`EXCHANGE`).
+* **US-6.6 (External Seller Panel & Merchant Governance):** As a platform operator, I want to onboard external merchants and instructors, set wholesale prices and commission splits, and audit seller scorecards.
+  * *Acceptance Criteria:* Seller profile management, catalog publishing permissions, commission rate configuration, and defect/fulfillment SLA monitoring.
+* **US-6.7 (Financial Payment Requests & Settlement):** As a financial controller, I want a dedicated payment request queue showing pending requests (badge indicator `3`), automated ledger balance verification, and approval/rejection workflows with external transaction references.
+  * *Acceptance Criteria:* Requests validate against available cleared balance; approve step requires transaction reference (bKash/Nagad/Bank TrxID); rejection notes reason and unlocks held funds.
+
 ---
 
 ## 3. Recommended Technology Stack & Architecture
@@ -132,8 +148,13 @@ flowchart TD
 
 ```mermaid
 erDiagram
+    branches ||--o{ student_batches : operates
+    student_batches ||--o{ batch_enrollments : contains
+    users ||--o{ batch_enrollments : enrolled_in
     institutes ||--o{ users : employs
     users ||--o{ stores : owns
+    users ||--o{ seller_profiles : registers
+    users ||--o{ payment_requests : submits
     stores ||--o{ store_products : lists
     master_products ||--o{ store_products : supplies
     categories ||--o{ master_products : categorizes
@@ -156,8 +177,8 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- 1. Users & RBAC
 CREATE TYPE user_role AS ENUM (
-    'SUPER_ADMIN', 'INSTITUTE_ADMIN', 'PRODUCT_MANAGER', 
-    'ORDER_MANAGER', 'TRAINING_MANAGER', 'SUPPORT_AGENT', 'STUDENT'
+    'SUPER_ADMIN', 'INSTITUTE_ADMIN', 'BRANCH_MANAGER', 'PRODUCT_MANAGER', 
+    'ORDER_MANAGER', 'TRAINING_MANAGER', 'SUPPORT_AGENT', 'SELLER', 'STUDENT'
 );
 
 CREATE TABLE users (
@@ -273,8 +294,18 @@ CREATE INDEX idx_customers_store ON customers(store_id);
 
 -- 6. Orders & Order Items
 CREATE TYPE order_status AS ENUM (
-    'PENDING_PAYMENT', 'PAID', 'PROCESSING', 
-    'SHIPPED', 'DELIVERED', 'COMPLETED', 'CANCELLED', 'RETURNED', 'REFUNDED'
+    'NEW',                  -- Incoming unprocessed orders (e.g. 8)
+    'INVOICED',             -- Bills generated, pick-pack ready (e.g. 8778)
+    'IN_COURIER',           -- In transit with 3PL logistics (e.g. 9243)
+    'PARTIAL_DELIVERED',    -- Partial split bundle delivered (e.g. 233)
+    'DELIVERED',            -- Consignment delivered to customer
+    'COMPLETE',             -- Return window expired & settlement locked (e.g. 0)
+    'HOLD',                 -- Paused for customer confirmation / stock replenishment (e.g. 29)
+    'CANCELLED',            -- Terminated order with stock restored (e.g. 131)
+    'UNMATCH',              -- Quarantined for SKU, barcode, or payment discrepancy (e.g. 4035)
+    'EXCHANGE',             -- Item or course replacement workflow
+    'RETURNED',             -- Returned to warehouse
+    'REFUNDED'              -- Payment refunded and ledger reversed
 );
 
 CREATE TABLE orders (
@@ -382,6 +413,82 @@ CREATE TABLE ledger_entries (
     notes TEXT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+-- 10. Campus Branches & Regional Locations
+CREATE TABLE branches (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    name VARCHAR(150) NOT NULL,
+    code VARCHAR(50) UNIQUE NOT NULL, -- e.g. 'DHK-MAIN', 'CTG-HUB', 'VIRTUAL'
+    branch_type VARCHAR(30) NOT NULL DEFAULT 'PHYSICAL', -- 'PHYSICAL', 'DIGITAL'
+    address TEXT,
+    city VARCHAR(100),
+    contact_phone VARCHAR(30),
+    contact_email VARCHAR(255),
+    manager_id UUID REFERENCES users(id) ON DELETE SET NULL,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- 11. Student Batches & Cohort Organization
+CREATE TABLE student_batches (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    branch_id UUID REFERENCES branches(id) ON DELETE SET NULL,
+    name VARCHAR(150) NOT NULL,
+    batch_code VARCHAR(60) UNIQUE NOT NULL, -- e.g. 'BATCH-2026-A'
+    instructor_id UUID REFERENCES users(id) ON DELETE SET NULL,
+    start_date DATE NOT NULL,
+    end_date DATE,
+    max_capacity INT NOT NULL DEFAULT 50,
+    status VARCHAR(30) NOT NULL DEFAULT 'ACTIVE', -- 'UPCOMING', 'ACTIVE', 'COMPLETED'
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE batch_enrollments (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    batch_id UUID NOT NULL REFERENCES student_batches(id) ON DELETE CASCADE,
+    student_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    status VARCHAR(30) NOT NULL DEFAULT 'ENROLLED', -- 'ENROLLED', 'GRADUATED', 'DROPPED'
+    enrolled_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    CONSTRAINT uq_batch_student UNIQUE (batch_id, student_id)
+);
+
+CREATE INDEX idx_batch_enrollments_student ON batch_enrollments(student_id);
+
+-- 12. External Sellers & Merchants
+CREATE TABLE seller_profiles (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID UNIQUE NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    company_name VARCHAR(200) NOT NULL,
+    seller_type VARCHAR(50) NOT NULL DEFAULT 'MERCHANT', -- 'MERCHANT', 'INSTRUCTOR', 'SUPPLIER'
+    trade_license_number VARCHAR(100),
+    tin_bin_number VARCHAR(100),
+    commission_rate NUMERIC(5, 2) NOT NULL DEFAULT 5.00,
+    compliance_score NUMERIC(4, 2) NOT NULL DEFAULT 100.00,
+    status VARCHAR(30) NOT NULL DEFAULT 'PENDING', -- 'PENDING', 'APPROVED', 'SUSPENDED'
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- 13. Financial Payment Requests
+CREATE TABLE payment_requests (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+    store_id UUID REFERENCES stores(id) ON DELETE SET NULL,
+    amount NUMERIC(12, 2) NOT NULL CHECK (amount > 0),
+    payment_method VARCHAR(50) NOT NULL, -- 'BKASH', 'NAGAD', 'BANK_TRANSFER'
+    account_details JSONB NOT NULL,
+    status VARCHAR(30) NOT NULL DEFAULT 'PENDING', -- 'PENDING', 'APPROVED', 'REJECTED', 'SETTLED'
+    transaction_reference VARCHAR(150),
+    rejection_reason TEXT,
+    reviewed_by_id UUID REFERENCES users(id) ON DELETE SET NULL,
+    requested_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    settled_at TIMESTAMPTZ
+);
+
+CREATE INDEX idx_payment_requests_status ON payment_requests(status);
+CREATE INDEX idx_payment_requests_user ON payment_requests(user_id);
 ```
 
 ---
@@ -513,6 +620,98 @@ All public endpoints resolve the tenant from either `{slug}` path parameter or `
   "deliveryComment": "Delivered within 48 hours."
 }
 ```
+
+### 5.2 Admin Portal Operations & Governance Endpoints
+
+All admin endpoints require an authenticated JWT bearing an administrative role (`SUPER_ADMIN`, `INSTITUTE_ADMIN`, `BRANCH_MANAGER`, `ORDER_MANAGER`, etc.) and enforce dynamic permission guards.
+
+#### 1. Executive Dashboard & Urgent Alerts
+- **`GET /api/v1/admin/dashboard/overview`**
+- **Response `200 OK`:**
+```json
+{
+  "urgentAlertsCount": 1,
+  "alerts": [
+    {
+      "id": "alert-01",
+      "severity": "HIGH",
+      "title": "Pending Payout Requests",
+      "message": "3 student withdrawal requests awaiting verification > 24 hours.",
+      "actionRoute": "/finance/payouts"
+    }
+  ],
+  "metrics": {
+    "totalGmv": 14258900.00,
+    "platformNetRevenue": 1140712.00,
+    "activeStoresCount": 412,
+    "totalStudents": 1250,
+    "todayOrdersCount": 184
+  }
+}
+```
+
+#### 2. Expandable Student Governance API
+- **`GET /api/v1/admin/students?page=1&limit=25&search=Rahim&status=ACTIVE&branchId=...`**
+- **`GET /api/v1/admin/students/:id`** (Returns profile, KYC docs, enrolled batches, linked store metrics)
+- **`PATCH /api/v1/admin/students/:id/status`**
+  - **Body:** `{ "status": "SUSPENDED", "reason": "Violation of merchant branding policy", "notifyStudent": true }`
+
+#### 3. Campus Branches Management
+- **`GET /api/v1/admin/branches`**
+- **`POST /api/v1/admin/branches`**
+  - **Body:** `{ "name": "Chittagong Regional Hub", "code": "CTG-HUB", "branchType": "PHYSICAL", "address": "Agrabad C/A", "city": "Chittagong", "managerId": "user-uuid" }`
+- **`PUT /api/v1/admin/branches/:id`**
+
+#### 4. Student Batches & Cohort Scheduling
+- **`GET /api/v1/admin/batches?branchId=...&status=ACTIVE`**
+- **`POST /api/v1/admin/batches`**
+  - **Body:** `{ "name": "Batch 2026-A E-Commerce Mastery", "batchCode": "BATCH-2026-A", "branchId": "branch-uuid", "instructorId": "user-uuid", "startDate": "2026-10-01", "maxCapacity": 60 }`
+- **`POST /api/v1/admin/batches/:id/enrollments`**
+  - **Body:** `{ "studentIds": ["user-uuid-1", "user-uuid-2"] }`
+- **`GET /api/v1/admin/batches/:id/leaderboard`** (Returns cohort rank by aggregate GMV, orders, completed challenges)
+
+#### 5. Orders Multi-Status Operations API
+- **`GET /api/v1/admin/orders/counts`**
+  - **Response `200 OK`:**
+  ```json
+  {
+    "all": 9410,
+    "new": 8,
+    "complete": 0,
+    "partialDelivered": 233,
+    "unmatch": 4035,
+    "invoiced": 8778,
+    "hold": 29,
+    "cancelled": 131,
+    "inCourier": 9243,
+    "exchange": 14
+  }
+  ```
+- **`GET /api/v1/admin/orders?status=NEW|INVOICED|IN_COURIER|UNMATCH|HOLD|PARTIAL_DELIVERED|COMPLETE|CANCELLED|EXCHANGE&page=1&limit=25`**
+- **`POST /api/v1/admin/orders/:id/invoice`** (Generates official tax invoice and moves order to `INVOICED`)
+- **`POST /api/v1/admin/orders/:id/hold`**
+  - **Body:** `{ "reason": "Customer requested delivery date change to next Monday", "holdUntil": "2026-09-29T10:00:00Z" }`
+- **`POST /api/v1/admin/orders/:id/unmatch/flag`**
+  - **Body:** `{ "discrepancyType": "SKU_MISMATCH", "details": "Barcode on physical item does not match MasterProduct SKU" }`
+- **`POST /api/v1/admin/orders/:id/unmatch/reconcile`**
+  - **Body:** `{ "resolutionAction": "OVERRIDE_SKU", "correctedMasterProductId": "uuid", "notes": "Approved by warehouse manager" }`
+- **`POST /api/v1/admin/orders/:id/dispatch`**
+  - **Body:** `{ "courierName": "Pathao", "trackingNumber": "PATH-89123490", "pickupAddressId": "hub-uuid" }` (Transitions to `IN_COURIER`)
+- **`POST /api/v1/admin/orders/:id/exchange`**
+  - **Body:** `{ "exchangeReason": "Wrong size received", "replacementStoreProductId": "uuid", "reshipCourier": "Steadfast" }`
+
+#### 6. Seller Panel (External Merchants & Instructors)
+- **`GET /api/v1/admin/sellers?status=APPROVED&sellerType=MERCHANT`**
+- **`POST /api/v1/admin/sellers/:id/commission`**
+  - **Body:** `{ "commissionRate": 4.5, "notes": "Volume supplier discount" }`
+- **`GET /api/v1/admin/sellers/:id/scorecard`** (Returns fulfillment time, defect rate, return rate, complaint tickets)
+
+#### 7. Financial Payment Requests
+- **`GET /api/v1/admin/finance/payment-requests?status=PENDING`** (Currently returning 3 pending requests)
+- **`POST /api/v1/admin/finance/payment-requests/:id/approve`**
+  - **Body:** `{ "transactionReference": "BK-981188-TRX", "disbursementMethod": "BKASH_MERCHANT", "notes": "Verified against ledger clearance" }`
+- **`POST /api/v1/admin/finance/payment-requests/:id/reject`**
+  - **Body:** `{ "rejectionReason": "Bank account name mismatch with NID profile", "revertBalance": true }`
 
 ---
 

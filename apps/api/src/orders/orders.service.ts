@@ -16,6 +16,8 @@ import {
 } from "./dto/order.dto";
 import { OrderStateMachine } from "./order-state-machine";
 import { OrderStatus, StoreStatus, Prisma } from "@repo/db";
+import { InventoryService } from "../inventory/inventory.service";
+import { DocumentSequenceService } from "../common/document-sequence.service";
 
 @Injectable()
 export class OrdersService {
@@ -24,6 +26,8 @@ export class OrdersService {
     private readonly pricingService: PricingService,
     private readonly storesService: StoresService,
     private readonly eventEmitter: EventEmitter2,
+    private readonly inventory: InventoryService,
+    private readonly sequences: DocumentSequenceService,
   ) {}
 
   /**
@@ -613,14 +617,18 @@ export class OrdersService {
       throw new NotFoundException(`Order "${orderId}" not found`);
     }
 
-    OrderStateMachine.validateTransition(order.status, OrderStatus.SHIPPED);
+    const targetStatus = OrderStateMachine.canTransition(order.status, OrderStatus.IN_COURIER)
+      ? OrderStatus.IN_COURIER
+      : OrderStatus.SHIPPED;
+
+    OrderStateMachine.validateTransition(order.status, targetStatus);
 
     return await this.prisma.order.update({
       where: { id: orderId },
       data: {
         courierName: dto.courierName,
         trackingNumber: dto.trackingNumber,
-        status: OrderStatus.SHIPPED,
+        status: targetStatus,
       },
     });
   }
@@ -640,15 +648,15 @@ export class OrdersService {
 
     OrderStateMachine.validateTransition(order.status, toStatus);
 
-    return await this.prisma.$transaction(async (tx) => {
+    const result = await this.prisma.$transaction(async (tx) => {
       // If order is cancelled or returned, restitute stock quantity to master product
       if (OrderStateMachine.shouldRestituteStock(order.status, toStatus)) {
-        for (const item of order.items) {
-          await tx.masterProduct.update({
-            where: { id: item.masterProductId },
-            data: {
-              stockQuantity: { increment: item.quantity },
-            },
+        for (const item of order.items.filter((i) => i.quantity > 0)) {
+          await this.inventory.restock(item.masterProductId, item.quantity, {
+            tx,
+            referenceType: `ORDER_${toStatus}`,
+            referenceId: order.id,
+            notes: `Restock for ${toStatus.toLowerCase()} order ${order.orderNumber}`,
           });
         }
 
@@ -706,14 +714,23 @@ export class OrdersService {
         });
       }
 
+      const invoiceFields =
+        toStatus === OrderStatus.INVOICED && !order.invoiceNumber
+          ? { invoiceNumber: await this.sequences.next("INV", { tx }), invoicedAt: new Date() }
+          : {};
+
       const updated = await tx.order.update({
         where: { id: orderId },
         data: {
           status: toStatus,
+          ...invoiceFields,
+          ...(toStatus === OrderStatus.DELIVERED ? { deliveredAt: new Date() } : {}),
+          ...(toStatus === OrderStatus.COMPLETE || toStatus === OrderStatus.COMPLETED ? { completedAt: new Date() } : {}),
           ...(paymentStatusUpdate ? { paymentStatus: paymentStatusUpdate } : {}),
           ...(reviewToken ? { reviewToken, reviewRequestSentAt } : {}),
         },
       });
+
 
       if (isDeliveredOrCompleted) {
         this.eventEmitter.emit("order.delivered", {
@@ -729,5 +746,11 @@ export class OrdersService {
 
       return updated;
     });
+
+    // Emitted after commit so listeners never act on a rolled-back reversal.
+    if (toStatus === OrderStatus.CANCELLED || toStatus === OrderStatus.RETURNED) {
+      this.eventEmitter.emit("order.reversed", { orderId: result.id, status: toStatus });
+    }
+    return result;
   }
 }

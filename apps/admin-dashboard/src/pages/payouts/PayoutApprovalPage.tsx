@@ -12,7 +12,7 @@ import {
   Building,
   RefreshCw,
 } from "lucide-react";
-import { Button } from "@repo/ui";
+import { Button, Dialog, DialogContent, DialogTitle, Input, Label, PageHeader, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Textarea } from "@repo/ui";
 
 interface PayoutApprovalPageProps {
   token: string;
@@ -130,32 +130,29 @@ export const PayoutApprovalPage: React.FC<PayoutApprovalPageProps> = ({ token })
     .reduce((sum, p) => sum + p.amount, 0);
 
   return (
-    <div className="p-8 max-w-7xl mx-auto space-y-6">
+    <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
-            Payouts & Financial Settlements
-          </h1>
-          <p className="text-sm text-slate-500 mt-1">
-            Review student earnings withdrawals, disburse via bKash/Nagad/Bank, and reconcile the ledger
-          </p>
-        </div>
-
-        <button
-          onClick={loadPayouts}
-          className="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg border border-slate-300 text-xs font-semibold text-slate-700 hover:bg-slate-100 transition-colors shadow-xs"
-        >
-          <RefreshCw className="h-3.5 w-3.5" />
-          Refresh Requests
-        </button>
-      </div>
+      <PageHeader
+        title="Payouts & Financial Settlements"
+        description="Review student earnings withdrawals, disburse via bKash/Nagad/Bank, and reconcile the ledger"
+        actions={
+          <>
+            <button
+              onClick={loadPayouts}
+              className="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg border border-input text-xs font-semibold text-slate-700 hover:bg-muted transition-colors shadow-xs"
+            >
+              <RefreshCw className="h-3.5 w-3.5" />
+              Refresh Requests
+            </button>
+          </>
+        }
+      />
 
       {/* Metrics Banner */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs flex items-center justify-between">
+        <div className="bg-card p-6 rounded-xl border border-border shadow-xs flex items-center justify-between">
           <div>
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
               Pending Queue
             </span>
             <div className="text-2xl font-extrabold text-amber-600 mt-1">
@@ -168,22 +165,22 @@ export const PayoutApprovalPage: React.FC<PayoutApprovalPageProps> = ({ token })
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs flex items-center justify-between">
+        <div className="bg-card p-6 rounded-xl border border-border shadow-xs flex items-center justify-between">
           <div>
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
               Supported Channels
             </span>
-            <div className="text-lg font-bold text-slate-900 mt-1">bKash, Nagad & Bank</div>
+            <div className="text-lg font-bold text-foreground mt-1">bKash, Nagad & Bank</div>
             <p className="text-xs text-slate-400 mt-0.5">Instant mobile wallets + BEFTN / EFT</p>
           </div>
-          <div className="h-10 w-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
+          <div className="h-10 w-10 rounded-xl bg-primary/5 text-primary flex items-center justify-center">
             <Smartphone className="h-5 w-5" />
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs flex items-center justify-between">
+        <div className="bg-card p-6 rounded-xl border border-border shadow-xs flex items-center justify-between">
           <div>
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
               Ledger Protection
             </span>
             <div className="text-lg font-bold text-emerald-600 mt-1">Double-Entry Audit</div>
@@ -196,14 +193,14 @@ export const PayoutApprovalPage: React.FC<PayoutApprovalPageProps> = ({ token })
       </div>
 
       {/* Filters Bar */}
-      <div className="bg-white p-4 rounded-xl border border-slate-200 flex flex-col md:flex-row gap-4 items-center justify-between shadow-xs">
-        <div className="flex bg-slate-100 p-1 rounded-lg">
+      <div className="bg-card p-4 rounded-xl border border-border flex flex-col md:flex-row gap-4 items-center justify-between shadow-xs">
+        <div className="flex bg-muted p-1 rounded-lg">
           <button
             onClick={() => setStatusFilter("PENDING")}
             className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${
               statusFilter === "PENDING"
-                ? "bg-white text-slate-900 shadow-xs"
-                : "text-slate-600 hover:text-slate-900"
+                ? "bg-card text-foreground shadow-xs"
+                : "text-slate-600 hover:text-foreground"
             }`}
           >
             Pending Review
@@ -212,8 +209,8 @@ export const PayoutApprovalPage: React.FC<PayoutApprovalPageProps> = ({ token })
             onClick={() => setStatusFilter("APPROVED")}
             className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${
               statusFilter === "APPROVED"
-                ? "bg-white text-slate-900 shadow-xs"
-                : "text-slate-600 hover:text-slate-900"
+                ? "bg-card text-foreground shadow-xs"
+                : "text-slate-600 hover:text-foreground"
             }`}
           >
             Disbursed
@@ -222,8 +219,8 @@ export const PayoutApprovalPage: React.FC<PayoutApprovalPageProps> = ({ token })
             onClick={() => setStatusFilter("REJECTED")}
             className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${
               statusFilter === "REJECTED"
-                ? "bg-white text-slate-900 shadow-xs"
-                : "text-slate-600 hover:text-slate-900"
+                ? "bg-card text-foreground shadow-xs"
+                : "text-slate-600 hover:text-foreground"
             }`}
           >
             Rejected
@@ -232,8 +229,8 @@ export const PayoutApprovalPage: React.FC<PayoutApprovalPageProps> = ({ token })
             onClick={() => setStatusFilter("")}
             className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${
               statusFilter === ""
-                ? "bg-white text-slate-900 shadow-xs"
-                : "text-slate-600 hover:text-slate-900"
+                ? "bg-card text-foreground shadow-xs"
+                : "text-slate-600 hover:text-foreground"
             }`}
           >
             All Requests
@@ -242,61 +239,61 @@ export const PayoutApprovalPage: React.FC<PayoutApprovalPageProps> = ({ token })
 
         <div className="w-full md:w-72 relative">
           <Search className="h-4 w-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-          <input
+          <Input
             type="text"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder="Search by student, TrxID, method..."
-            className="w-full pl-9 pr-4 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full pl-9 pr-4 text-sm"
           />
         </div>
       </div>
 
       {/* Payouts Table */}
-      <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-xs">
+      <div className="bg-card rounded-xl border border-border overflow-hidden shadow-xs">
         {loading ? (
           <div className="p-12 text-center text-slate-400">Loading payout requests...</div>
         ) : filteredPayouts.length === 0 ? (
-          <div className="p-12 text-center text-slate-500">
+          <div className="p-12 text-center text-muted-foreground">
             No payout requests found for current filter.
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm text-slate-600">
-              <thead className="bg-slate-50 border-b border-slate-200 text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                <tr>
-                  <th className="px-6 py-4">Student Reseller</th>
-                  <th className="px-6 py-4">Amount</th>
-                  <th className="px-6 py-4">Channel & Account</th>
-                  <th className="px-6 py-4">Date Requested</th>
-                  <th className="px-6 py-4">Status</th>
-                  <th className="px-6 py-4">Settlement Details</th>
-                  <th className="px-6 py-4 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
+            <Table className="w-full text-left text-sm text-slate-600">
+              <TableHeader className="bg-muted/50 border-b border-border text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                <TableRow>
+                  <TableHead className="px-6 py-4">Student Reseller</TableHead>
+                  <TableHead className="px-6 py-4">Amount</TableHead>
+                  <TableHead className="px-6 py-4">Channel & Account</TableHead>
+                  <TableHead className="px-6 py-4">Date Requested</TableHead>
+                  <TableHead className="px-6 py-4">Status</TableHead>
+                  <TableHead className="px-6 py-4">Settlement Details</TableHead>
+                  <TableHead className="px-6 py-4 text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody className="divide-y divide-border/60">
                 {filteredPayouts.map((payout) => (
-                  <tr key={payout.id} className="hover:bg-slate-50/60 transition-colors">
-                    <td className="px-6 py-4">
-                      <div className="font-semibold text-slate-900">
+                  <TableRow key={payout.id} className="hover:bg-muted/50/60 transition-colors">
+                    <TableCell className="px-6 py-4">
+                      <div className="font-semibold text-foreground">
                         {payout.student?.fullName || "Student Reseller"}
                       </div>
                       <div className="text-xs text-slate-400">{payout.student?.email}</div>
                       {payout.student?.phone && (
                         <div className="text-xs text-slate-400">{payout.student.phone}</div>
                       )}
-                    </td>
-                    <td className="px-6 py-4 font-extrabold text-slate-900 text-base">
+                    </TableCell>
+                    <TableCell className="px-6 py-4 font-extrabold text-foreground text-base">
                       ৳{payout.amount.toLocaleString()}
-                    </td>
-                    <td className="px-6 py-4">
+                    </TableCell>
+                    <TableCell className="px-6 py-4">
                       <div className="flex items-center gap-2">
                         {payout.paymentMethod === "BANK_TRANSFER" ? (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200">
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold bg-primary/5 text-primary border border-primary/20">
                             <Building className="h-3 w-3" /> BANK
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold bg-pink-50 text-pink-700 border border-pink-200">
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold bg-sky-50 text-sky-700 border border-sky-200">
                             <Smartphone className="h-3 w-3" /> {payout.paymentMethod}
                           </span>
                         )}
@@ -321,11 +318,11 @@ export const PayoutApprovalPage: React.FC<PayoutApprovalPageProps> = ({ token })
                           </div>
                         )}
                       </div>
-                    </td>
-                    <td className="px-6 py-4 text-xs text-slate-500">
+                    </TableCell>
+                    <TableCell className="px-6 py-4 text-xs text-muted-foreground">
                       {new Date(payout.createdAt).toLocaleString()}
-                    </td>
-                    <td className="px-6 py-4">
+                    </TableCell>
+                    <TableCell className="px-6 py-4">
                       <span
                         className={`inline-flex px-2.5 py-1 rounded-full text-xs font-semibold ${
                           payout.status === "APPROVED" || payout.status === "PROCESSED"
@@ -337,8 +334,8 @@ export const PayoutApprovalPage: React.FC<PayoutApprovalPageProps> = ({ token })
                       >
                         {payout.status}
                       </span>
-                    </td>
-                    <td className="px-6 py-4">
+                    </TableCell>
+                    <TableCell className="px-6 py-4">
                       {(payout.status === "APPROVED" || payout.status === "PROCESSED") && (
                         <div className="text-xs">
                           <div className="font-mono text-emerald-700 font-bold">
@@ -355,15 +352,15 @@ export const PayoutApprovalPage: React.FC<PayoutApprovalPageProps> = ({ token })
                         </div>
                       )}
                       {payout.status === "REJECTED" && (
-                        <div className="text-xs text-red-600">
+                        <div className="text-xs text-destructive">
                           <span className="font-semibold">Reason:</span> {payout.adminNotes || "Rejected by administration"}
                         </div>
                       )}
                       {payout.status === "PENDING" && (
                         <span className="text-xs text-slate-400 italic">Balance held on reserve</span>
                       )}
-                    </td>
-                    <td className="px-6 py-4 text-right">
+                    </TableCell>
+                    <TableCell className="px-6 py-4 text-right">
                       {payout.status === "PENDING" && (
                         <div className="flex items-center justify-end gap-2">
                           <button
@@ -383,50 +380,53 @@ export const PayoutApprovalPage: React.FC<PayoutApprovalPageProps> = ({ token })
                               setRejectionReason("");
                               setRejectError(null);
                             }}
-                            className="px-3 py-1.5 rounded-lg bg-white border border-red-200 text-red-600 hover:bg-red-50 text-xs font-semibold transition-colors"
+                            className="px-3 py-1.5 rounded-lg bg-card border border-destructive/20 text-destructive hover:bg-destructive/5 text-xs font-semibold transition-colors"
                           >
                             Reject
                           </button>
                         </div>
                       )}
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
         )}
       </div>
 
       {/* Approve Payout Modal */}
-      {approvingPayout && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100 space-y-4">
+      <Dialog open={!!approvingPayout} onOpenChange={(open) => !open && setApprovingPayout(null)}>
+        <DialogContent hideClose aria-describedby={undefined} className="max-w-md gap-0 overflow-visible border-0 bg-transparent p-0 shadow-none">
+            {approvingPayout && (
+            <>
+          <DialogTitle className="sr-only">Approve Payout</DialogTitle>
+          <div className="bg-card rounded-xl max-w-md w-full p-6 shadow-2xl border border-slate-100 space-y-4">
             <div className="flex items-center gap-3">
               <div className="h-10 w-10 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center">
                 <CheckCircle2 className="h-5 w-5" />
               </div>
               <div>
-                <h3 className="font-bold text-slate-900 text-lg">Approve Payout Disbursement</h3>
-                <p className="text-xs text-slate-500">
+                <h3 className="font-bold text-foreground text-lg">Approve Payout Disbursement</h3>
+                <p className="text-xs text-muted-foreground">
                   {approvingPayout.student?.fullName} ({approvingPayout.paymentMethod})
                 </p>
               </div>
             </div>
 
-            <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-1 text-xs">
+            <div className="p-3 bg-muted/50 rounded-xl border border-border space-y-1 text-xs">
               <div className="flex justify-between">
-                <span className="text-slate-500">Disbursement Amount:</span>
-                <span className="font-bold text-slate-900 text-sm">
+                <span className="text-muted-foreground">Disbursement Amount:</span>
+                <span className="font-bold text-foreground text-sm">
                   ৳{approvingPayout.amount.toLocaleString()}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-slate-500">Payment Channel:</span>
+                <span className="text-muted-foreground">Payment Channel:</span>
                 <span className="font-semibold text-slate-800">{approvingPayout.paymentMethod}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-slate-500">Account Destination:</span>
+                <span className="text-muted-foreground">Account Destination:</span>
                 <span className="font-mono text-slate-800">
                   {approvingPayout.accountDetails?.accountNumber ||
                     approvingPayout.accountDetails?.phone ||
@@ -436,23 +436,23 @@ export const PayoutApprovalPage: React.FC<PayoutApprovalPageProps> = ({ token })
             </div>
 
             {approvalError && (
-              <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-xs text-red-700">
+              <div className="p-3 rounded-lg bg-destructive/5 border border-destructive/20 text-xs text-destructive">
                 {approvalError}
               </div>
             )}
 
             <form onSubmit={handleApprove} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                <Label className="block text-xs font-semibold text-slate-700 mb-1">
                   Bank / Gateway Transaction Reference (TrxID) *
-                </label>
-                <input
+                </Label>
+                <Input
                   type="text"
                   required
                   value={trxId}
                   onChange={(e) => setTrxId(e.target.value)}
                   placeholder="e.g. BL9A814K99 or FT260924001"
-                  className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className="w-full text-sm font-mono"
                 />
                 <p className="text-[11px] text-slate-400 mt-1">
                   Enter the transaction ID generated from your bKash merchant/agent portal or bank slip.
@@ -460,15 +460,15 @@ export const PayoutApprovalPage: React.FC<PayoutApprovalPageProps> = ({ token })
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                <Label className="block text-xs font-semibold text-slate-700 mb-1">
                   Administrative Note (Optional)
-                </label>
-                <input
+                </Label>
+                <Input
                   type="text"
                   value={adminNotes}
                   onChange={(e) => setAdminNotes(e.target.value)}
                   placeholder="e.g. Disbursed via official bKash merchant desk"
-                  className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className="w-full text-sm"
                 />
               </div>
 
@@ -477,7 +477,7 @@ export const PayoutApprovalPage: React.FC<PayoutApprovalPageProps> = ({ token })
                   type="button"
                   onClick={() => setApprovingPayout(null)}
                   disabled={approving}
-                  className="px-4 py-2 rounded-lg border border-slate-300 text-xs font-semibold text-slate-600 hover:bg-slate-100"
+                  className="px-4 py-2 rounded-lg border border-input text-xs font-semibold text-slate-600 hover:bg-muted"
                 >
                   Cancel
                 </button>
@@ -491,20 +491,25 @@ export const PayoutApprovalPage: React.FC<PayoutApprovalPageProps> = ({ token })
               </div>
             </form>
           </div>
-        </div>
-      )}
+            </>
+            )}
+        </DialogContent>
+      </Dialog>
 
       {/* Reject Payout Modal */}
-      {rejectingPayout && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100 space-y-4">
+      <Dialog open={!!rejectingPayout} onOpenChange={(open) => !open && setRejectingPayout(null)}>
+        <DialogContent hideClose aria-describedby={undefined} className="max-w-md gap-0 overflow-visible border-0 bg-transparent p-0 shadow-none">
+            {rejectingPayout && (
+            <>
+          <DialogTitle className="sr-only">Reject Payout</DialogTitle>
+          <div className="bg-card rounded-xl max-w-md w-full p-6 shadow-2xl border border-slate-100 space-y-4">
             <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-xl bg-red-100 text-red-600 flex items-center justify-center">
+              <div className="h-10 w-10 rounded-xl bg-red-100 text-destructive flex items-center justify-center">
                 <XCircle className="h-5 w-5" />
               </div>
               <div>
-                <h3 className="font-bold text-slate-900 text-lg">Reject Payout Request</h3>
-                <p className="text-xs text-slate-500">
+                <h3 className="font-bold text-foreground text-lg">Reject Payout Request</h3>
+                <p className="text-xs text-muted-foreground">
                   {rejectingPayout.student?.fullName} - ৳{rejectingPayout.amount.toLocaleString()}
                 </p>
               </div>
@@ -518,23 +523,23 @@ export const PayoutApprovalPage: React.FC<PayoutApprovalPageProps> = ({ token })
             </div>
 
             {rejectError && (
-              <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-xs text-red-700">
+              <div className="p-3 rounded-lg bg-destructive/5 border border-destructive/20 text-xs text-destructive">
                 {rejectError}
               </div>
             )}
 
             <form onSubmit={handleReject} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                <Label className="block text-xs font-semibold text-slate-700 mb-1">
                   Reason for Rejection *
-                </label>
-                <textarea
+                </Label>
+                <Textarea
                   required
                   rows={3}
                   value={rejectionReason}
                   onChange={(e) => setRejectionReason(e.target.value)}
                   placeholder="e.g. Invalid bKash account number, account unverified, or cancelled per student request"
-                  className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+                  className="w-full text-sm"
                 />
               </div>
 
@@ -543,22 +548,24 @@ export const PayoutApprovalPage: React.FC<PayoutApprovalPageProps> = ({ token })
                   type="button"
                   onClick={() => setRejectingPayout(null)}
                   disabled={rejecting}
-                  className="px-4 py-2 rounded-lg border border-slate-300 text-xs font-semibold text-slate-600 hover:bg-slate-100"
+                  className="px-4 py-2 rounded-lg border border-input text-xs font-semibold text-slate-600 hover:bg-muted"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={rejecting}
-                  className="px-4 py-2 rounded-lg bg-red-600 text-xs font-semibold text-white hover:bg-red-700 shadow-sm"
+                  className="px-4 py-2 rounded-lg bg-destructive text-xs font-semibold text-white hover:bg-destructive/90 shadow-sm"
                 >
                   {rejecting ? "Rejecting..." : "Confirm Rejection & Release Hold"}
                 </button>
               </div>
             </form>
           </div>
-        </div>
-      )}
+            </>
+            )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

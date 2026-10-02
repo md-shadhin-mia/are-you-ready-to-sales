@@ -2,10 +2,23 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  ConflictException,
 } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
 import { LedgerService } from "./ledger.service";
-import { PayoutMethod, PayoutStatus, OrderStatus } from "@repo/db";
+import { DocumentSequenceService } from "../common/document-sequence.service";
+import { PayoutMethod, PayoutStatus, OrderStatus, LedgerEntryType } from "@repo/db";
+
+export class InsufficientFundsException extends ConflictException {
+  constructor(requested: number, available: number) {
+    super(`Insufficient funds: requested ৳${requested}, disbursable ৳${available}`);
+  }
+}
+
+export const PLATFORM_DISBURSEMENT_CLEARING = "PLATFORM_DISBURSEMENT_CLEARING";
+const round2 = (n: number) => Math.round(n * 100) / 100;
+/** Payout states that still hold wallet funds. */
+const HOLDING_STATUSES = [PayoutStatus.PENDING, PayoutStatus.APPROVED, PayoutStatus.HOLD];
 
 import { IsNumber, IsEnum, IsObject, IsNotEmpty, IsString, IsOptional, Min } from "class-validator";
 
@@ -20,6 +33,16 @@ export class RequestPayoutDto {
   @IsObject()
   @IsNotEmpty()
   accountDetails!: Record<string, any>;
+}
+
+export class DisbursePayoutDto {
+  @IsOptional()
+  @IsString()
+  transactionReference?: string;
+
+  @IsOptional()
+  @IsString()
+  adminNotes?: string;
 }
 
 export class ApprovePayoutDto {
@@ -37,6 +60,7 @@ export class PayoutService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly ledgerService: LedgerService,
+    private readonly sequences: DocumentSequenceService,
   ) {}
 
   /**
@@ -49,7 +73,7 @@ export class PayoutService {
     const activeHolds = await this.prisma.payoutRequest.findMany({
       where: {
         storeId,
-        status: { in: [PayoutStatus.PENDING, PayoutStatus.APPROVED] },
+        status: { in: HOLDING_STATUSES },
       },
       select: { amount: true },
     });
@@ -123,7 +147,7 @@ export class PayoutService {
       const activeHolds = await tx.payoutRequest.findMany({
         where: {
           storeId,
-          status: { in: [PayoutStatus.PENDING, PayoutStatus.APPROVED] },
+          status: { in: HOLDING_STATUSES },
         },
         select: { amount: true },
       });
@@ -156,7 +180,7 @@ export class PayoutService {
   }
 
   /**
-   * Approves and executes a student payout settlement with ledger debit append.
+   * Legacy "approve & settle" action; runs through the same locked disbursement path.
    */
   async approvePayout(
     payoutId: string,
@@ -166,72 +190,99 @@ export class PayoutService {
     if (!dto.transactionReference || dto.transactionReference.trim().length === 0) {
       throw new BadRequestException("Transaction reference (TrxID) is required");
     }
+    return this.disburse(payoutId, adminUserId, dto);
+  }
 
-    const payout = await this.prisma.payoutRequest.findUnique({
-      where: { id: payoutId },
-    });
-
-    if (!payout) {
-      throw new NotFoundException("Payout request not found");
-    }
-
-    if (payout.status !== PayoutStatus.PENDING && payout.status !== PayoutStatus.APPROVED) {
-      throw new BadRequestException(
-        `Cannot approve payout with status "${payout.status}". Only PENDING or APPROVED requests can be settled.`,
-      );
-    }
-
+  /**
+   * Disburses a payout: locks the payout and store rows, enforces
+   * walletBalance - earlier pending withdrawals >= amount, then appends the wallet ledger debit
+   * and a balanced double-entry pair (DR student wallet / CR disbursement clearing).
+   */
+  async disburse(payoutId: string, adminUserId: string, dto: DisbursePayoutDto) {
     return this.prisma.$transaction(async (tx) => {
-      // 1. Record immutable ledger debit
+      await tx.$queryRaw`SELECT id FROM payout_requests WHERE id = ${payoutId} FOR UPDATE`;
+      const payout = await tx.payoutRequest.findUnique({ where: { id: payoutId } });
+      if (!payout) {
+        throw new NotFoundException("Payout request not found");
+      }
+      if (payout.status !== PayoutStatus.PENDING && payout.status !== PayoutStatus.APPROVED) {
+        throw new ConflictException(`Payout is ${payout.status}; only PENDING or APPROVED payouts can be disbursed`);
+      }
+
+      // Serializes every withdrawal against this wallet.
+      await tx.$queryRaw`SELECT id FROM stores WHERE id = ${payout.storeId} FOR UPDATE`;
+
+      const amount = Number(payout.amount);
       const lastEntry = await tx.ledgerEntry.findFirst({
         where: { storeId: payout.storeId },
         orderBy: { createdAt: "desc" },
       });
+      const walletBalance = Number(lastEntry?.balanceAfter ?? 0);
+      const queuedAhead = await tx.payoutRequest.aggregate({
+        where: {
+          storeId: payout.storeId,
+          id: { not: payout.id },
+          status: { in: [PayoutStatus.PENDING, PayoutStatus.APPROVED] },
+          createdAt: { lt: payout.createdAt },
+        },
+        _sum: { amount: true },
+      });
+      const disbursable = round2(walletBalance - Number(queuedAhead._sum.amount ?? 0));
+      if (disbursable < amount) {
+        throw new InsufficientFundsException(amount, disbursable);
+      }
 
-      const previousBalance = lastEntry ? Number(lastEntry.balanceAfter) : 0;
-      const amount = Number(payout.amount);
-      const balanceAfter = Math.round((previousBalance - amount) * 100) / 100;
+      const voucherNumber = await this.sequences.next("PV", { tx });
+      const transactionReference = dto.transactionReference?.trim() || `SIM-${voucherNumber}`;
 
       const ledgerEntry = await tx.ledgerEntry.create({
         data: {
           storeId: payout.storeId,
           payoutRequestId: payout.id,
-          entryType: "PAYOUT_WITHDRAWAL",
+          entryType: LedgerEntryType.PAYOUT_WITHDRAWAL,
           amount: -amount,
-          balanceAfter,
-          notes: `Payout settled via ${payout.paymentMethod} (Ref: ${dto.transactionReference})`,
+          balanceAfter: round2(walletBalance - amount),
+          notes: `Payout ${voucherNumber} via ${payout.paymentMethod} (Ref: ${transactionReference})`,
         },
       });
 
-      // 2. Update payout request to PROCESSED
+      const journalLine = { transactionId: voucherNumber, referenceType: "PAYOUT", referenceId: payout.id };
+      await tx.journalEntry.createMany({
+        data: [
+          { ...journalLine, account: `STUDENT_WALLET:${payout.storeId}`, debit: amount, credit: 0, memo: "Student wallet payout" },
+          { ...journalLine, account: PLATFORM_DISBURSEMENT_CLEARING, debit: 0, credit: amount, memo: "Cash disbursed" },
+        ],
+      });
+
+      const disbursedAt = new Date();
       const updatedPayout = await tx.payoutRequest.update({
-        where: { id: payoutId },
+        where: { id: payout.id },
         data: {
           status: PayoutStatus.PROCESSED,
-          transactionReference: dto.transactionReference,
+          transactionReference,
+          voucherNumber,
+          disbursedAt,
           adminNotes: dto.adminNotes || payout.adminNotes,
           reviewedById: adminUserId,
         },
         include: {
-          store: {
-            select: {
-              storeName: true,
-              slug: true,
-            },
-          },
-          student: {
-            select: {
-              fullName: true,
-              email: true,
-              phone: true,
-            },
-          },
+          store: { select: { storeName: true, slug: true } },
+          student: { select: { fullName: true, email: true, phone: true } },
         },
       });
 
       return {
         payout: updatedPayout,
         ledgerEntry,
+        voucher: {
+          voucherNumber,
+          payoutId: payout.id,
+          amount,
+          paymentMethod: payout.paymentMethod,
+          transactionReference,
+          disbursedAt,
+          disbursedById: adminUserId,
+        },
       };
     });
   }
@@ -280,7 +331,7 @@ export class PayoutService {
 
     const where = filters?.status ? { status: filters.status } : {};
 
-    const [requests, total] = await Promise.all([
+    const [requests, total, pendingCount] = await Promise.all([
       this.prisma.payoutRequest.findMany({
         where,
         orderBy: { createdAt: "desc" },
@@ -310,10 +361,12 @@ export class PayoutService {
         },
       }),
       this.prisma.payoutRequest.count({ where }),
+      this.prisma.payoutRequest.count({ where: { status: PayoutStatus.PENDING } }),
     ]);
 
     return {
       requests,
+      pendingCount,
       pagination: {
         page,
         limit,

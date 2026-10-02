@@ -31,4 +31,9 @@ describe("PasswordService (Argon2)", () => {
     const isValid = await passwordService.verify(hash, "WrongPassword");
     expect(isValid).toBe(false);
   });
+
+  it("should return false when verifying with a malformed hash", async () => {
+    const isValid = await passwordService.verify("not-a-valid-argon2-hash", "password");
+    expect(isValid).toBe(false);
+  });
 });

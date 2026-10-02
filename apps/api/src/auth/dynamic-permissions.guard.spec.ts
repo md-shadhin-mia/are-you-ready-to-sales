@@ -125,4 +125,69 @@ describe("DynamicPermissionsGuard (Unit)", () => {
 
     expect(result).toBe(true);
   });
+
+  it("6. Should throw ForbiddenException when user is not present on request", async () => {
+    vi.spyOn(reflector, "getAllAndOverride").mockImplementation((key: any) => {
+      if (key === "permissions") return ["orders:view"];
+      return undefined;
+    });
+
+    const context = createMockContext(null);
+    await expect(guard.canActivate(context)).rejects.toThrow("Authentication required");
+  });
+
+  it("7. Should evaluate legacy roles when requiredRoles is defined", async () => {
+    vi.spyOn(reflector, "getAllAndOverride").mockImplementation((key: any) => {
+      if (key === "roles") return [UserRole.BRANCH_MANAGER];
+      return undefined;
+    });
+
+    const allowedCtx = createMockContext({ id: "bm-1", role: UserRole.BRANCH_MANAGER });
+    expect(await guard.canActivate(allowedCtx)).toBe(true);
+
+    const deniedCtx = createMockContext({ id: "stu-1", role: UserRole.STUDENT });
+    await expect(guard.canActivate(deniedCtx)).rejects.toThrow("Access denied. Required roles: [BRANCH_MANAGER]");
+  });
+
+  it("8. Should allow access when user has global wildcard '*'", async () => {
+    vi.spyOn(reflector, "getAllAndOverride").mockImplementation((key: any) => {
+      if (key === "permissions") return ["anything:custom"];
+      return undefined;
+    });
+
+    prismaMock.userRoleAssignment.findMany.mockResolvedValue([
+      { role: { rolePermissions: [{ permission: { slug: "*" } }] } },
+    ]);
+
+    const context = createMockContext({ id: "admin-root", role: UserRole.INSTITUTE_ADMIN });
+    expect(await guard.canActivate(context)).toBe(true);
+  });
+
+  it("9. Should use Redis cache when present and recover from corrupted cache", async () => {
+    redisMock.get.mockResolvedValueOnce(JSON.stringify(["cached:permission"]));
+
+    let perms = await guard.resolveUserPermissions("u-cached");
+    expect(perms).toEqual(["cached:permission"]);
+    expect(prismaMock.userRoleAssignment.findMany).not.toHaveBeenCalled();
+
+    // Corrupted cache
+    redisMock.get.mockResolvedValueOnce("invalid-json{");
+    prismaMock.userRoleAssignment.findMany.mockResolvedValueOnce([]);
+
+    perms = await guard.resolveUserPermissions("u-corrupt");
+    expect(perms).toEqual([]);
+    expect(prismaMock.userRoleAssignment.findMany).toHaveBeenCalled();
+  });
+
+  it("10. Should fallback to system role matching legacyRole when no assignments exist", async () => {
+    prismaMock.userRoleAssignment.findMany.mockResolvedValueOnce([]);
+    prismaMock.role.findFirst.mockResolvedValueOnce({
+      name: UserRole.STUDENT,
+      rolePermissions: [{ permission: { slug: "student:portal" } }],
+    });
+
+    const perms = await guard.resolveUserPermissions("stu-legacy", UserRole.STUDENT);
+    expect(perms).toEqual(["student:portal"]);
+    expect(redisMock.set).toHaveBeenCalledWith("user:permissions:stu-legacy", JSON.stringify(["student:portal"]), 600);
+  });
 });

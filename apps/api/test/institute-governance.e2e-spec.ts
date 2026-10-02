@@ -97,6 +97,7 @@ describe("Institute Executive Operations & Governance (E2E)", () => {
   it("2. Should retrieve filterable list of students with store, level, and subscription", async () => {
     const res = await request(app.getHttpServer())
       .get("/api/v1/admin/students")
+      .query({ search: "student1@platform.local" })
       .set("Authorization", `Bearer ${adminToken}`)
       .expect(200);
 

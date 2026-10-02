@@ -7,14 +7,35 @@ import {
   Query,
   UseGuards,
   Request,
+  HttpCode,
+  Put,
 } from "@nestjs/common";
 import { JwtAuthGuard } from "../auth/jwt-auth.guard";
 import { DynamicPermissionsGuard } from "../auth/dynamic-permissions.guard";
 import { RequirePermission } from "../auth/permissions.decorator";
-import { PayoutService, ApprovePayoutDto } from "./payout.service";
+import { PayoutService, ApprovePayoutDto, DisbursePayoutDto } from "./payout.service";
+import { PaymentGatewayService } from "./payment-gateway.service";
+import { Idempotent } from "../common/idempotency/idempotent.decorator";
 import { PayoutStatus } from "@repo/db";
 
-import { IsOptional, IsString } from "class-validator";
+import { IsBoolean, IsIn, IsNotEmpty, IsObject, IsOptional, IsString } from "class-validator";
+
+export class UpsertPaymentMethodDto {
+  @IsString()
+  @IsNotEmpty()
+  displayName!: string;
+
+  @IsOptional()
+  @IsIn(["SANDBOX", "LIVE"])
+  mode?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  isActive?: boolean;
+
+  @IsObject()
+  credentials!: Record<string, string>;
+}
 
 export class RejectPayoutDto {
   @IsOptional()
@@ -25,7 +46,34 @@ export class RejectPayoutDto {
 @Controller("api/v1/admin/finance")
 @UseGuards(JwtAuthGuard, DynamicPermissionsGuard)
 export class FinanceAdminController {
-  constructor(private readonly payoutService: PayoutService) {}
+  constructor(
+    private readonly payoutService: PayoutService,
+    private readonly gateways: PaymentGatewayService,
+  ) {}
+
+  @Post("payouts/:id/disburse")
+  @HttpCode(200)
+  @Idempotent()
+  @RequirePermission("finance:payout")
+  async disbursePayout(@Request() req: any, @Param("id") id: string, @Body() dto: DisbursePayoutDto) {
+    return this.payoutService.disburse(id, req.user.id, dto);
+  }
+
+  @Get("payment-methods")
+  @RequirePermission("finance:gateways")
+  async listPaymentMethods() {
+    return this.gateways.list();
+  }
+
+  @Put("payment-methods/:provider")
+  @RequirePermission("finance:gateways")
+  async upsertPaymentMethod(
+    @Request() req: any,
+    @Param("provider") provider: string,
+    @Body() dto: UpsertPaymentMethodDto,
+  ) {
+    return this.gateways.upsert(provider, dto, req.user.id);
+  }
 
   @Get("payouts")
   @RequirePermission("finance:payout")

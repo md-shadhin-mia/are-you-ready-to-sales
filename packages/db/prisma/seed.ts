@@ -65,7 +65,24 @@ async function main() {
     },
   });
 
-  console.log("✅ Seeded users (Super Admin, Institute Admin, Product Manager, Student)");
+  // Operational staff & external personas used by admin portal RBAC
+  const staffPersonas = [
+    { email: "ordermanager@platform.local", fullName: "Fulfillment Order Manager", phone: "+8801700000010", role: UserRole.ORDER_MANAGER },
+    { email: "branchmanager@platform.local", fullName: "Dhaka Campus Branch Manager", phone: "+8801700000011", role: UserRole.BRANCH_MANAGER },
+    { email: "support@platform.local", fullName: "Customer Support Agent", phone: "+8801700000012", role: UserRole.SUPPORT_AGENT },
+    { email: "seller@platform.local", fullName: "Vendor Partner Seller", phone: "+8801700000013", role: UserRole.SELLER },
+  ];
+  const staffUsers = new Map<string, { id: string }>();
+  for (const persona of staffPersonas) {
+    const u = await prisma.user.upsert({
+      where: { email: persona.email },
+      update: {},
+      create: { ...persona, passwordHash, isActive: true, isVerified: true },
+    });
+    staffUsers.set(persona.role, u);
+  }
+
+  console.log("✅ Seeded users (Super Admin, Institute Admin, Product/Order/Branch Managers, Support, Seller, Student)");
 
   // 2. Seed Student Store
   const sampleStore = await prisma.store.upsert({
@@ -483,6 +500,21 @@ async function main() {
     { slug: "students:verify", name: "Verify Students", module: "students", description: "Verify student identity and documentation" },
     { slug: "roles:manage", name: "Manage Roles & RBAC", module: "roles", description: "Create custom roles and configure permissions" },
     { slug: "subscriptions:manage", name: "Manage Subscriptions", module: "subscriptions", description: "Configure subscription plans and pricing" },
+    { slug: "students:kyc_audit", name: "Audit KYC Documents", module: "students", description: "View unredacted national ID numbers" },
+    { slug: "branches:manage", name: "Manage Branches & Batches", module: "branches", description: "Create campuses, batches, and enroll students" },
+    { slug: "exchanges:manage", name: "Manage Exchanges", module: "exchanges", description: "Review, approve, and inspect exchange orders" },
+    { slug: "sellers:manage", name: "Manage Sellers", module: "sellers", description: "Onboard, adjust, and deactivate external sellers" },
+    { slug: "sellers:approve_adjustment", name: "Approve Seller Adjustments", module: "sellers", description: "Second-approver sign-off for large balance adjustments" },
+    { slug: "finance:gateways", name: "Manage Payment Methods", module: "finance", description: "Configure encrypted payment gateway credentials" },
+    { slug: "inventory:view", name: "View Inventory", module: "inventory", description: "Inspect stock levels and the stock ledger" },
+    { slug: "inventory:manage", name: "Manage Inventory", module: "inventory", description: "Reserve stock and post audit adjustments" },
+    { slug: "purchases:manage", name: "Manage Purchases", module: "purchases", description: "Raise purchase orders, receive goods, and process returns" },
+    { slug: "suppliers:manage", name: "Manage Suppliers", module: "suppliers", description: "Maintain the supplier directory" },
+    { slug: "reports:view", name: "View Operational Reports", module: "reports", description: "Courier, supplier, and profit lifecycle reports" },
+    { slug: "wholesale:manage", name: "Manage Wholesale", module: "wholesale", description: "Create and manage B2B wholesale orders and credit" },
+    { slug: "cms:manage", name: "Manage Site & CMS", module: "cms", description: "Site settings, pages, banners, FAQ, and About Us" },
+    { slug: "employees:manage", name: "Manage Employees", module: "employees", description: "Employee records, commissions, and penalties" },
+    { slug: "payroll:finalize", name: "Finalize Payroll", module: "employees", description: "Seal monthly salary sheets" },
   ];
 
   const permissionsMap = new Map<string, string>();
@@ -522,25 +554,52 @@ async function main() {
         "students:verify",
         "roles:manage",
         "subscriptions:manage",
+        "branches:manage",
+        "exchanges:manage",
+        "sellers:manage",
+        "sellers:approve_adjustment",
+        "finance:gateways",
+        "inventory:view",
+        "inventory:manage",
+        "purchases:manage",
+        "suppliers:manage",
+        "reports:view",
+        "wholesale:manage",
+        "employees:manage",
       ],
+    },
+    {
+      name: "BRANCH_MANAGER",
+      description: "Campus manager scoped to their assigned branch",
+      isSystemRole: true,
+      permissionSlugs: ["students:view", "employees:manage"],
     },
     {
       name: "PRODUCT_MANAGER",
       description: "Catalog product and inventory manager",
       isSystemRole: true,
-      permissionSlugs: ["catalog:view", "catalog:create", "catalog:update", "catalog:stock"],
+      permissionSlugs: [
+        "catalog:view",
+        "catalog:create",
+        "catalog:update",
+        "catalog:stock",
+        "inventory:view",
+        "inventory:manage",
+        "purchases:manage",
+        "suppliers:manage",
+      ],
     },
     {
       name: "ORDER_MANAGER",
       description: "Order fulfillment and shipping manager",
       isSystemRole: true,
-      permissionSlugs: ["orders:read", "orders:dispatch", "orders:returns"],
+      permissionSlugs: ["orders:read", "orders:dispatch", "orders:returns", "exchanges:manage", "inventory:view"],
     },
     {
       name: "SUPPORT_AGENT",
       description: "Customer service and order tracking agent",
       isSystemRole: true,
-      permissionSlugs: ["orders:read", "students:view", "catalog:view"],
+      permissionSlugs: ["orders:read", "students:view", "catalog:view", "exchanges:manage"],
     },
     {
       name: "STUDENT",
@@ -590,6 +649,9 @@ async function main() {
     { userId: instituteAdmin.id, roleName: "INSTITUTE_ADMIN" },
     { userId: productManager.id, roleName: "PRODUCT_MANAGER" },
     { userId: studentUser.id, roleName: "STUDENT" },
+    { userId: staffUsers.get(UserRole.ORDER_MANAGER)!.id, roleName: "ORDER_MANAGER" },
+    { userId: staffUsers.get(UserRole.BRANCH_MANAGER)!.id, roleName: "BRANCH_MANAGER" },
+    { userId: staffUsers.get(UserRole.SUPPORT_AGENT)!.id, roleName: "SUPPORT_AGENT" },
   ];
 
   for (const assign of userAssignments) {
@@ -720,6 +782,57 @@ async function main() {
     });
   }
   console.log("✅ Seeded subscription plans (Free, Starter, Professional, Business) & student subscription");
+
+  // 10. Admin portal reference data
+  await prisma.siteSetting.upsert({
+    where: { id: "singleton" },
+    update: {},
+    create: {
+      siteName: "Are You Ready To Sales",
+      tagline: "Train, launch, and scale your own e-commerce store",
+      supportEmail: "support@platform.local",
+      supportPhone: "+8809600000000",
+      address: "Dhaka, Bangladesh",
+    },
+  });
+  await prisma.aboutContent.upsert({
+    where: { id: "singleton" },
+    update: {},
+    create: {
+      headline: "Building Bangladesh's next generation of e-commerce entrepreneurs",
+      story: "We pair hands-on training with a real reseller storefront so every student learns by selling.",
+      leadershipTeam: [],
+    },
+  });
+
+  const returnTypes = [
+    { code: "DAMAGED", name: "Damaged in Transit" },
+    { code: "DEFECTIVE", name: "Manufacturing Defect" },
+    { code: "WRONG_ITEM", name: "Wrong Item Supplied" },
+    { code: "EXCESS", name: "Excess Quantity" },
+  ];
+  for (const rt of returnTypes) {
+    await prisma.purchaseReturnType.upsert({ where: { code: rt.code }, update: {}, create: rt });
+  }
+
+  const sizes = [
+    { code: "S", name: "Small", sortOrder: 1 },
+    { code: "M", name: "Medium", sortOrder: 2 },
+    { code: "L", name: "Large", sortOrder: 3 },
+    { code: "XL", name: "Extra Large", sortOrder: 4 },
+  ];
+  for (const size of sizes) {
+    await prisma.size.upsert({ where: { code: size.code }, update: {}, create: size });
+  }
+  const colors = [
+    { code: "RED", name: "Red", hexCode: "#DC2626" },
+    { code: "BLUE", name: "Blue", hexCode: "#2563EB" },
+    { code: "BLACK", name: "Black", hexCode: "#111827" },
+  ];
+  for (const color of colors) {
+    await prisma.color.upsert({ where: { code: color.code }, update: {}, create: color });
+  }
+  console.log("✅ Seeded site settings, About Us, purchase return types, sizes & colors");
 
   console.log("🎉 Seeding completed successfully!");
 }

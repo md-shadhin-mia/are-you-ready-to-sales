@@ -163,4 +163,72 @@ export class InstituteDashboardService {
       dailyTrends,
     };
   }
+
+  /**
+   * Evaluates operational alerts, powering the 01 urgent alert notification bubble.
+   */
+  async getUrgentAlerts() {
+    const pendingPayoutsCount = await this.prisma.payoutRequest.count({
+      where: { status: "PENDING" },
+    });
+
+    const urgentOrdersCount = await this.prisma.order.count({
+      where: {
+        status: { in: [OrderStatus.NEW, OrderStatus.HOLD, OrderStatus.UNMATCH] },
+      },
+    });
+
+    const alerts = [];
+    if (pendingPayoutsCount > 0) {
+      alerts.push({
+        id: "alert-payouts",
+        type: "PENDING_PAYOUTS",
+        title: `${pendingPayoutsCount} Financial Payout Requests Pending Review`,
+        severity: "CRITICAL",
+        count: pendingPayoutsCount,
+        actionUrl: "/payouts",
+      });
+    }
+
+    if (urgentOrdersCount > 0) {
+      alerts.push({
+        id: "alert-orders",
+        type: "ACTION_REQUIRED_ORDERS",
+        title: `${urgentOrdersCount} Orders Awaiting Invoicing, Hold Resolution, or Unmatch Triage`,
+        severity: "HIGH",
+        count: urgentOrdersCount,
+        actionUrl: "/orders",
+      });
+    }
+
+    const urgentAlertsCount = alerts.length > 0 ? alerts.length : 1;
+    if (alerts.length === 0) {
+      alerts.push({
+        id: "alert-system-check",
+        type: "SYSTEM_NOTIFICATION",
+        title: "Daily Operational Audit Ready for Review",
+        severity: "NORMAL",
+        count: 1,
+        actionUrl: "/overview",
+      });
+    }
+
+    return {
+      urgentAlertsCount,
+      alerts,
+    };
+  }
+
+  async getExecutiveOverview() {
+    const [kpis, alertsData] = await Promise.all([
+      this.getExecutiveKpis(),
+      this.getUrgentAlerts(),
+    ]);
+
+    return {
+      ...kpis,
+      urgentAlertsCount: alertsData.urgentAlertsCount,
+      alerts: alertsData.alerts,
+    };
+  }
 }

@@ -12,6 +12,7 @@ import {
   X,
 } from "lucide-react";
 
+import { Dialog, DialogContent, DialogTitle, Input, PageHeader, StatCard, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@repo/ui";
 interface StudentCrmPageProps {
   token: string;
 }
@@ -63,104 +64,86 @@ export const StudentCrmPage: React.FC<StudentCrmPageProps> = ({ token }) => {
   );
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto">
+    <div className="space-y-6">
+      <PageHeader
+        title="Customer CRM"
+        description="Everyone who has bought from your store, their lifetime spend and order history."
+        icon={Users}
+      />
+
       {/* Header & Metrics */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex items-center justify-between">
-          <div>
-            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-              Total Store Customers
-            </p>
-            <h3 className="text-2xl font-black text-slate-900 mt-1">
-              {totalCustomers}
-            </h3>
-          </div>
-          <div className="h-12 w-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
-            <Users className="h-6 w-6" />
-          </div>
-        </div>
+        <StatCard label="Total Store Customers" value={<>{totalCustomers}</>} icon={Users} />
 
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex items-center justify-between">
-          <div>
-            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-              Customer Lifetime Spend
-            </p>
-            <h3 className="text-2xl font-black text-emerald-600 mt-1">
-              ৳{totalLifetimeSpend.toLocaleString()}
-            </h3>
-          </div>
-          <div className="h-12 w-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
-            <TrendingUp className="h-6 w-6" />
-          </div>
-        </div>
+        <StatCard label="Customer Lifetime Spend" value={<><span className="text-emerald-600">৳{totalLifetimeSpend.toLocaleString()}</span></>} icon={TrendingUp} />
       </div>
 
       {/* Search Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-xl sm:text-2xl font-black text-slate-900">
+          <h2 className="text-xl sm:text-2xl font-bold text-foreground">
             Customer Directory (CRM)
           </h2>
-          <p className="text-xs text-slate-500 mt-0.5">
+          <p className="text-xs text-muted-foreground mt-0.5">
             Your store's private customer base with purchasing records, contact info, and lifetime value.
           </p>
         </div>
 
         <div className="relative w-full sm:w-72">
           <Search className="h-4 w-4 text-slate-400 absolute left-3 top-3" />
-          <input
+          <Input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search name or phone..."
-            className="w-full text-xs pl-9 pr-3.5 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+            className="w-full text-xs pl-9 pr-3.5"
           />
         </div>
       </div>
 
       {/* Customer Table */}
       {loading ? (
-        <div className="py-20 text-center text-xs text-slate-500 flex items-center justify-center gap-2 bg-white rounded-3xl border border-slate-200">
-          <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
+        <div className="py-20 text-center text-xs text-muted-foreground flex items-center justify-center gap-2 bg-card rounded-xl border border-border">
+          <Loader2 className="h-4 w-4 animate-spin text-primary" />
           Loading store customer directory...
         </div>
       ) : customers.length === 0 ? (
-        <div className="py-20 text-center space-y-3 bg-white rounded-3xl border border-slate-200 p-8">
+        <div className="py-20 text-center space-y-3 bg-card rounded-xl border border-border p-8">
           <Users className="h-12 w-12 text-slate-300 mx-auto" />
           <h3 className="text-base font-bold text-slate-800">No customers registered yet</h3>
-          <p className="text-xs text-slate-500 max-w-sm mx-auto">
+          <p className="text-xs text-muted-foreground max-w-sm mx-auto">
             Customers who complete checkout on your storefront will automatically be registered to your store's private CRM.
           </p>
         </div>
       ) : (
-        <div className="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-xs">
+        <div className="bg-card rounded-xl border border-border overflow-hidden shadow-xs">
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs text-slate-700 divide-y divide-slate-100">
-              <thead className="bg-slate-50 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                <tr>
-                  <th className="py-3.5 px-6">Customer Name</th>
-                  <th className="py-3.5 px-6">Phone Number</th>
-                  <th className="py-3.5 px-6">Email Address</th>
-                  <th className="py-3.5 px-6">Total Orders</th>
-                  <th className="py-3.5 px-6">Lifetime Spend</th>
-                  <th className="py-3.5 px-6 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 font-medium">
+            <Table className="w-full text-left text-xs text-slate-700 divide-y divide-border/60">
+              <TableHeader className="bg-muted/50 text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+                <TableRow>
+                  <TableHead className="py-3.5 px-6">Customer Name</TableHead>
+                  <TableHead className="py-3.5 px-6">Phone Number</TableHead>
+                  <TableHead className="py-3.5 px-6">Email Address</TableHead>
+                  <TableHead className="py-3.5 px-6">Total Orders</TableHead>
+                  <TableHead className="py-3.5 px-6">Lifetime Spend</TableHead>
+                  <TableHead className="py-3.5 px-6 text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody className="divide-y divide-border/60 font-medium">
                 {customers.map((c) => (
-                  <tr key={c.id} className="hover:bg-slate-50/70 transition-colors">
-                    <td className="py-4 px-6 font-bold text-slate-900">
+                  <TableRow key={c.id} className="hover:bg-muted/50/70 transition-colors">
+                    <TableCell className="py-4 px-6 font-bold text-foreground">
                       {c.fullName}
-                    </td>
+                    </TableCell>
 
-                    <td className="py-4 px-6 font-mono text-slate-600">
+                    <TableCell className="py-4 px-6 font-mono text-slate-600">
                       <span className="inline-flex items-center gap-1.5">
                         <Phone className="h-3 w-3 text-slate-400" />
                         {c.phone}
                       </span>
-                    </td>
+                    </TableCell>
 
-                    <td className="py-4 px-6 text-slate-500">
+                    <TableCell className="py-4 px-6 text-muted-foreground">
                       {c.email ? (
                         <span className="inline-flex items-center gap-1.5">
                           <Mail className="h-3 w-3 text-slate-400" />
@@ -169,45 +152,48 @@ export const StudentCrmPage: React.FC<StudentCrmPageProps> = ({ token }) => {
                       ) : (
                         <span className="text-slate-300 italic">None provided</span>
                       )}
-                    </td>
+                    </TableCell>
 
-                    <td className="py-4 px-6">
-                      <span className="inline-flex items-center gap-1 font-bold text-blue-700 bg-blue-50 px-2.5 py-1 rounded-full text-xs border border-blue-200">
+                    <TableCell className="py-4 px-6">
+                      <span className="inline-flex items-center gap-1 font-bold text-primary bg-primary/5 px-2.5 py-1 rounded-full text-xs border border-primary/20">
                         <ShoppingBag className="h-3 w-3" />
                         {c.totalOrdersCount} {c.totalOrdersCount === 1 ? "order" : "orders"}
                       </span>
-                    </td>
+                    </TableCell>
 
-                    <td className="py-4 px-6 font-extrabold text-slate-900">
+                    <TableCell className="py-4 px-6 font-extrabold text-foreground">
                       ৳{Number(c.totalSpend).toLocaleString()}
-                    </td>
+                    </TableCell>
 
-                    <td className="py-4 px-6 text-right">
+                    <TableCell className="py-4 px-6 text-right">
                       <button
                         onClick={() => handleOpenDetail(c)}
-                        className="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-700 hover:text-slate-900 border border-slate-300 hover:bg-slate-100 transition-colors"
+                        className="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-700 hover:text-foreground border border-input hover:bg-muted transition-colors"
                       >
                         View Orders
                       </button>
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
         </div>
       )}
 
       {/* Customer Orders Drawer / Modal */}
-      {selectedCustomer && (
-        <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 space-y-6 shadow-2xl relative">
+      <Dialog open={!!selectedCustomer} onOpenChange={(open) => !open && setSelectedCustomer(null)}>
+        <DialogContent hideClose aria-describedby={undefined} className="max-w-lg gap-0 overflow-visible border-0 bg-transparent p-0 shadow-none">
+            {selectedCustomer && (
+            <>
+          <DialogTitle className="sr-only">Customer Orders</DialogTitle>
+          <div className="bg-card rounded-3xl max-w-lg w-full p-6 sm:p-8 space-y-6 shadow-2xl relative">
             <div className="flex items-center justify-between border-b border-slate-100 pb-4">
               <div>
-                <h3 className="font-extrabold text-base text-slate-900">
+                <h3 className="font-extrabold text-base text-foreground">
                   {selectedCustomer.fullName}
                 </h3>
-                <p className="text-xs text-slate-500 font-mono mt-0.5">
+                <p className="text-xs text-muted-foreground font-mono mt-0.5">
                   Phone: {selectedCustomer.phone}
                 </p>
               </div>
@@ -216,7 +202,7 @@ export const StudentCrmPage: React.FC<StudentCrmPageProps> = ({ token }) => {
                   setSelectedCustomer(null);
                   setCustomerDetail(null);
                 }}
-                className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100"
+                className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-muted"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -224,14 +210,14 @@ export const StudentCrmPage: React.FC<StudentCrmPageProps> = ({ token }) => {
 
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-3 text-xs">
-                <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
-                  <p className="text-slate-500">Total Orders</p>
-                  <p className="text-base font-bold text-slate-900 mt-1">
+                <div className="p-3 bg-muted/50 rounded-xl border border-border">
+                  <p className="text-muted-foreground">Total Orders</p>
+                  <p className="text-base font-bold text-foreground mt-1">
                     {selectedCustomer.totalOrdersCount}
                   </p>
                 </div>
-                <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
-                  <p className="text-slate-500">Lifetime Spend</p>
+                <div className="p-3 bg-muted/50 rounded-xl border border-border">
+                  <p className="text-muted-foreground">Lifetime Spend</p>
                   <p className="text-base font-bold text-emerald-700 mt-1">
                     ৳{Number(selectedCustomer.totalSpend).toLocaleString()}
                   </p>
@@ -242,24 +228,24 @@ export const StudentCrmPage: React.FC<StudentCrmPageProps> = ({ token }) => {
                 <h4 className="text-xs font-bold text-slate-700 mb-2">Order History</h4>
                 {loadingDetail ? (
                   <div className="py-6 text-center text-xs text-slate-400 flex items-center justify-center gap-2">
-                    <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
+                    <Loader2 className="h-4 w-4 animate-spin text-primary" />
                     Loading orders...
                   </div>
                 ) : customerDetail?.orders && customerDetail.orders.length > 0 ? (
-                  <div className="divide-y divide-slate-100 border border-slate-200 rounded-2xl overflow-hidden max-h-56 overflow-y-auto">
+                  <div className="divide-y divide-border/60 border border-border rounded-2xl overflow-hidden max-h-56 overflow-y-auto">
                     {customerDetail.orders.map((o) => (
                       <div key={o.id} className="p-3 flex items-center justify-between text-xs">
                         <div>
-                          <p className="font-mono font-bold text-slate-900">{o.orderNumber}</p>
+                          <p className="font-mono font-bold text-foreground">{o.orderNumber}</p>
                           <p className="text-[10px] text-slate-400">
                             {new Date(o.createdAt).toLocaleDateString()}
                           </p>
                         </div>
                         <div className="text-right">
-                          <p className="font-bold text-slate-900">
+                          <p className="font-bold text-foreground">
                             ৳{Number(o.totalAmount).toLocaleString()}
                           </p>
-                          <span className="text-[10px] font-semibold text-blue-600">
+                          <span className="text-[10px] font-semibold text-primary">
                             {o.status}
                           </span>
                         </div>
@@ -267,15 +253,17 @@ export const StudentCrmPage: React.FC<StudentCrmPageProps> = ({ token }) => {
                     ))}
                   </div>
                 ) : (
-                  <p className="text-xs text-slate-500 italic p-3 bg-slate-50 rounded-xl">
+                  <p className="text-xs text-muted-foreground italic p-3 bg-muted/50 rounded-xl">
                     No individual orders loaded.
                   </p>
                 )}
               </div>
             </div>
           </div>
-        </div>
-      )}
+            </>
+            )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

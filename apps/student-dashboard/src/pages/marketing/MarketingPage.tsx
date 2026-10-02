@@ -17,7 +17,7 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { apiClient, Coupon, StoreBanner } from "@repo/api-client";
-import { Button } from "@repo/ui";
+import { Button, Dialog, DialogContent, DialogTitle, Input, Label, NativeSelect, PageHeader, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, toast } from "@repo/ui";
 
 interface MarketingPageProps {
   token: string;
@@ -139,7 +139,7 @@ export const MarketingPage: React.FC<MarketingPageProps> = ({ token }) => {
       await apiClient.marketing.updateCoupon(id, { isActive: !currentActive }, token);
       loadCoupons();
     } catch (err: any) {
-      alert(err.message || "Failed to update coupon status");
+      toast.error(err.message || "Failed to update coupon status");
     }
   };
 
@@ -151,7 +151,7 @@ export const MarketingPage: React.FC<MarketingPageProps> = ({ token }) => {
       setBanner(updated);
       setBannerSavedMessage("Announcement banner updated successfully!");
     } catch (err: any) {
-      alert(err.message || "Failed to save banner");
+      toast.error(err.message || "Failed to save banner");
     } finally {
       setBannerLoading(false);
     }
@@ -172,24 +172,20 @@ export const MarketingPage: React.FC<MarketingPageProps> = ({ token }) => {
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2.5">
-          <Megaphone className="h-7 w-7 text-blue-600" />
-          Marketing & Promotion Suite
-        </h1>
-        <p className="text-xs text-slate-500 mt-1">
-          Launch promotional campaigns, create student discount coupons, configure storefront announcement bars, and track customer referrals.
-        </p>
-      </div>
+      <PageHeader
+        title="Marketing & Promotion Suite"
+        description="Launch promotional campaigns, create student discount coupons, configure storefront announcement bars, and track customer referrals."
+        icon={Megaphone}
+      />
 
       {/* Tabs */}
-      <div className="flex items-center gap-2 border-b border-slate-200 pb-2">
+      <div className="flex items-center gap-2 border-b border-border pb-2">
         <button
           onClick={() => setActiveTab("coupons")}
           className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-colors ${
             activeTab === "coupons"
-              ? "bg-blue-600 text-white shadow-xs"
-              : "text-slate-600 hover:bg-slate-100"
+              ? "bg-primary text-primary-foreground shadow-xs"
+              : "text-slate-600 hover:bg-muted"
           }`}
         >
           <Tag className="h-4 w-4" />
@@ -200,8 +196,8 @@ export const MarketingPage: React.FC<MarketingPageProps> = ({ token }) => {
           onClick={() => setActiveTab("banner")}
           className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-colors ${
             activeTab === "banner"
-              ? "bg-blue-600 text-white shadow-xs"
-              : "text-slate-600 hover:bg-slate-100"
+              ? "bg-primary text-primary-foreground shadow-xs"
+              : "text-slate-600 hover:bg-muted"
           }`}
         >
           <Megaphone className="h-4 w-4" />
@@ -212,8 +208,8 @@ export const MarketingPage: React.FC<MarketingPageProps> = ({ token }) => {
           onClick={() => setActiveTab("links")}
           className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-colors ${
             activeTab === "links"
-              ? "bg-blue-600 text-white shadow-xs"
-              : "text-slate-600 hover:bg-slate-100"
+              ? "bg-primary text-primary-foreground shadow-xs"
+              : "text-slate-600 hover:bg-muted"
           }`}
         >
           <Link2 className="h-4 w-4" />
@@ -226,15 +222,15 @@ export const MarketingPage: React.FC<MarketingPageProps> = ({ token }) => {
         <div className="space-y-6">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="font-extrabold text-sm text-slate-900">Active Coupons</h3>
-              <p className="text-xs text-slate-500">
+              <h3 className="font-extrabold text-sm text-foreground">Active Coupons</h3>
+              <p className="text-xs text-muted-foreground">
                 Coupons created here can be applied by customers on your storefront checkout.
               </p>
             </div>
             <Button
               size="sm"
               onClick={() => setCouponModalOpen(true)}
-              className="btn-store-primary text-xs font-bold gap-1.5 rounded-xl shadow-xs"
+              className="bg-primary text-primary-foreground hover:bg-primary/90 text-xs font-bold gap-1.5 rounded-xl shadow-xs"
             >
               <Plus className="h-4 w-4" />
               Create Coupon
@@ -242,7 +238,7 @@ export const MarketingPage: React.FC<MarketingPageProps> = ({ token }) => {
           </div>
 
           {couponError && (
-            <div className="p-4 bg-red-50 border border-red-200 rounded-2xl text-red-700 text-xs flex items-center gap-2">
+            <div className="p-4 bg-destructive/5 border border-destructive/20 rounded-2xl text-destructive text-xs flex items-center gap-2">
               <AlertCircle className="h-4 w-4 flex-shrink-0" />
               <span>{couponError}</span>
             </div>
@@ -250,87 +246,87 @@ export const MarketingPage: React.FC<MarketingPageProps> = ({ token }) => {
 
           {couponsLoading ? (
             <div className="py-16 text-center text-slate-400 text-xs flex items-center justify-center gap-2">
-              <Loader2 className="h-5 w-5 animate-spin text-blue-600" />
+              <Loader2 className="h-5 w-5 animate-spin text-primary" />
               Loading coupons...
             </div>
           ) : coupons.length === 0 ? (
-            <div className="bg-white rounded-3xl border border-slate-200 p-12 text-center space-y-4">
-              <div className="h-16 w-16 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center mx-auto">
+            <div className="bg-card rounded-xl border border-border p-12 text-center space-y-4">
+              <div className="h-16 w-16 rounded-full bg-primary/5 text-primary flex items-center justify-center mx-auto">
                 <Tag className="h-8 w-8" />
               </div>
               <div>
-                <h4 className="font-extrabold text-sm text-slate-900">No Coupons Created Yet</h4>
-                <p className="text-xs text-slate-500 max-w-sm mx-auto mt-1">
+                <h4 className="font-extrabold text-sm text-foreground">No Coupons Created Yet</h4>
+                <p className="text-xs text-muted-foreground max-w-sm mx-auto mt-1">
                   Create your first promo code (e.g. 10% off for new customers) to stimulate initial sales and complete your marketing challenge!
                 </p>
               </div>
               <Button
                 size="sm"
                 onClick={() => setCouponModalOpen(true)}
-                className="btn-store-primary text-xs font-bold gap-1.5 rounded-xl"
+                className="bg-primary text-primary-foreground hover:bg-primary/90 text-xs font-bold gap-1.5 rounded-xl"
               >
                 <Plus className="h-4 w-4" />
                 Create First Coupon
               </Button>
             </div>
           ) : (
-            <div className="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-xs">
+            <div className="bg-card rounded-xl border border-border overflow-hidden shadow-xs">
               <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs">
-                  <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase text-[10px] tracking-wider">
-                    <tr>
-                      <th className="px-6 py-3.5">Code</th>
-                      <th className="px-6 py-3.5">Discount</th>
-                      <th className="px-6 py-3.5">Min. Spend</th>
-                      <th className="px-6 py-3.5">Usage Count</th>
-                      <th className="px-6 py-3.5">Status</th>
-                      <th className="px-6 py-3.5 text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
+                <Table className="w-full text-left text-xs">
+                  <TableHeader className="bg-muted/50 border-b border-border text-muted-foreground font-bold uppercase text-[10px] tracking-wider">
+                    <TableRow>
+                      <TableHead className="px-6 py-3.5">Code</TableHead>
+                      <TableHead className="px-6 py-3.5">Discount</TableHead>
+                      <TableHead className="px-6 py-3.5">Min. Spend</TableHead>
+                      <TableHead className="px-6 py-3.5">Usage Count</TableHead>
+                      <TableHead className="px-6 py-3.5">Status</TableHead>
+                      <TableHead className="px-6 py-3.5 text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody className="divide-y divide-border/60">
                     {coupons.map((cpn) => (
-                      <tr key={cpn.id} className="hover:bg-slate-50/60 transition-colors">
-                        <td className="px-6 py-4 font-mono font-bold text-slate-900 flex items-center gap-2">
-                          <Tag className="h-3.5 w-3.5 text-blue-600" />
+                      <TableRow key={cpn.id} className="hover:bg-muted/50/60 transition-colors">
+                        <TableCell className="px-6 py-4 font-mono font-bold text-foreground flex items-center gap-2">
+                          <Tag className="h-3.5 w-3.5 text-primary" />
                           {cpn.code}
-                        </td>
-                        <td className="px-6 py-4 font-semibold text-slate-700">
+                        </TableCell>
+                        <TableCell className="px-6 py-4 font-semibold text-slate-700">
                           {cpn.discountType === "PERCENTAGE"
                             ? `${cpn.discountValue}% OFF`
                             : `৳${Number(cpn.discountValue).toLocaleString()} OFF`}
-                        </td>
-                        <td className="px-6 py-4 text-slate-500">
+                        </TableCell>
+                        <TableCell className="px-6 py-4 text-muted-foreground">
                           {Number(cpn.minSpend) > 0
                             ? `৳${Number(cpn.minSpend).toLocaleString()}`
                             : "No minimum"}
-                        </td>
-                        <td className="px-6 py-4 text-slate-600">
-                          <span className="font-bold text-slate-900">{cpn.usedCount}</span>
+                        </TableCell>
+                        <TableCell className="px-6 py-4 text-slate-600">
+                          <span className="font-bold text-foreground">{cpn.usedCount}</span>
                           {cpn.maxUses ? ` / ${cpn.maxUses}` : " (Unlimited)"}
-                        </td>
-                        <td className="px-6 py-4">
+                        </TableCell>
+                        <TableCell className="px-6 py-4">
                           <span
                             className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${
                               cpn.isActive
                                 ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                                : "bg-slate-100 text-slate-500"
+                                : "bg-muted text-muted-foreground"
                             }`}
                           >
                             {cpn.isActive ? "ACTIVE" : "PAUSED"}
                           </span>
-                        </td>
-                        <td className="px-6 py-4 text-right">
+                        </TableCell>
+                        <TableCell className="px-6 py-4 text-right">
                           <button
                             onClick={() => handleToggleCoupon(cpn.id, cpn.isActive)}
-                            className="text-xs font-semibold text-blue-600 hover:text-blue-800 transition-colors"
+                            className="text-xs font-semibold text-primary hover:text-primary transition-colors"
                           >
                             {cpn.isActive ? "Pause" : "Activate"}
                           </button>
-                        </td>
-                      </tr>
+                        </TableCell>
+                      </TableRow>
                     ))}
-                  </tbody>
-                </table>
+                  </TableBody>
+                </Table>
               </div>
             </div>
           )}
@@ -340,10 +336,10 @@ export const MarketingPage: React.FC<MarketingPageProps> = ({ token }) => {
       {/* TAB 2: ANNOUNCEMENT BAR */}
       {activeTab === "banner" && (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          <div className="lg:col-span-7 bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-xs space-y-6">
+          <div className="lg:col-span-7 bg-card p-6 sm:p-8 rounded-xl border border-border shadow-xs space-y-6">
             <div>
-              <h3 className="font-extrabold text-sm text-slate-900">Announcement Bar Settings</h3>
-              <p className="text-xs text-slate-500 mt-0.5">
+              <h3 className="font-extrabold text-sm text-foreground">Announcement Bar Settings</h3>
+              <p className="text-xs text-muted-foreground mt-0.5">
                 Displays a prominent sticky message at the top of your public storefront.
               </p>
             </div>
@@ -356,18 +352,18 @@ export const MarketingPage: React.FC<MarketingPageProps> = ({ token }) => {
             )}
 
             <div className="space-y-4 text-xs">
-              <div className="flex items-center justify-between p-3.5 rounded-2xl bg-slate-50 border border-slate-200">
+              <div className="flex items-center justify-between p-3.5 rounded-2xl bg-muted/50 border border-border">
                 <div>
-                  <p className="font-extrabold text-slate-900">Enable Announcement Bar</p>
-                  <p className="text-[11px] text-slate-500">Show or hide the banner on your store</p>
+                  <p className="font-extrabold text-foreground">Enable Announcement Bar</p>
+                  <p className="text-[11px] text-muted-foreground">Show or hide the banner on your store</p>
                 </div>
                 <button
                   type="button"
                   onClick={() => setBanner({ ...banner, bannerActive: !banner.bannerActive })}
-                  className="text-slate-700 hover:text-blue-600 transition-colors"
+                  className="text-slate-700 hover:text-primary transition-colors"
                 >
                   {banner.bannerActive ? (
-                    <ToggleRight className="h-8 w-8 text-blue-600" />
+                    <ToggleRight className="h-8 w-8 text-primary" />
                   ) : (
                     <ToggleLeft className="h-8 w-8 text-slate-400" />
                   )}
@@ -375,35 +371,35 @@ export const MarketingPage: React.FC<MarketingPageProps> = ({ token }) => {
               </div>
 
               <div>
-                <label className="block font-bold text-slate-700 mb-1">
+                <Label className="block font-bold text-slate-700 mb-1">
                   Announcement Message
-                </label>
-                <input
+                </Label>
+                <Input
                   type="text"
                   value={banner.bannerText || ""}
                   onChange={(e) => setBanner({ ...banner, bannerText: e.target.value })}
                   placeholder="e.g. Free shipping on all orders over ৳1,000! Use code FLASH10"
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs"
+                  className="w-full text-xs"
                 />
               </div>
 
               <div>
-                <label className="block font-bold text-slate-700 mb-1">
+                <Label className="block font-bold text-slate-700 mb-1">
                   Destination Link (Optional)
-                </label>
-                <input
+                </Label>
+                <Input
                   type="text"
                   value={banner.bannerLink || ""}
                   onChange={(e) => setBanner({ ...banner, bannerLink: e.target.value })}
                   placeholder="e.g. /apex-gadgets/product/headphones-id"
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs"
+                  className="w-full text-xs"
                 />
               </div>
 
               <div>
-                <label className="block font-bold text-slate-700 mb-2">
+                <Label className="block font-bold text-slate-700 mb-2">
                   Banner Background Color
-                </label>
+                </Label>
                 <div className="flex items-center gap-3">
                   {["#2563eb", "#059669", "#d97706", "#7c3aed", "#0f172a", "#dc2626"].map(
                     (color) => (
@@ -420,11 +416,11 @@ export const MarketingPage: React.FC<MarketingPageProps> = ({ token }) => {
                       />
                     ),
                   )}
-                  <input
+                  <Input
                     type="text"
                     value={banner.bannerBgColor || "#2563eb"}
                     onChange={(e) => setBanner({ ...banner, bannerBgColor: e.target.value })}
-                    className="w-24 px-2.5 py-1.5 rounded-lg border border-slate-300 font-mono text-[11px]"
+                    className="w-24 font-mono text-[11px]"
                   />
                 </div>
               </div>
@@ -432,7 +428,7 @@ export const MarketingPage: React.FC<MarketingPageProps> = ({ token }) => {
               <Button
                 disabled={bannerLoading}
                 onClick={handleSaveBanner}
-                className="btn-store-primary w-full py-2.5 rounded-xl text-xs font-bold gap-2"
+                className="bg-primary text-primary-foreground hover:bg-primary/90 w-full py-2.5 rounded-xl text-xs font-bold gap-2"
               >
                 {bannerLoading ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -449,7 +445,7 @@ export const MarketingPage: React.FC<MarketingPageProps> = ({ token }) => {
             <h4 className="font-extrabold text-xs text-slate-700 uppercase tracking-wider">
               Live Preview
             </h4>
-            <div className="rounded-2xl border border-slate-200 overflow-hidden shadow-sm bg-slate-100 p-2">
+            <div className="rounded-2xl border border-border overflow-hidden shadow-sm bg-muted p-2">
               <div
                 style={{ backgroundColor: banner.bannerBgColor || "#2563eb" }}
                 className="text-white text-xs font-semibold px-4 py-2 text-center flex items-center justify-center gap-2 rounded-xl transition-all shadow-xs"
@@ -459,7 +455,7 @@ export const MarketingPage: React.FC<MarketingPageProps> = ({ token }) => {
                 {banner.bannerLink && <ArrowRight className="h-3.5 w-3.5 flex-shrink-0 opacity-80" />}
               </div>
 
-              <div className="h-32 bg-white rounded-xl mt-2 flex items-center justify-center text-slate-400 text-xs">
+              <div className="h-32 bg-card rounded-xl mt-2 flex items-center justify-center text-slate-400 text-xs">
                 Storefront Header Area Preview
               </div>
             </div>
@@ -469,38 +465,38 @@ export const MarketingPage: React.FC<MarketingPageProps> = ({ token }) => {
 
       {/* TAB 3: REFERRAL & CAMPAIGN LINKS */}
       {activeTab === "links" && (
-        <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-xs space-y-6">
+        <div className="bg-card p-6 sm:p-8 rounded-xl border border-border shadow-xs space-y-6">
           <div>
-            <h3 className="font-extrabold text-sm text-slate-900">
+            <h3 className="font-extrabold text-sm text-foreground">
               Tracked Campaign & Referral Link Generator
             </h3>
-            <p className="text-xs text-slate-500 mt-0.5">
+            <p className="text-xs text-muted-foreground mt-0.5">
               Share trackable links on social media and WhatsApp. The platform tracks visitor drop-offs and completed orders associated with each campaign link.
             </p>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
             <div>
-              <label className="block font-bold text-slate-700 mb-1">
+              <Label className="block font-bold text-slate-700 mb-1">
                 Target Page Path (Optional)
-              </label>
-              <input
+              </Label>
+              <Input
                 type="text"
                 value={targetPath}
                 onChange={(e) => setTargetPath(e.target.value)}
                 placeholder="e.g. /product/headphones"
-                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs"
+                className="w-full text-xs"
               />
             </div>
 
             <div>
-              <label className="block font-bold text-slate-700 mb-1">
+              <Label className="block font-bold text-slate-700 mb-1">
                 Marketing Channel (UTM Source)
-              </label>
-              <select
+              </Label>
+              <NativeSelect containerClassName="w-full"
                 value={utmSource}
                 onChange={(e) => setUtmSource(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs bg-white"
+                className="text-xs"
               >
                 <option value="facebook">Facebook</option>
                 <option value="whatsapp">WhatsApp Group / DM</option>
@@ -508,58 +504,59 @@ export const MarketingPage: React.FC<MarketingPageProps> = ({ token }) => {
                 <option value="tiktok">TikTok</option>
                 <option value="youtube">YouTube</option>
                 <option value="direct">Direct Referral</option>
-              </select>
+              </NativeSelect>
             </div>
 
             <div>
-              <label className="block font-bold text-slate-700 mb-1">
+              <Label className="block font-bold text-slate-700 mb-1">
                 Campaign Name (UTM Campaign)
-              </label>
-              <input
+              </Label>
+              <Input
                 type="text"
                 value={utmCampaign}
                 onChange={(e) => setUtmCampaign(e.target.value)}
                 placeholder="e.g. eid_mega_sale"
-                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs"
+                className="w-full text-xs"
               />
             </div>
           </div>
 
           {/* Generated URL Box */}
-          <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-2">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+          <div className="bg-muted/50 p-4 rounded-2xl border border-border space-y-2">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
               Your Tracked Shareable Link:
             </span>
             <div className="flex items-center gap-2">
-              <input
+              <Input
                 type="text"
                 readOnly
                 value={trackedUrl}
-                className="flex-1 bg-white px-3.5 py-2 rounded-xl border border-slate-200 text-xs font-mono text-slate-800 focus:outline-none"
+                className="flex-1 text-xs font-mono"
               />
               <Button
                 size="sm"
                 onClick={handleCopyLink}
-                className="btn-store-primary text-xs font-bold gap-1.5 rounded-xl flex-shrink-0"
+                className="bg-primary text-primary-foreground hover:bg-primary/90 text-xs font-bold gap-1.5 rounded-xl flex-shrink-0"
               >
                 {copiedLink ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
                 {copiedLink ? "Copied!" : "Copy Link"}
               </Button>
             </div>
-            <p className="text-[11px] text-slate-500">
-              Attribution tag: <code className="bg-white px-1.5 py-0.5 rounded border border-slate-200">ref={refCode}</code>
+            <p className="text-[11px] text-muted-foreground">
+              Attribution tag: <code className="bg-card px-1.5 py-0.5 rounded border border-border">ref={refCode}</code>
             </p>
           </div>
         </div>
       )}
 
       {/* CREATE COUPON MODAL */}
-      {couponModalOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 space-y-6 shadow-2xl animate-in zoom-in-95">
+      <Dialog open={!!couponModalOpen} onOpenChange={(open) => !open && setCouponModalOpen(false)}>
+        <DialogContent hideClose aria-describedby={undefined} className="max-w-md gap-0 overflow-visible border-0 bg-transparent p-0 shadow-none">
+          <DialogTitle className="sr-only">CREATE COUPON MODAL</DialogTitle>
+          <div className="bg-card rounded-3xl max-w-md w-full p-6 sm:p-8 space-y-6 shadow-2xl animate-in zoom-in-95">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <h3 className="font-black text-base text-slate-900 flex items-center gap-2">
-                <Tag className="h-5 w-5 text-blue-600" />
+              <h3 className="font-bold text-base text-foreground flex items-center gap-2">
+                <Tag className="h-5 w-5 text-primary" />
                 Create Store Coupon
               </h3>
               <button
@@ -572,88 +569,87 @@ export const MarketingPage: React.FC<MarketingPageProps> = ({ token }) => {
 
             <form onSubmit={handleCreateCoupon} className="space-y-4 text-xs">
               <div>
-                <label className="block font-bold text-slate-700 mb-1">
+                <Label className="block font-bold text-slate-700 mb-1">
                   Coupon Code *
-                </label>
-                <input
+                </Label>
+                <Input
                   type="text"
                   required
                   value={newCode}
                   onChange={(e) => setNewCode(e.target.value.toUpperCase())}
                   placeholder="e.g. FLASH20"
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono uppercase"
+                  className="w-full font-mono uppercase"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">
+                  <Label className="block font-bold text-slate-700 mb-1">
                     Discount Type
-                  </label>
-                  <select
+                  </Label>
+                  <NativeSelect containerClassName="w-full"
                     value={newDiscountType}
                     onChange={(e) => setNewDiscountType(e.target.value as any)}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
                   >
                     <option value="PERCENTAGE">Percentage (%)</option>
                     <option value="FIXED_AMOUNT">Fixed Amount (৳)</option>
-                  </select>
+                  </NativeSelect>
                 </div>
 
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">
+                  <Label className="block font-bold text-slate-700 mb-1">
                     Discount Value *
-                  </label>
-                  <input
+                  </Label>
+                  <Input
                     type="number"
                     required
                     min={1}
                     max={newDiscountType === "PERCENTAGE" ? 100 : undefined}
                     value={newDiscountValue}
                     onChange={(e) => setNewDiscountValue(Number(e.target.value))}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono"
+                    className="w-full font-mono"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">
+                  <Label className="block font-bold text-slate-700 mb-1">
                     Minimum Cart Spend (৳)
-                  </label>
-                  <input
+                  </Label>
+                  <Input
                     type="number"
                     min={0}
                     value={newMinSpend}
                     onChange={(e) => setNewMinSpend(Number(e.target.value))}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono"
+                    className="w-full font-mono"
                   />
                 </div>
 
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">
+                  <Label className="block font-bold text-slate-700 mb-1">
                     Max Redemptions Limit
-                  </label>
-                  <input
+                  </Label>
+                  <Input
                     type="number"
                     min={1}
                     value={newMaxUses}
                     onChange={(e) => setNewMaxUses(e.target.value)}
                     placeholder="Unlimited"
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono"
+                    className="w-full font-mono"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block font-bold text-slate-700 mb-1">
+                <Label className="block font-bold text-slate-700 mb-1">
                   Expiration Date (Optional)
-                </label>
-                <input
+                </Label>
+                <Input
                   type="date"
                   value={newEndDate}
                   onChange={(e) => setNewEndDate(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full"
                 />
               </div>
 
@@ -669,15 +665,15 @@ export const MarketingPage: React.FC<MarketingPageProps> = ({ token }) => {
                 <Button
                   type="submit"
                   disabled={createCouponLoading}
-                  className="btn-store-primary flex-1 py-2.5 rounded-xl text-xs font-bold gap-1.5"
+                  className="bg-primary text-primary-foreground hover:bg-primary/90 flex-1 py-2.5 rounded-xl text-xs font-bold gap-1.5"
                 >
                   {createCouponLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save Coupon"}
                 </Button>
               </div>
             </form>
           </div>
-        </div>
-      )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

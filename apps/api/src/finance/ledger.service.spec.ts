@@ -137,4 +137,115 @@ describe("LedgerService Invariants (Unit)", () => {
     expect((ledgerService as any).updateLedgerEntry).toBeUndefined();
     expect((ledgerService as any).deleteLedgerEntry).toBeUndefined();
   });
+
+  it("6. Should return null if profit amount <= 0 or fee <= 0", async () => {
+    expect(await ledgerService.recordOrderProfit("o-1", "s-1", 0)).toBeNull();
+    expect(await ledgerService.recordOrderProfit("o-1", "s-1", -10)).toBeNull();
+    expect(await ledgerService.recordPlatformFee("o-1", "s-1", 0)).toBeNull();
+    expect(await ledgerService.recordPlatformFee("o-1", "s-1", -5)).toBeNull();
+  });
+
+  it("7. Should reject withdrawal amount <= 0", async () => {
+    await expect(
+      ledgerService.recordPayoutWithdrawal("s-1", "p-1", 0, "TRX-0"),
+    ).rejects.toThrow("Withdrawal amount must be greater than zero");
+
+    await expect(
+      ledgerService.recordPayoutWithdrawal("s-1", "p-1", -100, "TRX-0"),
+    ).rejects.toThrow("Withdrawal amount must be greater than zero");
+  });
+
+  it("8. Should use default notes for order profit and payout withdrawal when omitted", async () => {
+    prismaMock.ledgerEntry.findFirst.mockResolvedValue({ balanceAfter: "1000.00" });
+    prismaMock.ledgerEntry.create.mockImplementation(({ data }: any) => ({ id: "l-1", ...data }));
+
+    await ledgerService.recordOrderProfit("ord-99", "s-1", 100);
+    expect(prismaMock.ledgerEntry.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ notes: "Profit credited from order ord-99" }),
+      }),
+    );
+
+    await ledgerService.recordPayoutWithdrawal("s-1", "p-99", 100, "TRX-AUTO");
+    expect(prismaMock.ledgerEntry.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ notes: "Payout withdrawal processed (Ref: TRX-AUTO)" }),
+      }),
+    );
+  });
+
+  it("9. Should return 0 for store balance if no ledger entries exist", async () => {
+    prismaMock.ledgerEntry.findFirst.mockResolvedValue(null);
+    const balance = await ledgerService.getStoreBalance("store-empty");
+    expect(balance).toBe(0);
+  });
+
+  it("10. Should return paginated ledger statement with mapped order and payout fields", async () => {
+    prismaMock.ledgerEntry.findMany.mockResolvedValue([
+      {
+        id: "le-1",
+        entryType: LedgerEntryType.ORDER_PROFIT,
+        amount: "500.00",
+        balanceAfter: "500.00",
+        notes: "Credit",
+        order: { orderNumber: "ORD-001", totalAmount: "1000.00" },
+        payoutRequest: null,
+        createdAt: new Date(),
+      },
+      {
+        id: "le-2",
+        entryType: LedgerEntryType.PAYOUT_WITHDRAWAL,
+        amount: "-200.00",
+        balanceAfter: "300.00",
+        notes: "Debit",
+        order: null,
+        payoutRequest: { id: "p-1", paymentMethod: "BKASH", transactionReference: "TRX-101" },
+        createdAt: new Date(),
+      },
+    ]);
+    prismaMock.ledgerEntry.count.mockResolvedValue(2);
+    prismaMock.ledgerEntry.findFirst.mockResolvedValue({ balanceAfter: "300.00" });
+
+    const statement = await ledgerService.getLedgerStatement("s-1", 1, 10);
+    expect(statement.currentBalance).toBe(300);
+    expect(statement.entries).toHaveLength(2);
+    expect(statement.entries[0].orderNumber).toBe("ORD-001");
+    expect(statement.entries[0].transactionReference).toBeNull();
+    expect(statement.entries[1].orderNumber).toBeNull();
+    expect(statement.entries[1].transactionReference).toBe("TRX-101");
+    expect(statement.pagination).toEqual({
+      page: 1,
+      limit: 10,
+      total: 2,
+      totalPages: 1,
+    });
+  });
+
+  it("11. Should handle first transaction for store when no prior balance exists", async () => {
+    prismaMock.ledgerEntry.findFirst.mockResolvedValue(null);
+    prismaMock.ledgerEntry.create.mockImplementation(({ data }: any) => ({ id: "first", ...data }));
+
+    await ledgerService.recordOrderProfit("ord-1", "store-new", 250);
+    expect(prismaMock.ledgerEntry.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ balanceAfter: 250 }),
+      }),
+    );
+
+    await ledgerService.recordPlatformFee("ord-1", "store-new", 25);
+    expect(prismaMock.ledgerEntry.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ balanceAfter: -25 }),
+      }),
+    );
+  });
+
+  it("12. Should set totalPages to 1 when total is 0", async () => {
+    prismaMock.ledgerEntry.findMany.mockResolvedValue([]);
+    prismaMock.ledgerEntry.count.mockResolvedValue(0);
+    prismaMock.ledgerEntry.findFirst.mockResolvedValue(null);
+
+    const statement = await ledgerService.getLedgerStatement("s-empty", 1, 20);
+    expect(statement.pagination.totalPages).toBe(1);
+  });
 });

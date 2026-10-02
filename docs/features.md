@@ -58,10 +58,10 @@ Status legend: ⬜ Not planned · 🟡 Planning in progress · ✅ Planned
 - ⬜ 6.6 Headless/Storefront APIs (`/api/store/{store}/...`) for custom frontends
 
 ## 7. Order Management & Fulfillment
-- ⬜ 7.1 Order creation & lifecycle states (pending, paid, processing, shipped, delivered, cancelled, returned, refunded)
-- ⬜ 7.2 Centralized fulfillment dashboard (institute/order manager)
-- ⬜ 7.3 Shipment tracking & courier dispatch
-- ⬜ 7.4 Returns & refunds handling
+- ⬜ 7.1 Order creation & lifecycle states (New, Invoiced, In Courier, Partial Delivered, Complete, Hold, Cancelled, Unmatch, Exchange, Returned, Refunded)
+- ⬜ 7.2 Centralized fulfillment dashboard (institute/order manager) with real-time multi-status tracking queues
+- ⬜ 7.3 Shipment tracking & courier dispatch integration (Pathao, Steadfast, RedX)
+- ⬜ 7.4 Returns, exchanges & replacement processing
 - ⬜ 7.5 Order notifications (SMS/Email)
 
 ## 8. Customer Management (CRM per store)
@@ -109,12 +109,48 @@ Status legend: ⬜ Not planned · 🟡 Planning in progress · ✅ Planned
 - ⬜ 14.3 Average order value tracking
 - ⬜ 14.4 Automated insights/recommendations engine
 
-## 15. Institute (Admin) Dashboard
-- ⬜ 15.1 Student management (registration, verification, activation, profiles, restrictions)
-- ⬜ 15.2 Product management overview
-- ⬜ 15.3 Seller management (approved sellers, performance, complaints, suspensions)
-- ⬜ 15.4 Order management overview (all states)
-- ⬜ 15.5 Platform-wide analytics (students, stores, orders, sales, revenue, ratings)
+## 15. Institute Admin Portal & Operational Hub
+- ⬜ 15.1 Dashboards (Main Overview Panel)
+  - 15.1.1 Executive GMV, revenue, store health & operational KPIs
+  - 15.1.2 Real-time urgent alerts with notification bubble/badge indicator (e.g. `01` unread operational action)
+  - 15.1.3 Warehouse dispatch velocity & delivery success rate widgets
+- ⬜ 15.2 Students (Expandable Management Section)
+  - 15.2.1 Searchable student directory and comprehensive student profiles
+  - 15.2.2 Identity verification & KYC document audit workflow
+  - 15.2.3 Academic enrollment & store affiliation records
+  - 15.2.4 Account status governance (activation, suspension with audit reasons, restrictions)
+- ⬜ 15.3 Branches Management
+  - 15.3.1 Physical and digital campus location CRUD
+  - 15.3.2 Branch directors, coordinators, and staff assignment
+  - 15.3.3 Physical warehouse hub & regional distribution zone mapping
+  - 15.3.4 Branch-wise student enrollment, store activity, and GMV analytics
+- ⬜ 15.4 Student Batches Management
+  - 15.4.1 Cohort & class creation (batch code, schedule, calendar, enrollment capacity)
+  - 15.4.2 Student assignment & batch enrollment mapping
+  - 15.4.3 Mentor / training instructor assignment per batch
+  - 15.4.4 Cohort commercial performance leaderboard & milestone graduation tracking
+- ⬜ 15.5 Orders (Expanded Section — Multi-Status Fulfillment Engine)
+  - 15.5.1 Order Overview: General sales summary, GMV breakdown, pipeline conversion metrics
+  - 15.5.2 All Orders: Consolidated master queue across all student stores (volume badge e.g. 9410)
+  - 15.5.3 New Orders: Unprocessed transactions awaiting confirmation/triage (volume badge e.g. 8)
+  - 15.5.4 Complete Orders: Fully fulfilled & delivered transactions closed post-return window (volume badge e.g. 0)
+  - 15.5.5 Partial Delivered: Orders with partial item dispatch or split fulfillment (volume badge e.g. 233)
+  - 15.5.6 Unmatch Orders: Flagged items with catalog/SKU discrepancies, barcode mismatches, or student store mapping errors (volume badge e.g. 4035)
+  - 15.5.7 Invoiced Orders: Orders with official billing documents / tax invoices generated (volume badge e.g. 8778)
+  - 15.5.8 Hold Orders: Paused transactions awaiting customer confirmation or stock arrival (volume badge e.g. 29)
+  - 15.5.9 Cancelled Orders: Terminated or voided orders with cancellation audit trail (volume badge e.g. 131)
+  - 15.5.10 In Courier: Active 3PL shipments in transit with live courier sync (volume badge e.g. 9243)
+  - 15.5.11 Exchange Orders: Manage item, course, or merchandise swaps and return replacements
+- ⬜ 15.6 Seller Panel
+  - 15.6.1 External merchant & instructor onboarding and profile management
+  - 15.6.2 Commission rates, royalty models, and product listing permissions
+  - 15.6.3 Seller storefront compliance, complaints, and suspension workflows
+  - 15.6.4 Seller performance scorecards and reviews
+- ⬜ 15.7 Payment Requests
+  - 15.7.1 Financial payout request queue with pending badge indicator (e.g. 3)
+  - 15.7.2 Payout verification, ledger validation, and KYC check
+  - 15.7.3 Approval / rejection workflow with transaction reference ID (bKash/Nagad/Bank)
+  - 15.7.4 Settlement audit log and downloadable disbursement receipts
 
 ## 16. Multi-Tenant Architecture & Data Model
 - ⬜ 16.1 Tenant isolation (store-scoped data: products, customers, orders, reviews, theme)
@@ -150,7 +186,7 @@ Status legend: ⬜ Not planned · 🟡 Planning in progress · ✅ Planned
 13. Gamification & Training Progression
 14. Marketing Tools
 15. Store Analytics
-16. Institute Dashboard
+16. Institute Admin Portal & Operations (Dashboards, Students, Branches, Batches, Orders 11-status section, Seller Panel, Payment Requests)
 17. Business Model / Monetization
 18. Platform Roles & Permissions
 

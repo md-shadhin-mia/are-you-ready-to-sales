@@ -85,4 +85,27 @@ describe("RatingAggregatorService", () => {
     expect(breakdown.averageProductRating).toBe(0);
     expect(breakdown.starDistribution[5]).toBe(0);
   });
+
+  it("should accept an optional transaction client and fallback to 0 when aggregates are null", async () => {
+    const txMock: any = {
+      review: {
+        aggregate: vi.fn()
+          .mockResolvedValueOnce({ _avg: { productRating: null }, _count: { id: 0 } })
+          .mockResolvedValueOnce({ _avg: { storeRating: null }, _count: { id: 0 } }),
+      },
+      masterProduct: { update: vi.fn() },
+      store: { update: vi.fn() },
+    };
+
+    const result = await service.recalculateAggregates("prod-2", "store-2", txMock);
+
+    expect(result.productAvg).toBe(0);
+    expect(result.storeAvg).toBe(0);
+    expect(result.totalProductReviews).toBe(0);
+    expect(result.totalStoreReviews).toBe(0);
+    expect(txMock.masterProduct.update).toHaveBeenCalledWith({
+      where: { id: "prod-2" },
+      data: { ratingAvg: 0, totalReviewsCount: 0 },
+    });
+  });
 });

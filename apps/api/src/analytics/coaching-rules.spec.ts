@@ -101,4 +101,30 @@ describe("Business Coaching Engine Unit Tests", () => {
     expect(advice.actionType).toBe("ADD_PRODUCTS");
     expect(advice.priority).toBe("LOW");
   });
+
+  it("7. Should handle zero addToCarts and zero productViews gracefully", () => {
+    const adviceZeroCarts = service.generateCoachingAdvice({
+      visitors: 50,
+      productViews: 20,
+      addToCarts: 0,
+      checkoutsInitiated: 0,
+      completedOrders: 0,
+      conversionRatePercent: 0,
+      cartAbandonmentPercent: 0,
+    });
+    // With 20 views and 0 carts, viewToCartRate is 0% (< 5%), so it triggers Low Engagement
+    expect(adviceZeroCarts.diagnosis).toBe("Low Engagement on Product Details");
+
+    const adviceZeroViews = service.generateCoachingAdvice({
+      visitors: 50,
+      productViews: 0,
+      addToCarts: 0,
+      checkoutsInitiated: 0,
+      completedOrders: 0,
+      conversionRatePercent: 0,
+      cartAbandonmentPercent: 0,
+    });
+    // productViews < 20, visitors between 30 and 100, falls back to Balanced Funnel
+    expect(adviceZeroViews.diagnosis).toBe("Balanced Funnel Performance");
+  });
 });

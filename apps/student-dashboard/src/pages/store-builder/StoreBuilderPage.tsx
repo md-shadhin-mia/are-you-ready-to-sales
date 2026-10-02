@@ -11,15 +11,15 @@ import {
   Sparkles,
   Eye,
 } from "lucide-react";
-import { Button } from "@repo/ui";
+import { Button, Input, Label } from "@repo/ui";
 
 interface StoreBuilderPageProps {
   token: string;
 }
 
 const PRESET_COLORS = [
-  { name: "Ocean Blue", value: "#2563eb" },
   { name: "Emerald Green", value: "#059669" },
+  { name: "Ocean Blue", value: "#2563eb" },
   { name: "Royal Purple", value: "#7c3aed" },
   { name: "Sunset Orange", value: "#ea580c" },
   { name: "Crimson Rose", value: "#e11d48" },
@@ -40,7 +40,7 @@ export const StoreBuilderPage: React.FC<StoreBuilderPageProps> = ({ token }) => 
   const [faviconUrl, setFaviconUrl] = useState("");
   const [contactEmail, setContactEmail] = useState("");
   const [contactPhone, setContactPhone] = useState("");
-  const [primaryColor, setPrimaryColor] = useState("#2563eb");
+  const [primaryColor, setPrimaryColor] = useState("#059669");
   const [secondaryColor, setSecondaryColor] = useState("#475569");
   const [borderRadius, setBorderRadius] = useState("0.75rem");
 
@@ -59,7 +59,7 @@ export const StoreBuilderPage: React.FC<StoreBuilderPageProps> = ({ token }) => 
       setTagline(data.brandingInfo?.tagline || "");
       setContactEmail(data.brandingInfo?.contactEmail || "");
       setContactPhone(data.brandingInfo?.contactPhone || "");
-      setPrimaryColor(data.themeConfig?.primaryColor || "#2563eb");
+      setPrimaryColor(data.themeConfig?.primaryColor || "#059669");
       setSecondaryColor(data.themeConfig?.secondaryColor || "#475569");
       setBorderRadius(data.themeConfig?.borderRadius || "0.75rem");
     } catch (err: any) {
@@ -142,8 +142,8 @@ export const StoreBuilderPage: React.FC<StoreBuilderPageProps> = ({ token }) => 
 
   if (loading) {
     return (
-      <div className="py-20 text-center text-xs text-slate-500 flex items-center justify-center gap-2">
-        <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
+      <div className="py-20 text-center text-xs text-muted-foreground flex items-center justify-center gap-2">
+        <Loader2 className="h-4 w-4 animate-spin text-primary" />
         Loading store builder...
       </div>
     );
@@ -151,7 +151,7 @@ export const StoreBuilderPage: React.FC<StoreBuilderPageProps> = ({ token }) => 
 
   if (!store) {
     return (
-      <div className="bg-white p-8 rounded-2xl border border-slate-200 text-center">
+      <div className="bg-card p-8 rounded-xl border border-border text-center">
         <p className="text-sm font-semibold text-slate-700">No store found for your account.</p>
       </div>
     );
@@ -162,7 +162,7 @@ export const StoreBuilderPage: React.FC<StoreBuilderPageProps> = ({ token }) => 
   return (
     <div className="space-y-8 max-w-5xl mx-auto">
       {/* Top Banner: Status & Live Preview Link */}
-      <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="bg-card p-6 rounded-xl border border-border shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <div
             className="h-12 w-12 rounded-2xl flex items-center justify-center text-white font-extrabold shadow-sm"
@@ -172,7 +172,7 @@ export const StoreBuilderPage: React.FC<StoreBuilderPageProps> = ({ token }) => 
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h2 className="text-lg font-black text-slate-900">{store.storeName}</h2>
+              <h2 className="text-lg font-bold text-foreground">{store.storeName}</h2>
               <span
                 className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider ${
                   store.status === "ACTIVE"
@@ -183,7 +183,7 @@ export const StoreBuilderPage: React.FC<StoreBuilderPageProps> = ({ token }) => 
                 {store.status}
               </span>
             </div>
-            <p className="text-xs text-slate-500 font-mono mt-0.5">{store.slug}.platform.local</p>
+            <p className="text-xs text-muted-foreground font-mono mt-0.5">{store.slug}.platform.local</p>
           </div>
         </div>
 
@@ -192,7 +192,7 @@ export const StoreBuilderPage: React.FC<StoreBuilderPageProps> = ({ token }) => 
             href={storefrontUrl}
             target="_blank"
             rel="noreferrer"
-            className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-slate-700 hover:text-slate-900 border border-slate-300 hover:bg-slate-50 transition-colors"
+            className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-slate-700 hover:text-foreground border border-input hover:bg-muted/50 transition-colors"
           >
             <Eye className="h-4 w-4" />
             Visit Storefront
@@ -226,13 +226,13 @@ export const StoreBuilderPage: React.FC<StoreBuilderPageProps> = ({ token }) => 
           className={`p-4 rounded-2xl flex items-center gap-2 text-xs font-medium ${
             message.type === "success"
               ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
-              : "bg-red-50 text-red-800 border border-red-200"
+              : "bg-destructive/5 text-red-800 border border-destructive/20"
           }`}
         >
           {message.type === "success" ? (
             <CheckCircle2 className="h-4 w-4 text-emerald-600 flex-shrink-0" />
           ) : (
-            <AlertCircle className="h-4 w-4 text-red-600 flex-shrink-0" />
+            <AlertCircle className="h-4 w-4 text-destructive flex-shrink-0" />
           )}
           <span>{message.text}</span>
         </div>
@@ -243,76 +243,76 @@ export const StoreBuilderPage: React.FC<StoreBuilderPageProps> = ({ token }) => 
         {/* Branding Form */}
         <form
           onSubmit={handleSaveBranding}
-          className="bg-white p-6 rounded-3xl border border-slate-200 shadow-xs space-y-4"
+          className="bg-card p-6 rounded-xl border border-border shadow-xs space-y-4"
         >
           <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
-            <StoreIcon className="h-5 w-5 text-blue-600" />
-            <h3 className="font-extrabold text-sm text-slate-900">Store Branding</h3>
+            <StoreIcon className="h-5 w-5 text-primary" />
+            <h3 className="font-extrabold text-sm text-foreground">Store Branding</h3>
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1">Store Name</label>
-            <input
+            <Label className="block text-xs font-bold text-slate-700 mb-1">Store Name</Label>
+            <Input
               type="text"
               required
               value={storeName}
               onChange={(e) => setStoreName(e.target.value)}
-              className="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full text-xs"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1">Tagline</label>
-            <input
+            <Label className="block text-xs font-bold text-slate-700 mb-1">Tagline</Label>
+            <Input
               type="text"
               value={tagline}
               onChange={(e) => setTagline(e.target.value)}
               placeholder="e.g. Premium Gadgets & Accessories at Student Wholesale Prices"
-              className="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full text-xs"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1">Logo URL</label>
-            <input
+            <Label className="block text-xs font-bold text-slate-700 mb-1">Logo URL</Label>
+            <Input
               type="url"
               value={logoUrl}
               onChange={(e) => setLogoUrl(e.target.value)}
               placeholder="https://images.unsplash.com/..."
-              className="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono"
+              className="w-full text-xs font-mono"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1">Favicon URL</label>
-            <input
+            <Label className="block text-xs font-bold text-slate-700 mb-1">Favicon URL</Label>
+            <Input
               type="url"
               value={faviconUrl}
               onChange={(e) => setFaviconUrl(e.target.value)}
               placeholder="https://..."
-              className="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono"
+              className="w-full text-xs font-mono"
             />
           </div>
 
           <div className="grid grid-cols-2 gap-3 pt-2">
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">Support Email</label>
-              <input
+              <Label className="block text-xs font-bold text-slate-700 mb-1">Support Email</Label>
+              <Input
                 type="email"
                 value={contactEmail}
                 onChange={(e) => setContactEmail(e.target.value)}
                 placeholder="store@domain.com"
-                className="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full text-xs"
               />
             </div>
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">Support Phone</label>
-              <input
+              <Label className="block text-xs font-bold text-slate-700 mb-1">Support Phone</Label>
+              <Input
                 type="tel"
                 value={contactPhone}
                 onChange={(e) => setContactPhone(e.target.value)}
                 placeholder="01700000000"
-                className="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full text-xs"
               />
             </div>
           </div>
@@ -327,17 +327,17 @@ export const StoreBuilderPage: React.FC<StoreBuilderPageProps> = ({ token }) => 
         </form>
 
         {/* Theme Customizer */}
-        <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-xs space-y-5">
+        <div className="bg-card p-6 rounded-xl border border-border shadow-xs space-y-5">
           <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
-            <Palette className="h-5 w-5 text-indigo-600" />
-            <h3 className="font-extrabold text-sm text-slate-900">Theme & Visual Styling</h3>
+            <Palette className="h-5 w-5 text-primary" />
+            <h3 className="font-extrabold text-sm text-foreground">Theme & Visual Styling</h3>
           </div>
 
           {/* Primary Color Swatches */}
           <div>
-            <label className="block text-xs font-bold text-slate-700 mb-2">
+            <Label className="block text-xs font-bold text-slate-700 mb-2">
               Brand Primary Color
-            </label>
+            </Label>
             <div className="grid grid-cols-3 gap-2">
               {PRESET_COLORS.map((c) => (
                 <button
@@ -347,7 +347,7 @@ export const StoreBuilderPage: React.FC<StoreBuilderPageProps> = ({ token }) => 
                   className={`p-2 rounded-xl border flex items-center gap-2 transition-all ${
                     primaryColor === c.value
                       ? "border-slate-900 ring-2 ring-slate-900/10 shadow-xs"
-                      : "border-slate-200 hover:border-slate-300"
+                      : "border-border hover:border-input"
                   }`}
                 >
                   <span
@@ -366,7 +366,7 @@ export const StoreBuilderPage: React.FC<StoreBuilderPageProps> = ({ token }) => 
                 type="color"
                 value={primaryColor}
                 onChange={(e) => setPrimaryColor(e.target.value)}
-                className="h-9 w-12 rounded-lg cursor-pointer border border-slate-300"
+                className="h-9 w-12 rounded-lg cursor-pointer border border-input"
               />
               <span className="text-xs font-mono text-slate-600">{primaryColor}</span>
             </div>
@@ -374,7 +374,7 @@ export const StoreBuilderPage: React.FC<StoreBuilderPageProps> = ({ token }) => 
 
           {/* Border Radius */}
           <div>
-            <label className="block text-xs font-bold text-slate-700 mb-2">Corner Roundness</label>
+            <Label className="block text-xs font-bold text-slate-700 mb-2">Corner Roundness</Label>
             <div className="grid grid-cols-3 gap-2">
               {[
                 { label: "Subtle (6px)", value: "0.375rem" },
@@ -387,8 +387,8 @@ export const StoreBuilderPage: React.FC<StoreBuilderPageProps> = ({ token }) => 
                   onClick={() => setBorderRadius(r.value)}
                   className={`p-2.5 rounded-xl border text-xs font-bold transition-all ${
                     borderRadius === r.value
-                      ? "border-slate-900 bg-slate-50 text-slate-900"
-                      : "border-slate-200 text-slate-600 hover:border-slate-300"
+                      ? "border-slate-900 bg-muted/50 text-foreground"
+                      : "border-border text-slate-600 hover:border-input"
                   }`}
                 >
                   {r.label}
@@ -398,8 +398,8 @@ export const StoreBuilderPage: React.FC<StoreBuilderPageProps> = ({ token }) => 
           </div>
 
           {/* Live Component Preview */}
-          <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-3">
-            <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+          <div className="p-4 bg-muted/50 rounded-2xl border border-border space-y-3">
+            <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
               Live Button Preview
             </p>
             <button
@@ -418,7 +418,7 @@ export const StoreBuilderPage: React.FC<StoreBuilderPageProps> = ({ token }) => 
             type="button"
             onClick={handleSaveTheme}
             disabled={saving}
-            className="w-full py-2.5 text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-xs"
+            className="w-full py-2.5 text-xs font-bold bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl shadow-xs"
           >
             {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save Theme Styling"}
           </Button>

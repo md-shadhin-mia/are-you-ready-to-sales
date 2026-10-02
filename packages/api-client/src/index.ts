@@ -100,6 +100,59 @@ export interface StoreProduct {
   updatedAt: string;
 }
 
+export interface WholesaleOrderItem {
+  id: string;
+  wholesaleOrderId: string;
+  masterProductId: string;
+  masterProduct?: MasterProduct;
+  quantity: number;
+  unitPrice: number | string;
+  totalPrice: number | string;
+  createdAt: string;
+}
+
+export interface WholesaleOrder {
+  id: string;
+  userId: string;
+  user?: User;
+  orderNumber: string;
+  subtotal: number | string;
+  shippingFee: number | string;
+  totalAmount: number | string;
+  status: string;
+  paymentMethod: "WALLET" | "COD" | "BANK_TRANSFER";
+  paymentStatus: "PAID" | "UNPAID";
+  shippingAddress: {
+    recipientName: string;
+    phone: string;
+    addressLine: string;
+    city: string;
+    district?: string;
+    notes?: string;
+  };
+  trackingNumber?: string | null;
+  courierName?: string | null;
+  notes?: string | null;
+  items: WholesaleOrderItem[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateWholesaleOrderPayload {
+  items: { masterProductId: string; quantity: number }[];
+  shippingAddress: {
+    recipientName: string;
+    phone: string;
+    addressLine: string;
+    city: string;
+    district?: string;
+    notes?: string;
+  };
+  paymentMethod: "WALLET" | "COD" | "BANK_TRANSFER";
+  notes?: string;
+}
+
+
 export interface FeeBreakdown {
   sellingPrice: number;
   basePrice: number;
@@ -680,10 +733,20 @@ export interface AdminStudentItem {
   } | null;
 }
 
+/**
+ * Browsers call the API on their own origin (each frontend dev server proxies /api to the API),
+ * so the apps also work behind tunnels and reverse proxies. Server-side callers need an absolute URL.
+ */
+function defaultBaseUrl(): string {
+  if (typeof window !== "undefined") return "";
+  const env = (globalThis as { process?: { env?: Record<string, string | undefined> } }).process?.env;
+  return env?.API_URL || "http://localhost:4000";
+}
+
 export class PlatformApiClient {
   private baseUrl: string;
 
-  constructor(baseUrl: string = "http://localhost:4000") {
+  constructor(baseUrl: string = defaultBaseUrl()) {
     this.baseUrl = baseUrl.replace(/\/$/, "");
   }
 
@@ -1256,6 +1319,51 @@ export class PlatformApiClient {
         { method: "PATCH", body: JSON.stringify({ status }) },
         token,
       ),
+
+    getCounts: (token: string) =>
+      this.request<{
+        all: number;
+        new: number;
+        complete: number;
+        partialDelivered: number;
+        unmatch: number;
+        invoiced: number;
+        hold: number;
+        cancelled: number;
+        inCourier: number;
+        exchange: number;
+      }>("/api/v1/admin/orders/counts", { method: "GET" }, token),
+
+    invoice: (id: string, token: string) =>
+      this.request<Order>(`/api/v1/admin/orders/${id}/invoice`, { method: "POST" }, token),
+
+    hold: (id: string, reason: string | undefined, token: string) =>
+      this.request<Order>(
+        `/api/v1/admin/orders/${id}/hold`,
+        { method: "POST", body: JSON.stringify({ reason }) },
+        token,
+      ),
+
+    unmatch: (id: string, reason: string | undefined, token: string) =>
+      this.request<Order>(
+        `/api/v1/admin/orders/${id}/unmatch`,
+        { method: "POST", body: JSON.stringify({ reason }) },
+        token,
+      ),
+
+    reconcile: (id: string, toStatus: string | undefined, token: string) =>
+      this.request<Order>(
+        `/api/v1/admin/orders/${id}/reconcile`,
+        { method: "POST", body: JSON.stringify({ toStatus }) },
+        token,
+      ),
+
+    exchange: (id: string, notes: string | undefined, token: string) =>
+      this.request<Order>(
+        `/api/v1/admin/orders/${id}/exchange`,
+        { method: "POST", body: JSON.stringify({ notes }) },
+        token,
+      ),
   };
 
   // Student Customer CRM
@@ -1806,6 +1914,20 @@ export class PlatformApiClient {
         token,
       ),
 
+    getOverview: (token: string) =>
+      this.request<any>(
+        "/api/v1/admin/dashboard/overview",
+        { method: "GET" },
+        token,
+      ),
+
+    getAlerts: (token: string) =>
+      this.request<{ urgentAlertsCount: number; alerts: any[] }>(
+        "/api/v1/admin/dashboard/alerts",
+        { method: "GET" },
+        token,
+      ),
+
     getStudents: (
       params: {
         search?: string;
@@ -1828,6 +1950,23 @@ export class PlatformApiClient {
       );
     },
 
+    getStudentById: (id: string, token: string) =>
+      this.request<any>(
+        `/api/v1/admin/students/${id}`,
+        { method: "GET" },
+        token,
+      ),
+
+    verifyKyc: (id: string, isVerified: boolean, token: string) =>
+      this.request<any>(
+        `/api/v1/admin/students/${id}/verify-kyc`,
+        {
+          method: "POST",
+          body: JSON.stringify({ isVerified }),
+        },
+        token,
+      ),
+
     updateStoreStatus: (
       storeId: string,
       dto: { status: string; reason?: string },
@@ -1846,6 +1985,417 @@ export class PlatformApiClient {
       this.request<SellerScorecardItem[]>(
         "/api/v1/admin/sellers/scorecard",
         { method: "GET" },
+        token,
+      ),
+  };
+
+  // Campus Branches Management (Phase 5)
+  branches = {
+    list: (token: string) =>
+      this.request<any[]>("/api/v1/admin/branches", { method: "GET" }, token),
+
+    get: (id: string, token: string) =>
+      this.request<any>(`/api/v1/admin/branches/${id}`, { method: "GET" }, token),
+
+    create: (dto: any, token: string) =>
+      this.request<any>(
+        "/api/v1/admin/branches",
+        { method: "POST", body: JSON.stringify(dto) },
+        token,
+      ),
+
+    update: (id: string, dto: any, token: string) =>
+      this.request<any>(
+        `/api/v1/admin/branches/${id}`,
+        { method: "PUT", body: JSON.stringify(dto) },
+        token,
+      ),
+
+    getAnalytics: (id: string, token: string) =>
+      this.request<any>(`/api/v1/admin/branches/${id}/analytics`, { method: "GET" }, token),
+  };
+
+  // Student Batches & Cohorts (Phase 5)
+  batches = {
+    list: (params: { branchId?: string; status?: string } = {}, token: string) => {
+      const q = new URLSearchParams();
+      if (params.branchId) q.append("branchId", params.branchId);
+      if (params.status) q.append("status", params.status);
+      const qs = q.toString() ? `?${q.toString()}` : "";
+      return this.request<any[]>(`/api/v1/admin/batches${qs}`, { method: "GET" }, token);
+    },
+
+    get: (id: string, token: string) =>
+      this.request<any>(`/api/v1/admin/batches/${id}`, { method: "GET" }, token),
+
+    create: (dto: any, token: string) =>
+      this.request<any>(
+        "/api/v1/admin/batches",
+        { method: "POST", body: JSON.stringify(dto) },
+        token,
+      ),
+
+    update: (id: string, dto: any, token: string) =>
+      this.request<any>(
+        `/api/v1/admin/batches/${id}`,
+        { method: "PUT", body: JSON.stringify(dto) },
+        token,
+      ),
+
+    bulkEnroll: (id: string, studentIds: string[], token: string) =>
+      this.request<any>(
+        `/api/v1/admin/batches/${id}/enrollments`,
+        { method: "POST", body: JSON.stringify({ studentIds }) },
+        token,
+      ),
+
+    getLeaderboard: (id: string, token: string) =>
+      this.request<any>(`/api/v1/admin/batches/${id}/leaderboard`, { method: "GET" }, token),
+  };
+
+  // External Seller Panel (Phase 5)
+  sellers = {
+    list: (params: { status?: string; sellerType?: string } = {}, token: string) => {
+      const q = new URLSearchParams();
+      if (params.status) q.append("status", params.status);
+      if (params.sellerType) q.append("sellerType", params.sellerType);
+      const qs = q.toString() ? `?${q.toString()}` : "";
+      return this.request<any[]>(`/api/v1/admin/sellers${qs}`, { method: "GET" }, token);
+    },
+
+    get: (id: string, token: string) =>
+      this.request<any>(`/api/v1/admin/sellers/${id}`, { method: "GET" }, token),
+
+    onboard: (dto: any, token: string) =>
+      this.request<any>(
+        "/api/v1/admin/sellers",
+        { method: "POST", body: JSON.stringify(dto) },
+        token,
+      ),
+
+    update: (id: string, dto: any, token: string) =>
+      this.request<any>(
+        `/api/v1/admin/sellers/${id}`,
+        { method: "PUT", body: JSON.stringify(dto) },
+        token,
+      ),
+
+    overview: (token: string) =>
+      this.request<any>("/api/v1/admin/seller-panel/overview", { method: "GET" }, token),
+
+    adjust: (sellerId: string, dto: { type: string; amount: number; reasonCode: string; documentUrl?: string; notes?: string }, token: string) =>
+      this.request<any>(
+        `/api/v1/admin/seller-panel/adjustments/${sellerId}`,
+        { method: "POST", body: JSON.stringify(dto) },
+        token,
+      ),
+
+    listAdjustments: (params: { sellerId?: string; status?: string; page?: number; limit?: number } = {}, token: string) => {
+      const q = new URLSearchParams();
+      if (params.sellerId) q.append("sellerId", params.sellerId);
+      if (params.status) q.append("status", params.status);
+      if (params.page) q.append("page", params.page.toString());
+      if (params.limit) q.append("limit", params.limit.toString());
+      const qs = q.toString() ? `?${q.toString()}` : "";
+      return this.request<any>(`/api/v1/admin/seller-panel/adjustments${qs}`, { method: "GET" }, token);
+    },
+
+    listTickets: (params: { status?: string; sellerId?: string; page?: number; limit?: number } = {}, token: string) => {
+      const q = new URLSearchParams();
+      if (params.status) q.append("status", params.status);
+      if (params.sellerId) q.append("sellerId", params.sellerId);
+      if (params.page) q.append("page", params.page.toString());
+      if (params.limit) q.append("limit", params.limit.toString());
+      const qs = q.toString() ? `?${q.toString()}` : "";
+      return this.request<any>(`/api/v1/admin/seller-panel/tickets${qs}`, { method: "GET" }, token);
+    },
+
+    createTicket: (dto: any, token: string) =>
+      this.request<any>("/api/v1/admin/seller-panel/tickets", { method: "POST", body: JSON.stringify(dto) }, token),
+
+    updateTicket: (id: string, dto: any, token: string) =>
+      this.request<any>(`/api/v1/admin/seller-panel/tickets/${id}`, { method: "PATCH", body: JSON.stringify(dto) }, token),
+  };
+
+  // Exchanges Suite
+  exchanges = {
+    list: (params: { status?: string; search?: string; page?: number; limit?: number } = {}, token: string) => {
+      const q = new URLSearchParams();
+      if (params.status) q.append("status", params.status);
+      if (params.search) q.append("search", params.search);
+      if (params.page) q.append("page", params.page.toString());
+      if (params.limit) q.append("limit", params.limit.toString());
+      const qs = q.toString() ? `?${q.toString()}` : "";
+      return this.request<any>(`/api/v1/admin/exchanges${qs}`, { method: "GET" }, token);
+    },
+    overview: (token: string) =>
+      this.request<any>("/api/v1/admin/exchanges/overview", { method: "GET" }, token),
+    create: (dto: any, token: string) =>
+      this.request<any>("/api/v1/admin/exchanges", { method: "POST", body: JSON.stringify(dto) }, token),
+    approve: (id: string, token: string) =>
+      this.request<any>(`/api/v1/admin/exchanges/${id}/approve`, { method: "POST" }, token),
+    hold: (id: string, reason: string, token: string) =>
+      this.request<any>(`/api/v1/admin/exchanges/${id}/hold`, { method: "POST", body: JSON.stringify({ reason }) }, token),
+    reject: (id: string, reason: string, token: string) =>
+      this.request<any>(`/api/v1/admin/exchanges/${id}/reject`, { method: "POST", body: JSON.stringify({ reason }) }, token),
+    dispatch: (id: string, dto: any, token: string) =>
+      this.request<any>(`/api/v1/admin/exchanges/${id}/dispatch`, { method: "POST", body: JSON.stringify(dto) }, token),
+    inspect: (id: string, dto: any, token: string) =>
+      this.request<any>(`/api/v1/admin/exchanges/${id}/inspect`, { method: "POST", body: JSON.stringify(dto) }, token),
+    complete: (id: string, token: string) =>
+      this.request<any>(`/api/v1/admin/exchanges/${id}/complete`, { method: "POST" }, token),
+  };
+
+  // Procurement & Purchases
+  procurement = {
+    listSuppliers: (includeInactive = false, token: string) =>
+      this.request<any[]>(`/api/v1/admin/suppliers?includeInactive=${includeInactive}`, { method: "GET" }, token),
+    getSupplier: (id: string, token: string) =>
+      this.request<any>(`/api/v1/admin/suppliers/${id}`, { method: "GET" }, token),
+    createSupplier: (dto: any, token: string) =>
+      this.request<any>("/api/v1/admin/suppliers", { method: "POST", body: JSON.stringify(dto) }, token),
+    updateSupplier: (id: string, dto: any, token: string) =>
+      this.request<any>(`/api/v1/admin/suppliers/${id}`, { method: "PUT", body: JSON.stringify(dto) }, token),
+    getSupplierContractAlerts: (token: string) =>
+      this.request<any[]>("/api/v1/admin/suppliers/contract-alerts", { method: "GET" }, token),
+
+    directPurchase: (dto: any, token: string) =>
+      this.request<any>("/api/v1/admin/purchases", { method: "POST", body: JSON.stringify(dto) }, token),
+    getApAging: (token: string) =>
+      this.request<any[]>("/api/v1/admin/purchases/ap-aging", { method: "GET" }, token),
+
+    listPurchaseOrders: (params: { supplierId?: string; status?: string; page?: number; limit?: number } = {}, token: string) => {
+      const q = new URLSearchParams();
+      if (params.supplierId) q.append("supplierId", params.supplierId);
+      if (params.status) q.append("status", params.status);
+      if (params.page) q.append("page", params.page.toString());
+      if (params.limit) q.append("limit", params.limit.toString());
+      const qs = q.toString() ? `?${q.toString()}` : "";
+      return this.request<any>(`/api/v1/admin/purchase-orders${qs}`, { method: "GET" }, token);
+    },
+    createPurchaseOrder: (dto: any, token: string) =>
+      this.request<any>("/api/v1/admin/purchase-orders", { method: "POST", body: JSON.stringify(dto) }, token),
+    getPurchaseOrder: (id: string, token: string) =>
+      this.request<any>(`/api/v1/admin/purchase-orders/${id}`, { method: "GET" }, token),
+    issuePurchaseOrder: (id: string, token: string) =>
+      this.request<any>(`/api/v1/admin/purchase-orders/${id}/issue`, { method: "POST" }, token),
+    receiveGoods: (id: string, dto: any, token: string) =>
+      this.request<any>(`/api/v1/admin/purchase-orders/${id}/receive`, { method: "POST", body: JSON.stringify(dto) }, token),
+    matchInvoice: (id: string, dto: any, token: string) =>
+      this.request<any>(`/api/v1/admin/purchase-orders/${id}/match-invoice`, { method: "POST", body: JSON.stringify(dto) }, token),
+    recordPayment: (id: string, dto: any, token: string) =>
+      this.request<any>(`/api/v1/admin/purchase-orders/${id}/payments`, { method: "POST", body: JSON.stringify(dto) }, token),
+
+    listReturns: (params: { page?: number; limit?: number } = {}, token: string) => {
+      const q = new URLSearchParams();
+      if (params.page) q.append("page", params.page.toString());
+      if (params.limit) q.append("limit", params.limit.toString());
+      const qs = q.toString() ? `?${q.toString()}` : "";
+      return this.request<any>(`/api/v1/admin/purchase-returns${qs}`, { method: "GET" }, token);
+    },
+    createReturn: (dto: any, token: string) =>
+      this.request<any>("/api/v1/admin/purchase-returns", { method: "POST", body: JSON.stringify(dto) }, token),
+    listReturnTypes: (token: string) =>
+      this.request<any[]>("/api/v1/admin/purchase-return-types", { method: "GET" }, token),
+    createReturnType: (dto: any, token: string) =>
+      this.request<any>("/api/v1/admin/purchase-return-types", { method: "POST", body: JSON.stringify(dto) }, token),
+  };
+
+  // Inventory & Stock Ledger
+  inventory = {
+    getStock: (params: { search?: string; lowStockOnly?: boolean; page?: number; limit?: number } = {}, token: string) => {
+      const q = new URLSearchParams();
+      if (params.search) q.append("search", params.search);
+      if (params.lowStockOnly) q.append("lowStockOnly", "true");
+      if (params.page) q.append("page", params.page.toString());
+      if (params.limit) q.append("limit", params.limit.toString());
+      const qs = q.toString() ? `?${q.toString()}` : "";
+      return this.request<any>(`/api/v1/admin/inventory/stock${qs}`, { method: "GET" }, token);
+    },
+    getLedger: (params: { masterProductId?: string; movementType?: string; page?: number; limit?: number } = {}, token: string) => {
+      const q = new URLSearchParams();
+      if (params.masterProductId) q.append("masterProductId", params.masterProductId);
+      if (params.movementType) q.append("movementType", params.movementType);
+      if (params.page) q.append("page", params.page.toString());
+      if (params.limit) q.append("limit", params.limit.toString());
+      const qs = q.toString() ? `?${q.toString()}` : "";
+      return this.request<any>(`/api/v1/admin/inventory/ledger${qs}`, { method: "GET" }, token);
+    },
+    getReorderForecast: (token: string) =>
+      this.request<any[]>("/api/v1/admin/inventory/reorder-forecast", { method: "GET" }, token),
+    createAdjustment: (dto: { masterProductId: string; quantity: number; notes?: string }, token: string) =>
+      this.request<any>("/api/v1/admin/inventory/adjustments", { method: "POST", body: JSON.stringify(dto) }, token),
+  };
+
+  // HR & Payroll
+  hr = {
+    listEmployees: (query: Record<string, string> = {}, token: string) => {
+      const q = new URLSearchParams(query);
+      const qs = q.toString() ? `?${q.toString()}` : "";
+      return this.request<any>(`/api/v1/admin/employees${qs}`, { method: "GET" }, token);
+    },
+    createEmployee: (dto: any, token: string) =>
+      this.request<any>("/api/v1/admin/employees", { method: "POST", body: JSON.stringify(dto) }, token),
+    getEmployee: (id: string, token: string) =>
+      this.request<any>(`/api/v1/admin/employees/${id}`, { method: "GET" }, token),
+    updateEmployee: (id: string, dto: any, token: string) =>
+      this.request<any>(`/api/v1/admin/employees/${id}`, { method: "PUT", body: JSON.stringify(dto) }, token),
+
+    listCommissions: (employeeId: string, token: string) =>
+      this.request<any[]>(`/api/v1/admin/employees/${employeeId}/commissions`, { method: "GET" }, token),
+    createCommission: (employeeId: string, dto: any, token: string) =>
+      this.request<any>(`/api/v1/admin/employees/${employeeId}/commissions`, { method: "POST", body: JSON.stringify(dto) }, token),
+    approveCommission: (id: string, token: string) =>
+      this.request<any>(`/api/v1/admin/employees/commissions/${id}/approve`, { method: "POST" }, token),
+
+    listPenalties: (employeeId: string, token: string) =>
+      this.request<any[]>(`/api/v1/admin/employees/${employeeId}/penalties`, { method: "GET" }, token),
+    createPenalty: (employeeId: string, dto: any, token: string) =>
+      this.request<any>(`/api/v1/admin/employees/${employeeId}/penalties`, { method: "POST", body: JSON.stringify(dto) }, token),
+    approvePenalty: (id: string, token: string) =>
+      this.request<any>(`/api/v1/admin/employees/penalties/${id}/approve`, { method: "POST" }, token),
+    rejectPenalty: (id: string, token: string) =>
+      this.request<any>(`/api/v1/admin/employees/penalties/${id}/reject`, { method: "POST" }, token),
+
+    getPayroll: (month: string, token: string) =>
+      this.request<any>(`/api/v1/admin/payroll/${month}`, { method: "GET" }, token),
+    generatePayroll: (month: string, token: string) =>
+      this.request<any>(`/api/v1/admin/payroll/${month}/generate`, { method: "POST" }, token),
+    finalizePayroll: (month: string, token: string) =>
+      this.request<any>(`/api/v1/admin/payroll/${month}/finalize`, { method: "POST" }, token),
+  };
+
+  // CMS & Content
+  cms = {
+    getSettings: (token: string) =>
+      this.request<any>("/api/v1/admin/cms/settings", { method: "GET" }, token),
+    updateSettings: (dto: any, token: string) =>
+      this.request<any>("/api/v1/admin/cms/settings", { method: "PUT", body: JSON.stringify(dto) }, token),
+
+    listPages: (token: string) =>
+      this.request<any[]>("/api/v1/admin/cms/pages", { method: "GET" }, token),
+    createPage: (dto: any, token: string) =>
+      this.request<any>("/api/v1/admin/cms/pages", { method: "POST", body: JSON.stringify(dto) }, token),
+    updatePage: (id: string, dto: any, token: string) =>
+      this.request<any>(`/api/v1/admin/cms/pages/${id}`, { method: "PUT", body: JSON.stringify(dto) }, token),
+    deletePage: (id: string, token: string) =>
+      this.request<any>(`/api/v1/admin/cms/pages/${id}`, { method: "DELETE" }, token),
+
+    getAbout: (token: string) =>
+      this.request<any>("/api/v1/admin/cms/about", { method: "GET" }, token),
+    updateAbout: (dto: any, token: string) =>
+      this.request<any>("/api/v1/admin/cms/about", { method: "PUT", body: JSON.stringify(dto) }, token),
+
+    listBanners: (token: string) =>
+      this.request<any[]>("/api/v1/admin/cms/banners", { method: "GET" }, token),
+    createBanner: (dto: any, token: string) =>
+      this.request<any>("/api/v1/admin/cms/banners", { method: "POST", body: JSON.stringify(dto) }, token),
+    updateBanner: (id: string, dto: any, token: string) =>
+      this.request<any>(`/api/v1/admin/cms/banners/${id}`, { method: "PUT", body: JSON.stringify(dto) }, token),
+    deleteBanner: (id: string, token: string) =>
+      this.request<any>(`/api/v1/admin/cms/banners/${id}`, { method: "DELETE" }, token),
+
+    listFaqs: (token: string) =>
+      this.request<any[]>("/api/v1/admin/cms/faqs", { method: "GET" }, token),
+    createFaq: (dto: any, token: string) =>
+      this.request<any>("/api/v1/admin/cms/faqs", { method: "POST", body: JSON.stringify(dto) }, token),
+    updateFaq: (id: string, dto: any, token: string) =>
+      this.request<any>(`/api/v1/admin/cms/faqs/${id}`, { method: "PUT", body: JSON.stringify(dto) }, token),
+    deleteFaq: (id: string, token: string) =>
+      this.request<any>(`/api/v1/admin/cms/faqs/${id}`, { method: "DELETE" }, token),
+  };
+
+  // Reports & Analytics
+  reports = {
+    getProductCourierStatus: (token: string) =>
+      this.request<any[]>("/api/v1/admin/reports/product-courier-status", { method: "GET" }, token),
+    getSupplierProducts: (token: string) =>
+      this.request<any[]>("/api/v1/admin/reports/supplier-products", { method: "GET" }, token),
+    getSupplierProfitLifecycle: (token: string) =>
+      this.request<any[]>("/api/v1/admin/reports/supplier-profit-lifecycle", { method: "GET" }, token),
+    refresh: (token: string) =>
+      this.request<any>("/api/v1/admin/reports/refresh", { method: "POST" }, token),
+  };
+
+  // Catalog Taxonomy
+  taxonomy = {
+    listBrands: (token: string) =>
+      this.request<any[]>("/api/v1/admin/catalog/brands", { method: "GET" }, token),
+    createBrand: (dto: any, token: string) =>
+      this.request<any>("/api/v1/admin/catalog/brands", { method: "POST", body: JSON.stringify(dto) }, token),
+    updateBrand: (id: string, dto: any, token: string) =>
+      this.request<any>(`/api/v1/admin/catalog/brands/${id}`, { method: "PUT", body: JSON.stringify(dto) }, token),
+    deleteBrand: (id: string, token: string) =>
+      this.request<any>(`/api/v1/admin/catalog/brands/${id}`, { method: "DELETE" }, token),
+
+    listSizes: (token: string) =>
+      this.request<any[]>("/api/v1/admin/catalog/sizes", { method: "GET" }, token),
+    createSize: (dto: any, token: string) =>
+      this.request<any>("/api/v1/admin/catalog/sizes", { method: "POST", body: JSON.stringify(dto) }, token),
+    updateSize: (id: string, dto: any, token: string) =>
+      this.request<any>(`/api/v1/admin/catalog/sizes/${id}`, { method: "PUT", body: JSON.stringify(dto) }, token),
+    deleteSize: (id: string, token: string) =>
+      this.request<any>(`/api/v1/admin/catalog/sizes/${id}`, { method: "DELETE" }, token),
+
+    listColors: (token: string) =>
+      this.request<any[]>("/api/v1/admin/catalog/colors", { method: "GET" }, token),
+    createColor: (dto: any, token: string) =>
+      this.request<any>("/api/v1/admin/catalog/colors", { method: "POST", body: JSON.stringify(dto) }, token),
+    updateColor: (id: string, dto: any, token: string) =>
+      this.request<any>(`/api/v1/admin/catalog/colors/${id}`, { method: "PUT", body: JSON.stringify(dto) }, token),
+    deleteColor: (id: string, token: string) =>
+      this.request<any>(`/api/v1/admin/catalog/colors/${id}`, { method: "DELETE" }, token),
+
+    generateVariants: (dto: any, token: string) =>
+      this.request<any>("/api/v1/admin/catalog/generate-variants", { method: "POST", body: JSON.stringify(dto) }, token),
+  };
+
+  // B2B Reseller Wholesale Procurement
+  wholesale = {
+    createOrder: (payload: CreateWholesaleOrderPayload, token: string) =>
+      this.request<WholesaleOrder>(
+        "/api/v1/student/wholesale/orders",
+        { method: "POST", body: JSON.stringify(payload) },
+        token,
+      ),
+
+    listMyOrders: (params: { page?: number; limit?: number; status?: string } = {}, token: string) => {
+      const q = new URLSearchParams();
+      if (params.page) q.append("page", params.page.toString());
+      if (params.limit) q.append("limit", params.limit.toString());
+      if (params.status) q.append("status", params.status);
+      const qs = q.toString() ? `?${q.toString()}` : "";
+      return this.request<PaginatedResult<WholesaleOrder>>(
+        `/api/v1/student/wholesale/orders${qs}`,
+        { method: "GET" },
+        token,
+      );
+    },
+
+    getOrder: (id: string, token: string) =>
+      this.request<WholesaleOrder>(
+        `/api/v1/student/wholesale/orders/${id}`,
+        { method: "GET" },
+        token,
+      ),
+
+    adminListOrders: (params: { page?: number; limit?: number; status?: string } = {}, token: string) => {
+      const q = new URLSearchParams();
+      if (params.page) q.append("page", params.page.toString());
+      if (params.limit) q.append("limit", params.limit.toString());
+      if (params.status) q.append("status", params.status);
+      const qs = q.toString() ? `?${q.toString()}` : "";
+      return this.request<PaginatedResult<WholesaleOrder>>(
+        `/api/v1/admin/wholesale/orders${qs}`,
+        { method: "GET" },
+        token,
+      );
+    },
+
+    adminUpdateStatus: (id: string, dto: { status: string; trackingNumber?: string; courierName?: string }, token: string) =>
+      this.request<WholesaleOrder>(
+        `/api/v1/admin/wholesale/orders/${id}/status`,
+        { method: "PATCH", body: JSON.stringify(dto) },
         token,
       ),
   };
