@@ -19,6 +19,7 @@ describe("CouponService Unit Tests", () => {
         findMany: vi.fn(),
         create: vi.fn(),
         update: vi.fn(),
+        updateMany: vi.fn(),
       },
     };
 
@@ -162,14 +163,14 @@ describe("CouponService Unit Tests", () => {
 
   it("9. Should update coupon details or throw NotFoundException", async () => {
     mockPrisma.store.findFirst.mockResolvedValue({ id: "s-1" });
-    mockPrisma.coupon.findFirst.mockResolvedValueOnce(null);
+    mockPrisma.coupon.updateMany.mockResolvedValueOnce({ count: 0 });
 
     await expect(
       service.updateCoupon("stu-1", "cpn-missing", { isActive: false }),
     ).rejects.toThrow("Coupon not found.");
 
-    mockPrisma.coupon.findFirst.mockResolvedValueOnce({ id: "cpn-1", storeId: "s-1" });
-    mockPrisma.coupon.update.mockResolvedValue({ id: "cpn-1", isActive: false });
+    mockPrisma.coupon.updateMany.mockResolvedValueOnce({ count: 1 });
+    mockPrisma.coupon.findUnique.mockResolvedValueOnce({ id: "cpn-1", isActive: false });
 
     const updated = await service.updateCoupon("stu-1", "cpn-1", {
       isActive: false,
@@ -234,14 +235,14 @@ describe("CouponService Unit Tests", () => {
 
   it("13. Should update coupon or throw NotFoundException if missing", async () => {
     mockPrisma.store.findFirst.mockResolvedValue({ id: "s-1" });
-    mockPrisma.coupon.findFirst.mockResolvedValue(null);
+    mockPrisma.coupon.updateMany.mockResolvedValueOnce({ count: 0 });
 
     await expect(
       service.updateCoupon("stu-1", "cpn-missing", { isActive: false }),
     ).rejects.toThrow("Coupon not found.");
 
-    mockPrisma.coupon.findFirst.mockResolvedValue({ id: "cpn-1", storeId: "s-1" });
-    mockPrisma.coupon.update.mockResolvedValue({ id: "cpn-1", isActive: false, maxUses: 50 });
+    mockPrisma.coupon.updateMany.mockResolvedValueOnce({ count: 1 });
+    mockPrisma.coupon.findUnique.mockResolvedValueOnce({ id: "cpn-1", isActive: false, maxUses: 50 });
 
     const updated = await service.updateCoupon("stu-1", "cpn-1", {
       isActive: false,
@@ -249,8 +250,9 @@ describe("CouponService Unit Tests", () => {
       endDate: "2026-11-30",
     });
     expect(updated.id).toBe("cpn-1");
-    expect(mockPrisma.coupon.update).toHaveBeenCalledWith(
+    expect(mockPrisma.coupon.updateMany).toHaveBeenCalledWith(
       expect.objectContaining({
+        where: { id: "cpn-1", storeId: "s-1" },
         data: expect.objectContaining({ isActive: false, maxUses: 50 }),
       }),
     );
