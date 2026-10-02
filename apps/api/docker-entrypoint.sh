@@ -16,6 +16,11 @@ if [ -n "$DATABASE_URL" ]; then
   else
     echo "⚠️ [API] Prisma CLI not found in node_modules, continuing to startup."
   fi
+
+  if [ "${AUTO_SEED:-true}" = "true" ]; then
+    echo "🌱 [API] Ensuring database seed is applied..."
+    bun ./packages/db/prisma/seed.ts || echo "⚠️ [API] Seed execution skipped or finished with notice."
+  fi
 fi
 
 cd /app/apps/api
