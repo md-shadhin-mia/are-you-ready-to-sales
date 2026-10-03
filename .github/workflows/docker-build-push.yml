@@ -314,9 +314,12 @@ jobs:
 
             # 3. Health check ping on Port 81
             echo "🔍 Verifying gateway health on port 81..."
-            sleep 4
+            sleep 6
             HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:81/ || echo "000")
             echo "Gateway response: HTTP ${HTTP_CODE}"
+
+            echo "📋 Recent service logs (${TARGET_SERVICES}):"
+            docker compose -f "${COMPOSE_FILE}" logs --tail=40 ${TARGET_SERVICES}
 
             # 4. Prune dangling image layers from previous build
             echo "🧹 Cleaning up dangling Docker image layers..."
