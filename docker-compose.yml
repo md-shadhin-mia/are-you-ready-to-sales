@@ -1,86 +1,167 @@
 services:
+  # ---------------------------------------------------------------------------
+  # Database & State Infrastructure
+  # ---------------------------------------------------------------------------
   postgres:
     image: postgres:18-alpine
-    container_name: platform-postgres
-    restart: unless-stopped
+    container_name: platform-postgres-prod
+    restart: always
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
       POSTGRES_DB: ${POSTGRES_DB:-ecommerce_platform}
-    ports:
-      - "${POSTGRES_PORT:-5435}:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_prod_data:/var/lib/postgresql/data
+    networks:
+      - platform-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d ecommerce_platform"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-ecommerce_platform}"]
       interval: 5s
       timeout: 5s
       retries: 5
 
   redis:
     image: redis:7-alpine
-    container_name: platform-redis
-    restart: unless-stopped
-    ports:
-      - "${REDIS_PORT:-6382}:6379"
+    container_name: platform-redis-prod
+    restart: always
     volumes:
-      - redis_data:/data
+      - redis_prod_data:/data
+    networks:
+      - platform-network
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
       timeout: 5s
       retries: 5
 
+  # ---------------------------------------------------------------------------
+  # Object Storage (SeaweedFS Distributed S3 Gateway & Volume Store)
+  # ---------------------------------------------------------------------------
   seaweedfs:
     image: chrislusf/seaweedfs:latest
-    container_name: platform-seaweedfs
-    restart: unless-stopped
+    container_name: platform-seaweedfs-prod
+    restart: always
     command: "server -s3 -dir=/data -s3.port=8333 -s3.allowEmptyFolder=true"
     environment:
-      - AWS_ACCESS_KEY_ID=${MINIO_ACCESS_KEY:-minioadmin}
-      - AWS_SECRET_ACCESS_KEY=${MINIO_SECRET_KEY:-minioadmin}
-    ports:
-      - "${STORAGE_PORT:-8333}:8333"
-      - "${SEAWEED_FILER_PORT:-8888}:8888"
+      - AWS_ACCESS_KEY_ID=${STORAGE_ACCESS_KEY:-seaweedadmin}
+      - AWS_SECRET_ACCESS_KEY=${STORAGE_SECRET_KEY:-seaweedadmin}
     volumes:
-      - seaweedfs_data:/data
+      - seaweedfs_prod_data:/data
+    networks:
+      - platform-network
     healthcheck:
       test: ["CMD-SHELL", "echo 'ready'"]
       interval: 5s
       timeout: 5s
       retries: 5
 
+  # ---------------------------------------------------------------------------
+  # Backend API Monolith (Docker Hub: mdshadhinkn/artifact)
+  # ---------------------------------------------------------------------------
+  api:
+    image: mdshadhinkn/artifact:${API_TAG:-aurts-backend-api-latest}
+    container_name: platform-api-prod
+    restart: always
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-ecommerce_platform}?schema=public
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_URL: redis://redis:6379
+      STORAGE_ENDPOINT: http://seaweedfs:8333
+      STORAGE_PUBLIC_URL: ${STORAGE_PUBLIC_URL:-http://localhost:81/storage}
+      STORAGE_ACCESS_KEY: ${STORAGE_ACCESS_KEY:-seaweedadmin}
+      STORAGE_SECRET_KEY: ${STORAGE_SECRET_KEY:-seaweedadmin}
+      STORAGE_BUCKET_NAME: ${STORAGE_BUCKET_NAME:-platform-media}
+      MINIO_ENDPOINT: seaweedfs
+      MINIO_PORT: 8333
+      MINIO_USE_SSL: "false"
+      MINIO_ACCESS_KEY: ${STORAGE_ACCESS_KEY:-seaweedadmin}
+      MINIO_SECRET_KEY: ${STORAGE_SECRET_KEY:-seaweedadmin}
+      MINIO_BUCKET_NAME: ${STORAGE_BUCKET_NAME:-platform-media}
+      MINIO_PUBLIC_URL: ${STORAGE_PUBLIC_URL:-http://localhost:81/storage}
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-dev-access-super-secret-key-at-least-32-chars-long}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-dev-refresh-super-secret-key-at-least-32-chars-long}
+      JWT_ACCESS_EXPIRES_IN: ${JWT_ACCESS_EXPIRES_IN:-15m}
+      JWT_REFRESH_EXPIRES_IN: ${JWT_REFRESH_EXPIRES_IN:-7d}
+      PLATFORM_DOMAIN: ${PLATFORM_DOMAIN:-platform.local}
+      SECRETS_ENCRYPTION_KEY: ${SECRETS_ENCRYPTION_KEY:-0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef}
+      COURIER_WEBHOOK_SECRET: ${COURIER_WEBHOOK_SECRET:-dev-courier-webhook-secret}
+      ENABLE_SCHEDULED_JOBS: ${ENABLE_SCHEDULED_JOBS:-false}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      seaweedfs:
+        condition: service_healthy
+    networks:
+      - platform-network
 
-  # ── Cloudflare quick tunnels (opt-in: `docker compose --profile tunnels up -d`) ──
-  # Exposes the dev servers running on the host via random *.trycloudflare.com URLs.
-  # Host networking lets the containers reach the dev servers on 127.0.0.1.
-  # The API is not tunneled: each frontend proxies /api to localhost:4000 itself.
-  # Print the URLs with `pnpm tunnel:urls`.
-  tunnel-storefront:
-    image: cloudflare/cloudflared:latest
-    container_name: platform-tunnel-storefront
-    profiles: ["tunnels"]
-    restart: unless-stopped
-    network_mode: host
-    command: tunnel --no-autoupdate --url http://localhost:3000
+  # ---------------------------------------------------------------------------
+  # Next.js Storefront (Docker Hub: mdshadhinkn/artifact)
+  # ---------------------------------------------------------------------------
+  storefront:
+    image: mdshadhinkn/artifact:${STOREFRONT_TAG:-aurts-frontend-storefront-latest}
+    container_name: platform-storefront-prod
+    restart: always
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      API_URL: http://api:4000
+      PLATFORM_DOMAIN: ${PLATFORM_DOMAIN:-platform.local}
+    depends_on:
+      - api
+    networks:
+      - platform-network
 
-  tunnel-student:
-    image: cloudflare/cloudflared:latest
-    container_name: platform-tunnel-student
-    profiles: ["tunnels"]
-    restart: unless-stopped
-    network_mode: host
-    command: tunnel --no-autoupdate --url http://localhost:3001
+  # ---------------------------------------------------------------------------
+  # Student Dashboard (Docker Hub: mdshadhinkn/artifact)
+  # ---------------------------------------------------------------------------
+  student-dashboard:
+    image: mdshadhinkn/artifact:${STUDENT_TAG:-aurts-frontend-student-dashboard-latest}
+    container_name: platform-student-dashboard-prod
+    restart: always
+    depends_on:
+      - api
+    networks:
+      - platform-network
 
-  tunnel-admin:
-    image: cloudflare/cloudflared:latest
-    container_name: platform-tunnel-admin
-    profiles: ["tunnels"]
-    restart: unless-stopped
-    network_mode: host
-    command: tunnel --no-autoupdate --url http://localhost:3002
+  # ---------------------------------------------------------------------------
+  # Admin Dashboard (Docker Hub: mdshadhinkn/artifact)
+  # ---------------------------------------------------------------------------
+  admin-dashboard:
+    image: mdshadhinkn/artifact:${ADMIN_TAG:-aurts-frontend-admin-dashboard-latest}
+    container_name: platform-admin-dashboard-prod
+    restart: always
+    depends_on:
+      - api
+    networks:
+      - platform-network
+
+  # ---------------------------------------------------------------------------
+  # Nginx Gateway Orchestrator (Docker Hub: mdshadhinkn/artifact)
+  # ---------------------------------------------------------------------------
+  nginx:
+    image: mdshadhinkn/artifact:${NGINX_TAG:-aurts-gateway-nginx-latest}
+    container_name: platform-nginx-gateway-prod
+    restart: always
+    ports:
+      - "${HTTP_PORT:-81}:80"
+    depends_on:
+      - api
+      - storefront
+      - student-dashboard
+      - admin-dashboard
+    networks:
+      - platform-network
+
+networks:
+  platform-network:
+    driver: bridge
 
 volumes:
-  postgres_data:
-  redis_data:
-  seaweedfs_data:
+  postgres_prod_data:
+  redis_prod_data:
+  seaweedfs_prod_data:

@@ -1,0 +1,86 @@
+services:
+  postgres:
+    image: postgres:18-alpine
+    container_name: platform-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-ecommerce_platform}
+    ports:
+      - "${POSTGRES_PORT:-5435}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d ecommerce_platform"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: platform-redis
+    restart: unless-stopped
+    ports:
+      - "${REDIS_PORT:-6382}:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  seaweedfs:
+    image: chrislusf/seaweedfs:latest
+    container_name: platform-seaweedfs
+    restart: unless-stopped
+    command: "server -s3 -dir=/data -s3.port=8333 -s3.allowEmptyFolder=true"
+    environment:
+      - AWS_ACCESS_KEY_ID=${MINIO_ACCESS_KEY:-minioadmin}
+      - AWS_SECRET_ACCESS_KEY=${MINIO_SECRET_KEY:-minioadmin}
+    ports:
+      - "${STORAGE_PORT:-8333}:8333"
+      - "${SEAWEED_FILER_PORT:-8888}:8888"
+    volumes:
+      - seaweedfs_data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "echo 'ready'"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+
+  # ── Cloudflare quick tunnels (opt-in: `docker compose --profile tunnels up -d`) ──
+  # Exposes the dev servers running on the host via random *.trycloudflare.com URLs.
+  # Host networking lets the containers reach the dev servers on 127.0.0.1.
+  # The API is not tunneled: each frontend proxies /api to localhost:4000 itself.
+  # Print the URLs with `pnpm tunnel:urls`.
+  tunnel-storefront:
+    image: cloudflare/cloudflared:latest
+    container_name: platform-tunnel-storefront
+    profiles: ["tunnels"]
+    restart: unless-stopped
+    network_mode: host
+    command: tunnel --no-autoupdate --url http://localhost:3000
+
+  tunnel-student:
+    image: cloudflare/cloudflared:latest
+    container_name: platform-tunnel-student
+    profiles: ["tunnels"]
+    restart: unless-stopped
+    network_mode: host
+    command: tunnel --no-autoupdate --url http://localhost:3001
+
+  tunnel-admin:
+    image: cloudflare/cloudflared:latest
+    container_name: platform-tunnel-admin
+    profiles: ["tunnels"]
+    restart: unless-stopped
+    network_mode: host
+    command: tunnel --no-autoupdate --url http://localhost:3002
+
+volumes:
+  postgres_data:
+  redis_data:
+  seaweedfs_data:

@@ -39,6 +39,7 @@ jobs:
     outputs:
       has_changes: ${{ steps.set-matrix.outputs.has_changes }}
       matrix: ${{ steps.set-matrix.outputs.matrix }}
+      compose_services: ${{ steps.set-matrix.outputs.compose_services }}
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -123,32 +124,41 @@ jobs:
           echo "  Nginx Gateway: $NGINX"
 
           MATRIX_ITEMS=()
+          COMPOSE_SERVICES=()
           if [ "$API" = "true" ]; then
             MATRIX_ITEMS+=('{"name":"api","type":"backend","dockerfile":"apps/api/Dockerfile","context":"."}')
+            COMPOSE_SERVICES+=("api")
           fi
           if [ "$STOREFRONT" = "true" ]; then
             MATRIX_ITEMS+=('{"name":"storefront","type":"frontend","dockerfile":"apps/storefront/Dockerfile","context":"."}')
+            COMPOSE_SERVICES+=("storefront")
           fi
           if [ "$STUDENT" = "true" ]; then
             MATRIX_ITEMS+=('{"name":"student-dashboard","type":"frontend","dockerfile":"apps/student-dashboard/Dockerfile","context":"."}')
+            COMPOSE_SERVICES+=("student-dashboard")
           fi
           if [ "$ADMIN" = "true" ]; then
             MATRIX_ITEMS+=('{"name":"admin-dashboard","type":"frontend","dockerfile":"apps/admin-dashboard/Dockerfile","context":"."}')
+            COMPOSE_SERVICES+=("admin-dashboard")
           fi
           if [ "$NGINX" = "true" ]; then
             MATRIX_ITEMS+=('{"name":"nginx-gateway","type":"gateway","dockerfile":"docker/nginx/Dockerfile","context":"."}')
+            COMPOSE_SERVICES+=("nginx")
           fi
 
           if [ ${#MATRIX_ITEMS[@]} -eq 0 ]; then
             echo "has_changes=false" >> $GITHUB_OUTPUT
             echo "matrix={\"include\":[]}" >> $GITHUB_OUTPUT
+            echo "compose_services=" >> $GITHUB_OUTPUT
             echo "No relevant services changed. Skipping build."
           else
             JOINED=$(IFS=,; echo "${MATRIX_ITEMS[*]}")
             JSON="{\"include\":[${JOINED}]}"
             echo "has_changes=true" >> $GITHUB_OUTPUT
             echo "matrix=${JSON}" >> $GITHUB_OUTPUT
+            echo "compose_services=${COMPOSE_SERVICES[*]}" >> $GITHUB_OUTPUT
             echo "Build matrix: ${JSON}"
+            echo "Target compose services: ${COMPOSE_SERVICES[*]}"
           fi
 
   build-and-push:
@@ -234,3 +244,82 @@ jobs:
           tags: ${{ steps.tags.outputs.tags }}
           cache-from: type=gha,scope=${{ matrix.name }}
           cache-to: type=gha,mode=max,scope=${{ matrix.name }}
+
+  deploy:
+    name: Deploy to Server
+    needs: [detect-changes, build-and-push]
+    if: |
+      always() &&
+      github.ref == 'refs/heads/main' &&
+      needs.detect-changes.outputs.has_changes == 'true' &&
+      needs.build-and-push.result == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check Deployment Configuration
+        id: check-config
+        run: |
+          if [ -z "${{ secrets.SSH_HOST }}" ] || [ -z "${{ secrets.SSH_KEY }}" ]; then
+            echo "configured=false" >> $GITHUB_OUTPUT
+            echo "::notice ::SSH_HOST or SSH_KEY secret is not configured. Skipping automated remote deployment."
+          else
+            echo "configured=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Deploy Selective Service(s) via SSH
+        if: steps.check-config.outputs.configured == 'true'
+        uses: appleboy/ssh-action@v1.2.0
+        env:
+          TARGET_SERVICES: ${{ needs.detect-changes.outputs.compose_services }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH || '/root' }}
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER || 'root' }}
+          key: ${{ secrets.SSH_KEY }}
+          port: ${{ secrets.SSH_PORT || 22 }}
+          envs: TARGET_SERVICES,DEPLOY_PATH
+          script: |
+            set -e
+            cd "${DEPLOY_PATH:-/root}"
+            echo "=========================================="
+            echo "🚀 Continuous Deployment: Selective Update"
+            echo "📅 Timestamp: $(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+            echo "🎯 Target Services: ${TARGET_SERVICES}"
+            echo "=========================================="
+
+            # Locate compose file (prioritizing docker-compose.yml as configured on the server)
+            COMPOSE_FILE=""
+            if [ -f "docker-compose.yml" ]; then
+              COMPOSE_FILE="docker-compose.yml"
+            elif [ -f "docker-compose.hub.yml" ]; then
+              COMPOSE_FILE="docker-compose.hub.yml"
+            fi
+
+            if [ -z "$COMPOSE_FILE" ]; then
+              echo "❌ Error: Neither docker-compose.yml nor docker-compose.hub.yml found in $(pwd)"
+              exit 1
+            fi
+
+            echo "📦 Using Compose configuration: ${COMPOSE_FILE}"
+
+            # 1. Pull ONLY the newly built images
+            echo "📥 Pulling updated image(s): ${TARGET_SERVICES}..."
+            docker compose -f "${COMPOSE_FILE}" pull ${TARGET_SERVICES}
+
+            # 2. Rolling restart ONLY the updated containers without touching dependencies
+            echo "🔄 Restarting container(s): ${TARGET_SERVICES}..."
+            docker compose -f "${COMPOSE_FILE}" up -d --no-deps ${TARGET_SERVICES}
+
+            # 3. Health check ping on Port 81
+            echo "🔍 Verifying gateway health on port 81..."
+            sleep 4
+            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:81/ || echo "000")
+            echo "Gateway response: HTTP ${HTTP_CODE}"
+
+            # 4. Prune dangling image layers from previous build
+            echo "🧹 Cleaning up dangling Docker image layers..."
+            docker image prune -f
+
+            echo "=========================================="
+            echo "✅ Deployment completed successfully!"
+            echo "=========================================="
+
