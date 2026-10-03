@@ -1,0 +1,36 @@
+name: Server Remote Diagnostics & Management
+
+on:
+  workflow_dispatch:
+    inputs:
+      command:
+        description: "Bash command to execute in DEPLOY_PATH on the server"
+        required: true
+        default: "docker compose ps && docker compose logs --tail=60 api"
+
+jobs:
+  exec:
+    name: Execute Remote Command
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run Command via SSH
+        uses: appleboy/ssh-action@v1.2.0
+        env:
+          USER_COMMAND: ${{ github.event.inputs.command }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER || 'root' }}
+          key: ${{ secrets.SSH_KEY }}
+          password: ${{ secrets.SSH_PASSWORD }}
+          port: ${{ secrets.SSH_PORT || 22 }}
+          envs: USER_COMMAND,DEPLOY_PATH
+          script: |
+            TARGET_DIR="${DEPLOY_PATH:-$HOME}"
+            TARGET_DIR="${TARGET_DIR/#\~/$HOME}"
+            cd "$TARGET_DIR"
+            echo "📁 In directory: $(pwd)"
+            echo "⚡ Executing: ${USER_COMMAND}"
+            echo "----------------------------------------"
+            eval "${USER_COMMAND}"
+            echo "----------------------------------------"
