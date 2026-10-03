@@ -258,9 +258,9 @@ jobs:
       - name: Check Deployment Configuration
         id: check-config
         run: |
-          if [ -z "${{ secrets.SSH_HOST }}" ] || [ -z "${{ secrets.SSH_KEY }}" ]; then
+          if [ -z "${{ secrets.SSH_HOST }}" ] || ( [ -z "${{ secrets.SSH_KEY }}" ] && [ -z "${{ secrets.SSH_PASSWORD }}" ] ); then
             echo "configured=false" >> $GITHUB_OUTPUT
-            echo "::notice ::SSH_HOST or SSH_KEY secret is not configured. Skipping automated remote deployment."
+            echo "::notice ::SSH_HOST and either SSH_KEY or SSH_PASSWORD must be configured. Skipping automated remote deployment."
           else
             echo "configured=true" >> $GITHUB_OUTPUT
           fi
@@ -275,6 +275,7 @@ jobs:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER || 'root' }}
           key: ${{ secrets.SSH_KEY }}
+          password: ${{ secrets.SSH_PASSWORD }}
           port: ${{ secrets.SSH_PORT || 22 }}
           envs: TARGET_SERVICES,DEPLOY_PATH
           script: |
