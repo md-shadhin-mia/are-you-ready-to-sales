@@ -13,8 +13,16 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "Commercial E-Commerce Storefront",
-  description: "Multi-tenant student reseller store",
+  title: "WIN Wholesale Hub - B2B & Dropship Reseller Platform",
+  description: "Next-generation enterprise wholesale platform and automated dropshipping fulfillment infrastructure.",
+  icons: {
+    icon: [
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/win-icon.png", type: "image/png" },
+    ],
+    shortcut: "/win-icon.png",
+    apple: "/win-icon.png",
+  },
 };
 
 export default function RootLayout({

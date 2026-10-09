@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { CheckCircle2, Truck, FileText, Store } from "lucide-react";
 import { WholesaleOrderConfirmation } from "./types";
 
 interface WholesaleOrderConfirmationModalProps {
@@ -21,7 +22,7 @@ export function WholesaleOrderConfirmationModal({
       <div className="relative w-full max-w-lg bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden text-center p-6 space-y-5">
         {/* Success Icon */}
         <div className="mx-auto w-16 h-16 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center ring-8 ring-emerald-50">
-          <span className="material-symbols-outlined text-[36px]">check_circle</span>
+          <CheckCircle2 className="w-9 h-9" />
         </div>
 
         <div>
@@ -65,7 +66,7 @@ export function WholesaleOrderConfirmationModal({
 
           <div className="flex items-center justify-between text-xs pt-2 border-t border-slate-200 text-slate-600">
             <span className="flex items-center gap-1">
-              <span className="material-symbols-outlined text-[15px] text-brand">local_shipping</span>
+              <Truck className="w-4 h-4 text-brand" />
               Dispatch Hub:
             </span>
             <span className="font-semibold text-slate-800">Dhaka Metro Central Hub (Same Day)</span>
@@ -81,14 +82,14 @@ export function WholesaleOrderConfirmationModal({
             }}
             className="py-2.5 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs flex items-center justify-center gap-1.5 transition-colors"
           >
-            <span className="material-symbols-outlined text-[16px]">receipt_long</span>
+            <FileText className="w-4 h-4" />
             <span>View Orders</span>
           </button>
           <button
             onClick={onClose}
             className="py-2.5 px-4 rounded-xl bg-brand hover:bg-brand-hover text-white font-bold text-xs shadow-md shadow-brand/20 flex items-center justify-center gap-1.5 transition-colors"
           >
-            <span className="material-symbols-outlined text-[16px]">storefront</span>
+            <Store className="w-4 h-4" />
             <span>Continue Sourcing</span>
           </button>
         </div>

@@ -154,7 +154,7 @@ export const INITIAL_WHOLESALE_CATALOG: WholesaleProduct[] = [
     "price": 1050,
     "msrp": 2400,
     "stockQuantity": 270,
-    "image": "https://lh3.googleusercontent.com/aida-public/AB6AXuAkobANjs7HgzTeKJytdtN5_PqLsH-w9i4GOSBrehCBz4LUZrmN6qlDplCSWeS8RvFZXZ2vyqaXrJSPnvwQZlXV1QLNNBwlWg4cNEvvwV-24HG34Gw-lhSIPVxJJlxqD5PxqfQb2lsvwnXXWH-4v0WCYy6CPrJVuPpO0yyUbhhjHgXRxS7le0Iwy227Yhu4fM1G5gbvoCqATlAqZjPZHTWN9ejvV0XHZF4QL-YJgQM-MgsTfrh8daQVQ",
+    "image": "https://images.unsplash.com/photo-1557597774-9d273605dfa9?w=800&auto=format&fit=crop",
     "description": "Ultra-compact magnet-mounted HD wireless surveillance camera with night vision and mobile app stream."
   },
   {

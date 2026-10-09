@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { X, AlertCircle, KeyRound, Mail, Lock, LogIn, UserPlus } from "lucide-react";
 import { ResellerUser } from "./types";
 
 interface ResellerLoginModalProps {
@@ -107,7 +108,7 @@ export function ResellerLoginModal({ isOpen, onClose, onLoginSuccess }: Reseller
             onClick={onClose}
             className="w-8 h-8 rounded-lg hover:bg-slate-200/70 text-slate-500 hover:text-slate-800 flex items-center justify-center transition-colors"
           >
-            <span className="material-symbols-outlined text-[20px]">close</span>
+            <X className="w-5 h-5" />
           </button>
         </div>
 
@@ -131,7 +132,7 @@ export function ResellerLoginModal({ isOpen, onClose, onLoginSuccess }: Reseller
 
         {error && (
           <div className="mx-4 mb-3 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center gap-2">
-            <span className="material-symbols-outlined text-[18px] text-rose-600">error</span>
+            <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
             <span>{error}</span>
           </div>
         )}
@@ -142,7 +143,7 @@ export function ResellerLoginModal({ isOpen, onClose, onLoginSuccess }: Reseller
             {/* Demo Quick Fill Helper */}
             <div className="p-2.5 rounded-xl bg-blue-50/70 border border-blue-100 flex items-center justify-between text-xs">
               <div className="flex items-center gap-1.5 text-blue-900 font-medium">
-                <span className="material-symbols-outlined text-[16px] text-brand">key</span>
+                <KeyRound className="w-4 h-4 text-brand" />
                 <span>Demo Reseller Credentials:</span>
               </div>
               <button
@@ -157,7 +158,7 @@ export function ResellerLoginModal({ isOpen, onClose, onLoginSuccess }: Reseller
             <div>
               <label className="block text-xs font-semibold text-slate-700 mb-1">Reseller Work Email</label>
               <div className="relative">
-                <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-[18px]">mail</span>
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
                 <input
                   type="email"
                   required
@@ -175,7 +176,7 @@ export function ResellerLoginModal({ isOpen, onClose, onLoginSuccess }: Reseller
                 <span className="text-[11px] text-brand hover:underline cursor-pointer">Forgot password?</span>
               </div>
               <div className="relative">
-                <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-[18px]">lock</span>
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
                 <input
                   type="password"
                   required
@@ -196,7 +197,7 @@ export function ResellerLoginModal({ isOpen, onClose, onLoginSuccess }: Reseller
                 <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
               ) : (
                 <>
-                  <span className="material-symbols-outlined text-[18px]">login</span>
+                  <LogIn className="w-4 h-4" />
                   <span>Enter Wholesale Portal</span>
                 </>
               )}
@@ -257,7 +258,7 @@ export function ResellerLoginModal({ isOpen, onClose, onLoginSuccess }: Reseller
                 <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
               ) : (
                 <>
-                  <span className="material-symbols-outlined text-[18px]">how_to_reg</span>
+                  <UserPlus className="w-4 h-4" />
                   <span>Submit Reseller Application</span>
                 </>
               )}

@@ -1,6 +1,45 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
+import {
+  Phone,
+  MessageSquare,
+  CheckCircle2,
+  CreditCard,
+  Lock,
+  Search,
+  X,
+  FileText,
+  User,
+  KeyRound,
+  Truck,
+  RefreshCw,
+  ShieldCheck,
+  BadgeCheck,
+  Store,
+  UserPlus,
+  Banknote,
+  ShoppingBag,
+  Package,
+  LayoutGrid,
+  Zap,
+  ShoppingCart,
+  ArrowRight,
+  Percent,
+  Check,
+  ChevronDown,
+  Building2,
+  Headphones,
+  Baby,
+  UtensilsCrossed,
+  Wallet,
+  Laptop,
+  Sparkles,
+  Plane,
+  Dumbbell,
+  Watch,
+  LucideIcon,
+} from "lucide-react";
 import { INITIAL_WHOLESALE_CATALOG } from "./initialCatalog";
 import { WholesaleProduct, WholesaleCartItem, ResellerUser, WholesaleOrderConfirmation } from "./types";
 import { ResellerLoginModal } from "./ResellerLoginModal";
@@ -177,17 +216,17 @@ export function WinWholesaleShop() {
   const totalCartAmount = cart.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
 
   // Curated Categories List from design
-  const categoryDirectory = [
-    { name: "Baby & Toddler Items", count: "42 Wholesale Items", icon: "child_care", filterKey: "Baby" },
-    { name: "Kitchen & Pantry Ware", count: "68 Wholesale Items", icon: "soup_kitchen", filterKey: "Kitchenware" },
-    { name: "Women's Fashion & Bags", count: "84 Wholesale Items", icon: "shopping_bag", filterKey: "Fashion" },
-    { name: "Men's Leather Goods", count: "52 Wholesale Items", icon: "wallet", filterKey: "Leather" },
-    { name: "Fast-Moving Gadgets", count: "115 Wholesale Items", icon: "devices_other", filterKey: "Smart Gadgets" },
-    { name: "Flash Liquidations", count: "29 Clearance Deals", icon: "bolt", filterKey: "Flash" },
-    { name: "Skincare & Beauty", count: "64 Wholesale Items", icon: "spa", filterKey: "Beauty & Care" },
-    { name: "Travel Gear & Luggage", count: "37 Wholesale Items", icon: "flight_takeoff", filterKey: "Travel" },
-    { name: "Health & Therapy", count: "48 Wholesale Items", icon: "fitness_center", filterKey: "Health" },
-    { name: "Watches & Jewelry", count: "56 Wholesale Items", icon: "watch", filterKey: "Watches" },
+  const categoryDirectory: { name: string; count: string; icon: LucideIcon; filterKey: string }[] = [
+    { name: "Baby & Toddler Items", count: "42 Wholesale Items", icon: Baby, filterKey: "Baby" },
+    { name: "Kitchen & Pantry Ware", count: "68 Wholesale Items", icon: UtensilsCrossed, filterKey: "Kitchenware" },
+    { name: "Women's Fashion & Bags", count: "84 Wholesale Items", icon: ShoppingBag, filterKey: "Fashion" },
+    { name: "Men's Leather Goods", count: "52 Wholesale Items", icon: Wallet, filterKey: "Leather" },
+    { name: "Fast-Moving Gadgets", count: "115 Wholesale Items", icon: Laptop, filterKey: "Smart Gadgets" },
+    { name: "Flash Liquidations", count: "29 Clearance Deals", icon: Zap, filterKey: "Flash" },
+    { name: "Skincare & Beauty", count: "64 Wholesale Items", icon: Sparkles, filterKey: "Beauty & Care" },
+    { name: "Travel Gear & Luggage", count: "37 Wholesale Items", icon: Plane, filterKey: "Travel" },
+    { name: "Health & Therapy", count: "48 Wholesale Items", icon: Dumbbell, filterKey: "Health" },
+    { name: "Watches & Jewelry", count: "56 Wholesale Items", icon: Watch, filterKey: "Watches" },
   ];
 
   // Filter Categories in Section 2 search
@@ -232,7 +271,7 @@ export function WinWholesaleShop() {
       {/* Toast Notification */}
       {toastMessage && (
         <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2 bg-slate-900 text-white text-xs font-semibold px-4 py-3 rounded-xl shadow-2xl border border-slate-700 animate-in slide-in-from-bottom duration-200">
-          <span className="material-symbols-outlined text-[18px] text-emerald-400">check_circle</span>
+          <CheckCircle2 className="w-4.5 h-4.5 text-emerald-400 shrink-0" />
           <span>{toastMessage}</span>
         </div>
       )}
@@ -246,17 +285,17 @@ export function WinWholesaleShop() {
             {/* Contacts & Net 30 badge */}
             <div className="flex items-center gap-6">
               <div className="flex items-center gap-1.5">
-                <span className="material-symbols-outlined text-[14px] text-brand-light">call</span>
+                <Phone className="w-3.5 h-3.5 text-brand-light" />
                 <span className="text-white font-medium">+880 1800-946482</span>
               </div>
               <div className="hidden sm:flex items-center gap-1.5">
-                <span className="material-symbols-outlined text-[14px] text-emerald-400">chat</span>
+                <MessageSquare className="w-3.5 h-3.5 text-emerald-400" />
                 <span>
                   WhatsApp Wholesale: <strong className="text-white font-semibold">+880 1700-019283</strong>
                 </span>
               </div>
               <div className="hidden lg:flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-950/80 text-emerald-300 border border-emerald-800 text-[10px]">
-                <span className="material-symbols-outlined text-[13px]">verified</span>
+                <CheckCircle2 className="w-3 h-3" />
                 <span className="font-semibold">Verified Net 30/60 B2B Terms Available</span>
               </div>
             </div>
@@ -264,7 +303,7 @@ export function WinWholesaleShop() {
             {/* Currency selector & Authentication */}
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-1.5">
-                <span className="material-symbols-outlined text-[14px] text-slate-400">payments</span>
+                <CreditCard className="w-3.5 h-3.5 text-slate-400" />
                 <select
                   value={currency}
                   onChange={(e) => setCurrency(e.target.value as "BDT" | "USD")}
@@ -314,7 +353,7 @@ export function WinWholesaleShop() {
                     onClick={() => setIsLoginModalOpen(true)}
                     className="text-white hover:text-brand-light font-bold flex items-center gap-1 transition-colors"
                   >
-                    <span className="material-symbols-outlined text-[14px] text-brand-light">lock</span>
+                    <Lock className="w-3.5 h-3.5 text-brand-light" />
                     <span>B2B Portal Login</span>
                   </button>
                 </div>
@@ -367,7 +406,7 @@ export function WinWholesaleShop() {
               <option value="Fitness & Sport">Fitness &amp; Sport</option>
             </select>
             <div className="flex items-center px-3 flex-1">
-              <span className="material-symbols-outlined text-slate-400 text-[18px] mr-2">search</span>
+              <Search className="w-4 h-4 text-slate-400 mr-2 shrink-0" />
               <input
                 type="text"
                 value={searchQuery}
@@ -381,7 +420,7 @@ export function WinWholesaleShop() {
                 onClick={() => setSearchQuery("")}
                 className="text-slate-400 hover:text-slate-600 p-1 mr-1"
               >
-                <span className="material-symbols-outlined text-[16px]">close</span>
+                <X className="w-4 h-4" />
               </button>
             )}
           </div>
@@ -401,7 +440,7 @@ export function WinWholesaleShop() {
               className="flex items-center gap-2.5 px-3.5 py-2 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 text-slate-800 transition-all shadow-xs hover:border-brand/40 group"
             >
               <div className="relative">
-                <span className="material-symbols-outlined text-brand text-[22px]">receipt_long</span>
+                <FileText className="w-5 h-5 text-brand" />
                 {totalCartItems > 0 && (
                   <span className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-brand text-white text-[10px] font-extrabold flex items-center justify-center animate-bounce">
                     {totalCartItems}
@@ -422,14 +461,14 @@ export function WinWholesaleShop() {
                 className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-200/80 hover:bg-blue-100 text-brand flex items-center justify-center font-bold text-xs shadow-2xs transition-colors"
                 title="My Wholesale Purchases"
               >
-                <span className="material-symbols-outlined text-[20px]">person</span>
+                <User className="w-5 h-5" />
               </button>
             ) : (
               <button
                 onClick={() => setIsLoginModalOpen(true)}
                 className="hidden sm:flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-brand hover:bg-brand-hover text-white font-bold text-xs shadow-sm shadow-brand/20 transition-all"
               >
-                <span className="material-symbols-outlined text-[16px]">vpn_key</span>
+                <KeyRound className="w-4 h-4" />
                 <span>Reseller Login</span>
               </button>
             )}
@@ -450,19 +489,19 @@ export function WinWholesaleShop() {
               </span>
             </div>
             <div className="hidden sm:flex items-center gap-2 text-slate-600 text-xs">
-              <span className="material-symbols-outlined text-[16px] text-brand">local_shipping</span>
+              <Truck className="w-4 h-4 text-brand" />
               <span>
                 Same-Day Metro Dispatch: <strong className="text-slate-900 font-bold">Orders before 3 PM</strong>
               </span>
             </div>
             <div className="hidden md:flex items-center gap-2 text-slate-600 text-xs">
-              <span className="material-symbols-outlined text-[16px] text-emerald-600">currency_exchange</span>
+              <RefreshCw className="w-4 h-4 text-emerald-600" />
               <span>Zero Inventory Capital Required</span>
             </div>
           </div>
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2 bg-slate-100 border border-slate-200 px-3 py-1.5 rounded-lg text-slate-700 text-xs">
-              <span className="material-symbols-outlined text-brand text-[16px]">verified_user</span>
+              <ShieldCheck className="w-4 h-4 text-brand" />
               <span className="font-semibold text-slate-800">14,280+ Active Resellers</span>
             </div>
           </div>
@@ -480,7 +519,7 @@ export function WinWholesaleShop() {
           {/* Left Hero Text Column */}
           <div className="lg:col-span-7 flex flex-col gap-6">
             <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-50 border border-blue-200/80 text-brand w-fit">
-              <span className="material-symbols-outlined text-brand text-[18px]">verified</span>
+              <BadgeCheck className="w-4 h-4 text-brand" />
               <span className="text-xs font-bold tracking-wider uppercase">Direct-From-Factory Sourcing</span>
             </div>
             <h1 className="text-3xl sm:text-4xl lg:text-5xl text-slate-900 tracking-tight leading-tight font-extrabold">
@@ -500,14 +539,14 @@ export function WinWholesaleShop() {
                 href="#catalog"
                 className="px-6 py-3.5 rounded-xl bg-brand hover:bg-brand-hover text-white font-bold text-sm shadow-md shadow-brand/25 flex items-center gap-2 transition-all hover:scale-[1.02] active:scale-[0.98]"
               >
-                <span className="material-symbols-outlined text-[18px]">storefront</span>
+                <Store className="w-4 h-4" />
                 <span>Explore Wholesale Catalog</span>
               </a>
               <button
                 onClick={() => setIsLoginModalOpen(true)}
                 className="px-6 py-3.5 rounded-xl bg-white hover:bg-slate-100 text-slate-800 font-bold text-sm border border-slate-200 flex items-center gap-2 transition-all shadow-xs"
               >
-                <span className="material-symbols-outlined text-[18px] text-brand">how_to_reg</span>
+                <UserPlus className="w-4 h-4 text-brand" />
                 <span>Open Reseller Account</span>
               </button>
             </div>
@@ -515,19 +554,19 @@ export function WinWholesaleShop() {
             {/* Trust Badges */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-6 border-t border-slate-200">
               <div className="flex items-center gap-2">
-                <span className="material-symbols-outlined text-brand text-[20px]">verified</span>
+                <ShieldCheck className="w-5 h-5 text-brand" />
                 <span className="text-xs font-bold text-slate-700">Verified ISO 9001</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="material-symbols-outlined text-emerald-600 text-[20px]">credit_card</span>
+                <CreditCard className="w-5 h-5 text-emerald-600" />
                 <span className="text-xs font-bold text-slate-700">Net 30/60 B2B Credit</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="material-symbols-outlined text-blue-600 text-[20px]">local_shipping</span>
+                <Truck className="w-5 h-5 text-blue-600" />
                 <span className="text-xs font-bold text-slate-700">99.4% Dispatch SLA</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="material-symbols-outlined text-purple-600 text-[20px]">attach_money</span>
+                <Banknote className="w-5 h-5 text-purple-600" />
                 <span className="text-xs font-bold text-slate-700">Zero Capital Start</span>
               </div>
             </div>
@@ -553,7 +592,7 @@ export function WinWholesaleShop() {
                 <div className="p-3.5 rounded-xl bg-slate-800/80 border border-slate-700/60 flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-lg bg-blue-500/20 text-blue-400 flex items-center justify-center">
-                      <span className="material-symbols-outlined text-[18px]">shopping_bag</span>
+                      <ShoppingBag className="w-4.5 h-4.5" />
                     </div>
                     <div>
                       <p className="text-xs font-bold text-slate-100">Reseller Order Authorized</p>
@@ -566,7 +605,7 @@ export function WinWholesaleShop() {
                 <div className="p-3.5 rounded-xl bg-slate-800/80 border border-slate-700/60 flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-lg bg-purple-500/20 text-purple-400 flex items-center justify-center">
-                      <span className="material-symbols-outlined text-[18px]">pallet</span>
+                      <Package className="w-4.5 h-4.5" />
                     </div>
                     <div>
                       <p className="text-xs font-bold text-slate-100">Dhaka Central Hub Picking</p>
@@ -579,7 +618,7 @@ export function WinWholesaleShop() {
                 <div className="p-3.5 rounded-xl bg-slate-800/80 border border-slate-700/60 flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
-                      <span className="material-symbols-outlined text-[18px]">local_shipping</span>
+                      <Truck className="w-4.5 h-4.5" />
                     </div>
                     <div>
                       <p className="text-xs font-bold text-slate-100">Blind Carrier Handover</p>
@@ -609,7 +648,7 @@ export function WinWholesaleShop() {
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-2">
             <div className="flex flex-col gap-2">
               <div className="flex items-center gap-2">
-                <span className="material-symbols-outlined text-brand text-[20px]">grid_view</span>
+                <LayoutGrid className="w-5 h-5 text-brand" />
                 <span className="text-xs text-brand uppercase tracking-widest font-bold">
                   Sourcing Directory
                 </span>
@@ -623,7 +662,7 @@ export function WinWholesaleShop() {
             </div>
             <div className="flex items-center gap-3">
               <div className="flex items-center px-3.5 py-2 rounded-xl bg-white border border-slate-200 text-slate-800 w-full sm:w-72 shadow-2xs focus-within:border-brand focus-within:ring-2 focus-within:ring-brand/20">
-                <span className="material-symbols-outlined text-slate-400 text-[18px] mr-2">search</span>
+                <Search className="w-4 h-4 text-slate-400 mr-2 shrink-0" />
                 <input
                   type="text"
                   value={categorySearchQuery}
@@ -663,7 +702,7 @@ export function WinWholesaleShop() {
                         : "bg-blue-50 text-brand group-hover:bg-brand group-hover:text-white"
                     }`}
                   >
-                    <span className="material-symbols-outlined text-[28px]">{cat.icon}</span>
+                    <cat.icon className="w-7 h-7" />
                   </div>
                   <div className="flex flex-col">
                     <span className="text-xs font-bold text-slate-900 group-hover:text-brand transition-colors">
@@ -689,7 +728,7 @@ export function WinWholesaleShop() {
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-4 border-b border-slate-100">
             <div className="flex flex-col gap-1">
               <div className="flex items-center gap-2">
-                <span className="material-symbols-outlined text-brand text-[20px]">inventory_2</span>
+                <Package className="w-5 h-5 text-brand" />
                 <span className="text-xs text-brand uppercase tracking-widest font-bold">
                   Verified Inventory
                 </span>
@@ -750,10 +789,14 @@ export function WinWholesaleShop() {
                       <img
                         src={p.image}
                         alt={p.title}
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src =
+                            "https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?auto=format&fit=crop&w=600&q=80";
+                        }}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                       />
-                      <div className="absolute top-2.5 left-2.5 px-2.5 py-1 rounded-md bg-white/95 backdrop-blur-md text-emerald-800 text-[11px] flex items-center gap-1 shadow-2xs font-bold border border-slate-200">
-                        <span className="material-symbols-outlined text-[13px] text-emerald-600">bolt</span>
+                      <div className="absolute top-2.5 left-2.5 px-2.5 py-1 rounded-md bg-white/95 backdrop-blur-md text-emerald-800 text-[11px] flex items-center gap-1.5 shadow-2xs font-bold border border-slate-200">
+                        <Zap className="w-3.5 h-3.5 text-emerald-600 fill-emerald-600" />
                         <span>In Stock - 24h</span>
                       </div>
                       <div className="absolute bottom-2.5 right-2.5 px-2 py-0.5 rounded bg-slate-900/80 text-white font-mono text-[10px]">
@@ -825,7 +868,7 @@ export function WinWholesaleShop() {
                         onClick={() => handleAddToCart(p)}
                         className="flex-1 py-2 rounded-xl bg-brand hover:bg-brand-hover text-white text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-1.5"
                       >
-                        <span className="material-symbols-outlined text-[16px]">add_shopping_cart</span>
+                        <ShoppingCart className="w-4 h-4" />
                         <span>Add to PO</span>
                       </button>
                     </div>
@@ -845,7 +888,7 @@ export function WinWholesaleShop() {
           <div className="p-8 rounded-3xl bg-white border border-slate-200 shadow-xs flex flex-col justify-between">
             <div className="space-y-3">
               <div className="w-12 h-12 rounded-2xl bg-blue-50 text-brand flex items-center justify-center">
-                <span className="material-symbols-outlined text-[28px]">local_shipping</span>
+                <Truck className="w-7 h-7 text-brand" />
               </div>
               <h3 className="text-xl font-bold text-slate-900">Automated Blind-Drop Logistics API</h3>
               <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
@@ -854,14 +897,14 @@ export function WinWholesaleShop() {
             </div>
             <div className="mt-6 flex items-center gap-2 text-xs font-bold text-brand">
               <span>Read Logistics Specifications</span>
-              <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
+              <ArrowRight className="w-4 h-4" />
             </div>
           </div>
 
           <div className="p-8 rounded-3xl bg-white border border-slate-200 shadow-xs flex flex-col justify-between">
             <div className="space-y-3">
               <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
-                <span className="material-symbols-outlined text-[28px]">percent</span>
+                <Percent className="w-7 h-7 text-emerald-600" />
               </div>
               <h3 className="text-xl font-bold text-slate-900">Tiered Bulk Discount Volume Engine</h3>
               <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
@@ -870,7 +913,7 @@ export function WinWholesaleShop() {
             </div>
             <div className="mt-6 flex items-center gap-2 text-xs font-bold text-emerald-700">
               <span>View Volume Discount Tiers</span>
-              <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
+              <ArrowRight className="w-4 h-4" />
             </div>
           </div>
         </div>
@@ -911,7 +954,7 @@ export function WinWholesaleShop() {
                   <p className="text-xs text-slate-500 mt-1 leading-relaxed">{s.desc}</p>
                 </div>
                 <div className="w-6 h-6 rounded-full bg-blue-100 text-brand flex items-center justify-center font-bold text-xs">
-                  &check;
+                  <Check className="w-3.5 h-3.5" />
                 </div>
               </div>
             ))}
@@ -963,13 +1006,11 @@ export function WinWholesaleShop() {
                     className="w-full p-5 text-left flex items-center justify-between hover:bg-slate-50 transition-colors"
                   >
                     <span className="text-sm font-bold text-slate-900">{faq.q}</span>
-                    <span
-                      className={`material-symbols-outlined text-brand transition-transform duration-300 ${
+                    <ChevronDown
+                      className={`w-5 h-5 text-brand transition-transform duration-300 ${
                         isOpen ? "rotate-180" : ""
                       }`}
-                    >
-                      expand_more
-                    </span>
+                    />
                   </button>
                   {isOpen && (
                     <div className="px-5 pb-5 pt-1 text-slate-600 text-xs leading-relaxed border-t border-slate-100">
@@ -1001,11 +1042,11 @@ export function WinWholesaleShop() {
               </p>
               <div className="space-y-1 text-slate-300 text-[11px]">
                 <div className="flex items-center gap-2">
-                  <span className="material-symbols-outlined text-brand-light text-[16px]">warehouse</span>
+                  <Building2 className="w-4 h-4 text-brand-light shrink-0" />
                   <span>Fulfillment Hubs: Dhaka Central (DAC1), Chittagong Port (CTG2)</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="material-symbols-outlined text-brand-light text-[16px]">support_agent</span>
+                  <Headphones className="w-4 h-4 text-brand-light shrink-0" />
                   <span>24/7 Enterprise Tier Support: enterprise@winwholesale.com</span>
                 </div>
               </div>

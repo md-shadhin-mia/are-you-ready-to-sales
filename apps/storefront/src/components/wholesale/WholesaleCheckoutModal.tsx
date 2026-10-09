@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { X, Lock, AlertCircle, Truck, CreditCard, Wallet, Landmark, ShieldCheck, ClipboardCheck } from "lucide-react";
 import { ResellerUser, WholesaleCartItem, WholesaleOrderConfirmation } from "./types";
 
 interface WholesaleCheckoutModalProps {
@@ -112,7 +113,7 @@ export function WholesaleCheckoutModal({
         <div className="flex items-center justify-between p-5 border-b border-slate-100 bg-slate-50/80">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-brand text-white flex items-center justify-center shadow-sm">
-              <span className="material-symbols-outlined text-[22px]">assignment_turned_in</span>
+              <ClipboardCheck className="w-5 h-5 text-white" />
             </div>
             <div>
               <h2 className="text-base font-bold text-slate-900 leading-tight">
@@ -127,7 +128,7 @@ export function WholesaleCheckoutModal({
             onClick={onClose}
             className="w-8 h-8 rounded-lg hover:bg-slate-200/70 text-slate-500 hover:text-slate-800 flex items-center justify-center transition-colors"
           >
-            <span className="material-symbols-outlined text-[20px]">close</span>
+            <X className="w-5 h-5" />
           </button>
         </div>
 
@@ -135,7 +136,7 @@ export function WholesaleCheckoutModal({
         {!user && (
           <div className="p-4 bg-amber-50 border-b border-amber-200/80 flex items-center justify-between gap-4">
             <div className="flex items-center gap-2.5 text-xs text-amber-900 font-medium">
-              <span className="material-symbols-outlined text-amber-700 text-[20px]">lock</span>
+              <Lock className="w-5 h-5 text-amber-700 shrink-0" />
               <span>
                 You must be signed in as a verified reseller to authorize wholesale purchase orders.
               </span>
@@ -151,7 +152,7 @@ export function WholesaleCheckoutModal({
 
         {error && (
           <div className="mx-6 mt-4 p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center gap-2">
-            <span className="material-symbols-outlined text-[18px] text-rose-600">error</span>
+            <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
             <span>{error}</span>
           </div>
         )}
@@ -161,7 +162,7 @@ export function WholesaleCheckoutModal({
           <div className="md:col-span-7 space-y-4">
             <div>
               <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2 flex items-center gap-1.5">
-                <span className="material-symbols-outlined text-[16px] text-brand">local_shipping</span>
+                <Truck className="w-4 h-4 text-brand" />
                 1. Delivery & Consignee Information
               </h3>
               <div className="grid grid-cols-2 gap-2.5">
@@ -235,7 +236,7 @@ export function WholesaleCheckoutModal({
             {/* Payment Method Selection */}
             <div>
               <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2 flex items-center gap-1.5">
-                <span className="material-symbols-outlined text-[16px] text-brand">payments</span>
+                <CreditCard className="w-4 h-4 text-brand" />
                 2. Wholesale Payment Settlement
               </h3>
               <div className="space-y-2">
@@ -258,7 +259,7 @@ export function WholesaleCheckoutModal({
                   <div className="flex-1 text-xs">
                     <div className="flex items-center justify-between font-bold text-slate-900">
                       <span className="flex items-center gap-1.5">
-                        <span className="material-symbols-outlined text-[16px] text-brand">account_balance_wallet</span>
+                        <Wallet className="w-4 h-4 text-brand" />
                         Reseller Wallet Balance
                       </span>
                       <span className="text-emerald-700 font-bold">
@@ -290,7 +291,7 @@ export function WholesaleCheckoutModal({
                   <div className="flex-1 text-xs">
                     <div className="flex items-center justify-between font-bold text-slate-900">
                       <span className="flex items-center gap-1.5">
-                        <span className="material-symbols-outlined text-[16px] text-emerald-600">local_shipping</span>
+                        <Truck className="w-4 h-4 text-emerald-600" />
                         Cash on Delivery (COD) / Carrier Collect
                       </span>
                       <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold">
@@ -322,7 +323,7 @@ export function WholesaleCheckoutModal({
                   <div className="flex-1 text-xs">
                     <div className="flex items-center justify-between font-bold text-slate-900">
                       <span className="flex items-center gap-1.5">
-                        <span className="material-symbols-outlined text-[16px] text-blue-600">account_balance</span>
+                        <Landmark className="w-4 h-4 text-blue-600" />
                         B2B Bank Wire / Corporate Transfer
                       </span>
                     </div>
@@ -409,13 +410,13 @@ export function WholesaleCheckoutModal({
                   <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
                 ) : (
                   <>
-                    <span className="material-symbols-outlined text-[18px]">lock</span>
+                    <Lock className="w-4 h-4" />
                     <span>Confirm Wholesale Purchase</span>
                   </>
                 )}
               </button>
               <div className="flex items-center justify-center gap-2 text-[10px] text-slate-500 text-center">
-                <span className="material-symbols-outlined text-[14px] text-emerald-600">verified</span>
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
                 <span>Protected by WIN B2B Wholesale Guarantee</span>
               </div>
             </div>

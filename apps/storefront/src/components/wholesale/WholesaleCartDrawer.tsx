@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { FileText, X, Truck, Package, Trash2, TrendingUp, ShoppingCart } from "lucide-react";
 import { WholesaleCartItem } from "./types";
 
 interface WholesaleCartDrawerProps {
@@ -53,7 +54,7 @@ export function WholesaleCartDrawer({
           <div className="p-5 border-b border-slate-200 flex items-center justify-between bg-slate-50/70">
             <div className="flex items-center gap-2.5">
               <div className="w-9 h-9 rounded-xl bg-blue-50 text-brand flex items-center justify-center border border-blue-200/60">
-                <span className="material-symbols-outlined text-[20px]">receipt_long</span>
+                <FileText className="w-5 h-5" />
               </div>
               <div>
                 <h2 className="text-base font-bold text-slate-900 leading-tight">Wholesale Purchase Order</h2>
@@ -66,7 +67,7 @@ export function WholesaleCartDrawer({
               onClick={onClose}
               className="w-8 h-8 rounded-lg hover:bg-slate-200/70 text-slate-500 hover:text-slate-800 flex items-center justify-center transition-colors"
             >
-              <span className="material-symbols-outlined text-[20px]">close</span>
+              <X className="w-5 h-5" />
             </button>
           </div>
 
@@ -75,7 +76,7 @@ export function WholesaleCartDrawer({
             <div className="px-5 py-3 bg-blue-50/50 border-b border-blue-100">
               <div className="flex items-center justify-between text-xs mb-1.5">
                 <span className="font-semibold text-slate-700 flex items-center gap-1">
-                  <span className="material-symbols-outlined text-brand text-[15px]">local_shipping</span>
+                  <Truck className="w-3.5 h-3.5 text-brand" />
                   {subtotal >= freeShippingThreshold ? (
                     <span className="text-emerald-700 font-bold">Free Bulk Delivery Unlocked!</span>
                   ) : (
@@ -98,7 +99,7 @@ export function WholesaleCartDrawer({
             {items.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-center p-6 text-slate-500">
                 <div className="w-16 h-16 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-400 mb-3">
-                  <span className="material-symbols-outlined text-[32px]">inventory_2</span>
+                  <Package className="w-8 h-8 text-slate-400" />
                 </div>
                 <h3 className="font-bold text-slate-800 text-sm">Purchase Order is Empty</h3>
                 <p className="text-xs text-slate-500 max-w-xs mt-1">
@@ -133,7 +134,7 @@ export function WholesaleCartDrawer({
                           onClick={() => onRemoveItem(item.product.id)}
                           className="text-slate-400 hover:text-rose-600 transition-colors p-1"
                         >
-                          <span className="material-symbols-outlined text-[16px]">delete</span>
+                          <Trash2 className="w-4 h-4" />
                         </button>
                       </div>
 
@@ -179,7 +180,7 @@ export function WholesaleCartDrawer({
               {/* Reseller Profit Callout */}
               <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200/80 flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <span className="material-symbols-outlined text-emerald-700 text-[18px]">trending_up</span>
+                  <TrendingUp className="w-4.5 h-4.5 text-emerald-700" />
                   <span className="text-xs font-bold text-emerald-900">Estimated Reseller Profit</span>
                 </div>
                 <span className="text-sm font-extrabold text-emerald-700">
@@ -214,7 +215,7 @@ export function WholesaleCartDrawer({
                 onClick={onProceedCheckout}
                 className="w-full py-3 rounded-xl bg-brand hover:bg-brand-hover text-white font-bold text-sm shadow-md shadow-brand/25 flex items-center justify-center gap-2 transition-all hover:scale-[1.01] active:scale-[0.99]"
               >
-                <span className="material-symbols-outlined text-[18px]">shopping_cart_checkout</span>
+                <ShoppingCart className="w-4 h-4" />
                 <span>Proceed to Wholesale Checkout</span>
               </button>
             </div>
