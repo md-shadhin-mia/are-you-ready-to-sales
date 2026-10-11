@@ -47,6 +47,7 @@ import { WholesaleCartDrawer } from "./WholesaleCartDrawer";
 import { WholesaleCheckoutModal } from "./WholesaleCheckoutModal";
 import { WholesaleOrderConfirmationModal } from "./WholesaleOrderConfirmationModal";
 import { MyOrdersDrawer } from "./MyOrdersDrawer";
+import { BangladeshDistributionMap } from "./BangladeshDistributionMap";
 
 export function WinWholesaleShop() {
   // Catalog State
@@ -572,69 +573,9 @@ export function WinWholesaleShop() {
             </div>
           </div>
 
-          {/* Right Hero Graphic: Live Operations Engine Simulation */}
+          {/* Right Hero Graphic: Animated Nationwide Distribution Map */}
           <div className="lg:col-span-5 relative">
-            <div className="relative rounded-3xl bg-slate-900 border border-slate-800 p-6 shadow-2xl text-white overflow-hidden">
-              <div className="absolute top-0 right-0 w-64 h-64 bg-brand/10 rounded-full blur-3xl pointer-events-none" />
-              
-              <div className="flex items-center justify-between pb-4 border-b border-slate-800">
-                <div className="flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping"></span>
-                  <span className="text-xs font-mono uppercase tracking-wider text-emerald-400 font-bold">
-                    Automated Dispatch Engine
-                  </span>
-                </div>
-                <span className="text-[10px] font-mono text-slate-400">EDI v4.2 Connected</span>
-              </div>
-
-              {/* Pipeline Steps Cards */}
-              <div className="mt-5 space-y-3">
-                <div className="p-3.5 rounded-xl bg-slate-800/80 border border-slate-700/60 flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-blue-500/20 text-blue-400 flex items-center justify-center">
-                      <ShoppingBag className="w-4.5 h-4.5" />
-                    </div>
-                    <div>
-                      <p className="text-xs font-bold text-slate-100">Reseller Order Authorized</p>
-                      <span className="text-[10px] text-slate-400">Order #WN-WS-94812 &bull; 15 units</span>
-                    </div>
-                  </div>
-                  <span className="text-[11px] font-mono font-bold text-emerald-400">INSTANT</span>
-                </div>
-
-                <div className="p-3.5 rounded-xl bg-slate-800/80 border border-slate-700/60 flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-purple-500/20 text-purple-400 flex items-center justify-center">
-                      <Package className="w-4.5 h-4.5" />
-                    </div>
-                    <div>
-                      <p className="text-xs font-bold text-slate-100">Dhaka Central Hub Picking</p>
-                      <span className="text-[10px] text-slate-400">Automated ASRS Barcode Scan</span>
-                    </div>
-                  </div>
-                  <span className="text-[11px] font-mono font-bold text-blue-400">PACKING</span>
-                </div>
-
-                <div className="p-3.5 rounded-xl bg-slate-800/80 border border-slate-700/60 flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
-                      <Truck className="w-4.5 h-4.5" />
-                    </div>
-                    <div>
-                      <p className="text-xs font-bold text-slate-100">Blind Carrier Handover</p>
-                      <span className="text-[10px] text-slate-400">Steadfast / Pathao Courier API</span>
-                    </div>
-                  </div>
-                  <span className="text-[11px] font-mono font-bold text-emerald-400">TRACKING LIVE</span>
-                </div>
-              </div>
-
-              {/* Bottom Quick Callout */}
-              <div className="mt-5 p-3 rounded-xl bg-brand/20 border border-brand/40 flex items-center justify-between text-xs">
-                <span className="text-slate-300 font-medium">Average Reseller Monthly Margin:</span>
-                <span className="font-extrabold text-emerald-400 text-sm">৳68,400+</span>
-              </div>
-            </div>
+            <BangladeshDistributionMap />
           </div>
         </div>
       </section>
