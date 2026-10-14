@@ -79,7 +79,7 @@ export function BangladeshDistributionMap() {
   const { width: W, height: H } = MAP_VIEWBOX;
 
   return (
-    <div className="relative rounded-3xl bg-slate-900 border border-slate-800 p-5 sm:p-6 shadow-2xl text-white overflow-hidden">
+    <div className="relative rounded-3xl bg-slate-900/70 border border-white/10 ring-1 ring-white/5 backdrop-blur-xl p-5 sm:p-6 shadow-2xl shadow-black/40 text-white overflow-hidden">
       <div className="absolute top-0 right-0 w-64 h-64 bg-brand/10 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute -bottom-20 -left-16 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
 

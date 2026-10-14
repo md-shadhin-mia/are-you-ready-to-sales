@@ -512,25 +512,25 @@ export function WinWholesaleShop() {
       {/* ======================================================== */}
       {/* SECTION 1: VIBRANT HERO SHOWCASE BANNER                  */}
       {/* ======================================================== */}
-      <section className="w-full relative overflow-hidden bg-gradient-to-b from-white via-slate-50 to-blue-50/40 py-12 lg:py-20 px-4 sm:px-6 lg:px-8 border-b border-slate-200">
-        <div className="absolute -top-32 left-1/4 w-96 h-96 rounded-full bg-blue-100/60 blur-3xl pointer-events-none"></div>
-        <div className="absolute bottom-0 right-10 w-96 h-96 rounded-full bg-emerald-100/50 blur-3xl pointer-events-none"></div>
+      <section className="w-full text-white relative overflow-hidden bg-gradient-to-b from-slate-950 via-[#07142e] to-[#0b1b3a] py-12 lg:py-20 px-4 sm:px-6 lg:px-8 border-b border-slate-800">
+        <div className="absolute -top-32 left-1/4 w-96 h-96 rounded-full bg-brand/25 blur-3xl pointer-events-none"></div>
+        <div className="absolute bottom-0 right-10 w-96 h-96 rounded-full bg-emerald-500/15 blur-3xl pointer-events-none"></div>
 
         <div className="max-w-[1440px] mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 items-center relative z-10">
           {/* Left Hero Text Column */}
           <div className="lg:col-span-7 flex flex-col gap-6">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-50 border border-blue-200/80 text-brand w-fit">
-              <BadgeCheck className="w-4 h-4 text-brand" />
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-brand/15 border border-brand/40 text-blue-200 w-fit backdrop-blur-sm">
+              <BadgeCheck className="w-4 h-4 text-blue-300" />
               <span className="text-xs font-bold tracking-wider uppercase">Direct-From-Factory Sourcing</span>
             </div>
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl text-slate-900 tracking-tight leading-tight font-extrabold">
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl text-white tracking-tight leading-tight font-extrabold">
               The Country's Premier{" "}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand via-blue-600 to-indigo-600">
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-sky-300 to-emerald-300">
                 Dropshipping &amp; Wholesale
               </span>{" "}
               Reseller Platform
             </h1>
-            <p className="text-sm sm:text-base text-slate-600 max-w-2xl leading-relaxed">
+            <p className="text-sm sm:text-base text-slate-300 max-w-2xl leading-relaxed">
               Source verified fast-moving products at true factory cost. Automated blind-shipping dispatch straight to your end customer with full white-label packaging or bulk wholesale delivery to your outlet.
             </p>
 
@@ -545,30 +545,30 @@ export function WinWholesaleShop() {
               </a>
               <button
                 onClick={() => setIsLoginModalOpen(true)}
-                className="px-6 py-3.5 rounded-xl bg-white hover:bg-slate-100 text-slate-800 font-bold text-sm border border-slate-200 flex items-center gap-2 transition-all shadow-xs"
+                className="px-6 py-3.5 rounded-xl bg-white/10 hover:bg-white/15 text-white font-bold text-sm border border-white/20 backdrop-blur-sm flex items-center gap-2 transition-all"
               >
-                <UserPlus className="w-4 h-4 text-brand" />
+                <UserPlus className="w-4 h-4 text-blue-300" />
                 <span>Open Reseller Account</span>
               </button>
             </div>
 
             {/* Trust Badges */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-6 border-t border-slate-200">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-6 border-t border-white/10">
               <div className="flex items-center gap-2">
-                <ShieldCheck className="w-5 h-5 text-brand" />
-                <span className="text-xs font-bold text-slate-700">Verified ISO 9001</span>
+                <ShieldCheck className="w-5 h-5 text-blue-400" />
+                <span className="text-xs font-bold text-slate-200">Verified ISO 9001</span>
               </div>
               <div className="flex items-center gap-2">
-                <CreditCard className="w-5 h-5 text-emerald-600" />
-                <span className="text-xs font-bold text-slate-700">Net 30/60 B2B Credit</span>
+                <CreditCard className="w-5 h-5 text-emerald-400" />
+                <span className="text-xs font-bold text-slate-200">Net 30/60 B2B Credit</span>
               </div>
               <div className="flex items-center gap-2">
-                <Truck className="w-5 h-5 text-blue-600" />
-                <span className="text-xs font-bold text-slate-700">99.4% Dispatch SLA</span>
+                <Truck className="w-5 h-5 text-sky-400" />
+                <span className="text-xs font-bold text-slate-200">99.4% Dispatch SLA</span>
               </div>
               <div className="flex items-center gap-2">
-                <Banknote className="w-5 h-5 text-purple-600" />
-                <span className="text-xs font-bold text-slate-700">Zero Capital Start</span>
+                <Banknote className="w-5 h-5 text-purple-400" />
+                <span className="text-xs font-bold text-slate-200">Zero Capital Start</span>
               </div>
             </div>
           </div>
